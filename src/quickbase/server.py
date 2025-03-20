@@ -7,7 +7,7 @@
 # ///
 import asyncio
 import json
-from typing import Any, Optional
+from typing import Any, Optional, List, Dict, Union
 import os
 import requests
 from dotenv import load_dotenv
@@ -56,7 +56,8 @@ class QuickbaseClient:
         except Exception as e:
             print(f"Quickbase connection failed: {str(e)}")
             return False
-    
+
+    # Table Operations
     def get_table_fields(self, table_id: str) -> list[dict]:
         """Retrieves field information for a specific Quickbase table.
 
@@ -73,7 +74,42 @@ class QuickbaseClient:
         except Exception as e:
             print(f"Failed to get table fields: {str(e)}")
             return []
-            
+
+    def get_table_schema(self, table_id: str) -> dict:
+        """Retrieves the complete schema for a table.
+
+        Args:
+            table_id (str): The ID of the Quickbase table.
+
+        Returns:
+            dict: Complete table schema
+        """
+        try:
+            response = self.session.get(f"{self.base_url}/tables/{table_id}/schema")
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            print(f"Failed to get table schema: {str(e)}")
+            return {}
+
+    def get_table_relationships(self, table_id: str) -> list[dict]:
+        """Retrieves relationships for a table.
+
+        Args:
+            table_id (str): The ID of the Quickbase table.
+
+        Returns:
+            list[dict]: List of table relationships
+        """
+        try:
+            response = self.session.get(f"{self.base_url}/tables/{table_id}/relationships")
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            print(f"Failed to get table relationships: {str(e)}")
+            return []
+
+    # Record Operations
     def get_table_records(self, table_id: str, query: Optional[dict] = None) -> dict:
         """Retrieves records from a Quickbase table.
 
@@ -98,7 +134,7 @@ class QuickbaseClient:
         except Exception as e:
             print(f"Failed to query records: {str(e)}")
             return {"data": []}
-            
+
     def create_record(self, table_id: str, data: dict) -> dict:
         """Creates a new record in a Quickbase table.
 
@@ -120,7 +156,7 @@ class QuickbaseClient:
         except Exception as e:
             print(f"Failed to create record: {str(e)}")
             return {}
-            
+
     def update_record(self, table_id: str, record_id: int, data: dict) -> dict:
         """Updates an existing record in a Quickbase table.
 
@@ -146,7 +182,7 @@ class QuickbaseClient:
         except Exception as e:
             print(f"Failed to update record: {str(e)}")
             return {}
-            
+
     def delete_record(self, table_id: str, record_id: int) -> bool:
         """Deletes a record from a Quickbase table.
 
@@ -168,6 +204,384 @@ class QuickbaseClient:
         except Exception as e:
             print(f"Failed to delete record: {str(e)}")
             return False
+
+    def bulk_create_records(self, table_id: str, records: List[dict]) -> dict:
+        """Creates multiple records in a Quickbase table.
+
+        Args:
+            table_id (str): The ID of the Quickbase table
+            records (List[dict]): List of records to create
+
+        Returns:
+            dict: Created records metadata
+        """
+        try:
+            payload = {
+                "to": table_id,
+                "data": records
+            }
+            response = self.session.post(f"{self.base_url}/records", json=payload)
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            print(f"Failed to bulk create records: {str(e)}")
+            return {}
+
+    def bulk_update_records(self, table_id: str, records: List[dict]) -> dict:
+        """Updates multiple records in a Quickbase table.
+
+        Args:
+            table_id (str): The ID of the Quickbase table
+            records (List[dict]): List of records to update
+
+        Returns:
+            dict: Updated records metadata
+        """
+        try:
+            payload = {
+                "to": table_id,
+                "data": records
+            }
+            response = self.session.post(f"{self.base_url}/records", json=payload)
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            print(f"Failed to bulk update records: {str(e)}")
+            return {}
+
+    def bulk_delete_records(self, table_id: str, record_ids: List[int]) -> bool:
+        """Deletes multiple records from a Quickbase table.
+
+        Args:
+            table_id (str): The ID of the Quickbase table
+            record_ids (List[int]): List of record IDs to delete
+
+        Returns:
+            bool: True if deletion successful
+        """
+        try:
+            record_ids_str = "','".join(map(str, record_ids))
+            payload = {
+                "from": table_id,
+                "where": f"{3}.EX.'{record_ids_str}'"  # Record ID field
+            }
+            response = self.session.delete(f"{self.base_url}/records", json=payload)
+            response.raise_for_status()
+            return True
+        except Exception as e:
+            print(f"Failed to bulk delete records: {str(e)}")
+            return False
+
+    # Report Operations
+    def get_report(self, report_id: str) -> dict:
+        """Retrieves a report definition.
+
+        Args:
+            report_id (str): The ID of the report
+
+        Returns:
+            dict: Report definition
+        """
+        try:
+            response = self.session.get(f"{self.base_url}/reports/{report_id}")
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            print(f"Failed to get report: {str(e)}")
+            return {}
+
+    def run_report(self, report_id: str, options: Optional[dict] = None) -> dict:
+        """Runs a report with optional parameters.
+
+        Args:
+            report_id (str): The ID of the report
+            options (Optional[dict]): Report run options
+
+        Returns:
+            dict: Report results
+        """
+        try:
+            response = self.session.post(
+                f"{self.base_url}/reports/{report_id}/run",
+                json=options or {}
+            )
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            print(f"Failed to run report: {str(e)}")
+            return {}
+
+    # File Operations
+    def upload_file(self, table_id: str, record_id: int, field_id: int, file_path: str) -> dict:
+        """Uploads a file to a record field.
+
+        Args:
+            table_id (str): The ID of the Quickbase table
+            record_id (int): The record ID
+            field_id (int): The field ID to upload to
+            file_path (str): Path to the file to upload
+
+        Returns:
+            dict: Upload response
+        """
+        try:
+            with open(file_path, 'rb') as f:
+                files = {'file': f}
+                response = self.session.post(
+                    f"{self.base_url}/files",
+                    files=files,
+                    data={
+                        'tableId': table_id,
+                        'recordId': record_id,
+                        'fieldId': field_id
+                    }
+                )
+                response.raise_for_status()
+                return response.json()
+        except Exception as e:
+            print(f"Failed to upload file: {str(e)}")
+            return {}
+
+    def download_file(self, file_id: str) -> bytes:
+        """Downloads a file from QuickBase.
+
+        Args:
+            file_id (str): The ID of the file to download
+
+        Returns:
+            bytes: File contents
+        """
+        try:
+            response = self.session.get(f"{self.base_url}/files/{file_id}")
+            response.raise_for_status()
+            return response.content
+        except Exception as e:
+            print(f"Failed to download file: {str(e)}")
+            return b""
+
+    def delete_file(self, file_id: str) -> bool:
+        """Deletes a file from QuickBase.
+
+        Args:
+            file_id (str): The ID of the file to delete
+
+        Returns:
+            bool: True if deletion successful
+        """
+        try:
+            response = self.session.delete(f"{self.base_url}/files/{file_id}")
+            response.raise_for_status()
+            return True
+        except Exception as e:
+            print(f"Failed to delete file: {str(e)}")
+            return False
+
+    # User Operations
+    def get_user(self, user_id: str) -> dict:
+        """Retrieves user information.
+
+        Args:
+            user_id (str): The ID of the user
+
+        Returns:
+            dict: User information
+        """
+        try:
+            response = self.session.get(f"{self.base_url}/users/{user_id}")
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            print(f"Failed to get user: {str(e)}")
+            return {}
+
+    def get_current_user(self) -> dict:
+        """Retrieves current user information.
+
+        Returns:
+            dict: Current user information
+        """
+        try:
+            response = self.session.get(f"{self.base_url}/users/me")
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            print(f"Failed to get current user: {str(e)}")
+            return {}
+
+    def get_user_roles(self, user_id: str) -> list[dict]:
+        """Retrieves roles for a user.
+
+        Args:
+            user_id (str): The ID of the user
+
+        Returns:
+            list[dict]: List of user roles
+        """
+        try:
+            response = self.session.get(f"{self.base_url}/users/{user_id}/roles")
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            print(f"Failed to get user roles: {str(e)}")
+            return []
+
+    # Role Operations
+    def get_role(self, role_id: str) -> dict:
+        """Retrieves role information.
+
+        Args:
+            role_id (str): The ID of the role
+
+        Returns:
+            dict: Role information
+        """
+        try:
+            response = self.session.get(f"{self.base_url}/roles/{role_id}")
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            print(f"Failed to get role: {str(e)}")
+            return {}
+
+    def get_role_users(self, role_id: str) -> list[dict]:
+        """Retrieves users in a role.
+
+        Args:
+            role_id (str): The ID of the role
+
+        Returns:
+            list[dict]: List of users in the role
+        """
+        try:
+            response = self.session.get(f"{self.base_url}/roles/{role_id}/users")
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            print(f"Failed to get role users: {str(e)}")
+            return []
+
+    # App Operations
+    def get_app(self, app_id: str) -> dict:
+        """Retrieves application information.
+
+        Args:
+            app_id (str): The ID of the application
+
+        Returns:
+            dict: Application information
+        """
+        try:
+            response = self.session.get(f"{self.base_url}/apps/{app_id}")
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            print(f"Failed to get app: {str(e)}")
+            return {}
+
+    def get_app_tables(self, app_id: str) -> list[dict]:
+        """Retrieves tables in an application.
+
+        Args:
+            app_id (str): The ID of the application
+
+        Returns:
+            list[dict]: List of tables in the application
+        """
+        try:
+            response = self.session.get(f"{self.base_url}/apps/{app_id}/tables")
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            print(f"Failed to get app tables: {str(e)}")
+            return []
+
+    def get_app_roles(self, app_id: str) -> list[dict]:
+        """Retrieves roles in an application.
+
+        Args:
+            app_id (str): The ID of the application
+
+        Returns:
+            list[dict]: List of roles in the application
+        """
+        try:
+            response = self.session.get(f"{self.base_url}/apps/{app_id}/roles")
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            print(f"Failed to get app roles: {str(e)}")
+            return []
+
+    # Form Operations
+    def get_form(self, table_id: str, form_id: str) -> dict:
+        """Retrieves form information.
+
+        Args:
+            table_id (str): The ID of the table
+            form_id (str): The ID of the form
+
+        Returns:
+            dict: Form information
+        """
+        try:
+            response = self.session.get(f"{self.base_url}/forms/{table_id}/{form_id}")
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            print(f"Failed to get form: {str(e)}")
+            return {}
+
+    def get_table_forms(self, table_id: str) -> list[dict]:
+        """Retrieves forms for a table.
+
+        Args:
+            table_id (str): The ID of the table
+
+        Returns:
+            list[dict]: List of forms for the table
+        """
+        try:
+            response = self.session.get(f"{self.base_url}/tables/{table_id}/forms")
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            print(f"Failed to get table forms: {str(e)}")
+            return []
+
+    # Dashboard Operations
+    def get_dashboard(self, dashboard_id: str) -> dict:
+        """Retrieves dashboard information.
+
+        Args:
+            dashboard_id (str): The ID of the dashboard
+
+        Returns:
+            dict: Dashboard information
+        """
+        try:
+            response = self.session.get(f"{self.base_url}/dashboards/{dashboard_id}")
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            print(f"Failed to get dashboard: {str(e)}")
+            return {}
+
+    def get_app_dashboards(self, app_id: str) -> list[dict]:
+        """Retrieves dashboards in an application.
+
+        Args:
+            app_id (str): The ID of the application
+
+        Returns:
+            list[dict]: List of dashboards in the application
+        """
+        try:
+            response = self.session.get(f"{self.base_url}/apps/{app_id}/dashboards")
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            print(f"Failed to get app dashboards: {str(e)}")
+            return []
 
 # Create a server instance
 server = Server("quickbase-mcp")
@@ -698,7 +1112,7 @@ async def handle_call_tool(name: str, arguments: dict[str, str]) -> list[types.T
         if not report_id:
             raise ValueError("Missing 'report_id' argument")
 
-        results = qb_client.session.post(f"{qb_client.base_url}/reports/{report_id}/run", json=options).json()
+        results = qb_client.run_report(report_id, options)
         return [
             types.TextContent(
                 type="text",
@@ -720,7 +1134,7 @@ async def handle_call_tool(name: str, arguments: dict[str, str]) -> list[types.T
         elif action in ["download", "delete"] and not attachment_id:
             raise ValueError("Missing 'attachment_id' for download/delete action")
 
-        results = qb_client.session.post(f"{qb_client.base_url}/records/{table_id}/{record_id}/attachments/{action}", json={"attachmentId": attachment_id, "file": open(file_path, 'rb')}).json()
+        results = qb_client.upload_file(table_id, record_id, attachment_id, file_path)
         return [
             types.TextContent(
                 type="text",
