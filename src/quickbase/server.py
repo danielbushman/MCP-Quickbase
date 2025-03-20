@@ -17,6 +17,34 @@ from mcp.server import Server, NotificationOptions
 from mcp.server.models import InitializationOptions
 import mcp.server.stdio
 
+class QuickbaseError(Exception):
+    """Base exception for QuickBase API errors."""
+    def __init__(self, message: str, status_code: int = None, response: dict = None):
+        self.message = message
+        self.status_code = status_code
+        self.response = response
+        super().__init__(message)
+
+class QuickbaseAuthenticationError(QuickbaseError):
+    """Raised when authentication fails."""
+    pass
+
+class QuickbaseValidationError(QuickbaseError):
+    """Raised when request validation fails."""
+    pass
+
+class QuickbaseNotFoundError(QuickbaseError):
+    """Raised when a resource is not found."""
+    pass
+
+class QuickbaseRateLimitError(QuickbaseError):
+    """Raised when rate limit is exceeded."""
+    pass
+
+class QuickbaseServerError(QuickbaseError):
+    """Raised when QuickBase server encounters an error."""
+    pass
+
 class QuickbaseClient:
     """Handles Quickbase operations and caching using the v1 REST API."""
     
@@ -28,18 +56,92 @@ class QuickbaseClient:
         self.realm_hostname = None
         self.user_token = None
 
+    def _handle_response(self, response: requests.Response) -> Any:
+        """Handles API response and raises appropriate exceptions.
+        
+        Args:
+            response (requests.Response): The API response
+            
+        Returns:
+            Any: The response data
+            
+        Raises:
+            QuickbaseAuthenticationError: If authentication fails
+            QuickbaseValidationError: If request validation fails
+            QuickbaseNotFoundError: If resource not found
+            QuickbaseRateLimitError: If rate limit exceeded
+            QuickbaseServerError: If server error occurs
+        """
+        try:
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.HTTPError as e:
+            status_code = response.status_code
+            try:
+                error_data = response.json() if response.content else {}
+            except:
+                error_data = {"error": str(e)}
+            
+            if status_code == 401:
+                raise QuickbaseAuthenticationError(
+                    "Authentication failed. Please check your credentials.",
+                    status_code,
+                    error_data
+                )
+            elif status_code == 403:
+                raise QuickbaseAuthenticationError(
+                    "Access denied. Please check your permissions.",
+                    status_code,
+                    error_data
+                )
+            elif status_code == 404:
+                raise QuickbaseNotFoundError(
+                    f"Resource not found: {response.url}",
+                    status_code,
+                    error_data
+                )
+            elif status_code == 422:
+                raise QuickbaseValidationError(
+                    "Invalid request data.",
+                    status_code,
+                    error_data
+                )
+            elif status_code == 429:
+                raise QuickbaseRateLimitError(
+                    "Rate limit exceeded. Please try again later.",
+                    status_code,
+                    error_data
+                )
+            elif status_code >= 500:
+                raise QuickbaseServerError(
+                    "QuickBase server error. Please try again later.",
+                    status_code,
+                    error_data
+                )
+            else:
+                raise QuickbaseError(
+                    f"API request failed with status {status_code}",
+                    status_code,
+                    error_data
+                )
+        except requests.exceptions.RequestException as e:
+            raise QuickbaseError(f"Request failed: {str(e)}")
+
     def connect(self) -> bool:
         """Establishes connection to Quickbase using environment variables.
         
         Returns:
             bool: True if connection successful, False otherwise
+            
+        Raises:
+            QuickbaseAuthenticationError: If authentication fails
         """
         try:
             self.realm_hostname = os.getenv('QUICKBASE_REALM_HOST')
             self.user_token = os.getenv('QUICKBASE_USER_TOKEN')
             
             if not self.realm_hostname or not self.user_token:
-                raise ValueError("Missing required environment variables")
+                raise QuickbaseAuthenticationError("Missing required environment variables")
                 
             # Set up default headers for all requests
             self.session.headers.update({
@@ -48,14 +150,19 @@ class QuickbaseClient:
                 'Content-Type': 'application/json'
             })
             
-            # Test connection by getting user info
-            response = self.session.get(f"{self.base_url}/users/me")
-            response.raise_for_status()
+            # Test connection by getting app info instead of user info
+            app_id = os.getenv('QUICKBASE_APP_ID')
+            if not app_id:
+                raise QuickbaseAuthenticationError("Missing QUICKBASE_APP_ID environment variable")
+                
+            response = self.session.get(f"{self.base_url}/apps/{app_id}")
+            self._handle_response(response)
             return True
             
+        except QuickbaseAuthenticationError:
+            raise
         except Exception as e:
-            print(f"Quickbase connection failed: {str(e)}")
-            return False
+            raise QuickbaseError(f"Connection failed: {str(e)}")
 
     # Table Operations
     def get_table_fields(self, table_id: str) -> list[dict]:
@@ -66,14 +173,17 @@ class QuickbaseClient:
 
         Returns:
             list[dict]: List of field definitions
+            
+        Raises:
+            QuickbaseError: If the API request fails
         """
         try:
             response = self.session.get(f"{self.base_url}/fields?tableId={table_id}")
-            response.raise_for_status()
-            return response.json()
+            return self._handle_response(response)
+        except QuickbaseError:
+            raise
         except Exception as e:
-            print(f"Failed to get table fields: {str(e)}")
-            return []
+            raise QuickbaseError(f"Failed to get table fields: {str(e)}")
 
     def get_table_schema(self, table_id: str) -> dict:
         """Retrieves the complete schema for a table.
@@ -146,16 +256,22 @@ class QuickbaseClient:
             dict: Created record metadata
         """
         try:
+            # Format the data according to QuickBase's API requirements
+            formatted_data = {}
+            for field_id, value in data.items():
+                formatted_data[field_id] = {"value": value}
+
             payload = {
                 "to": table_id,
-                "data": [data]
+                "data": [formatted_data]
             }
+            
             response = self.session.post(f"{self.base_url}/records", json=payload)
-            response.raise_for_status()
-            return response.json()
+            return self._handle_response(response)
+        except QuickbaseError:
+            raise
         except Exception as e:
-            print(f"Failed to create record: {str(e)}")
-            return {}
+            raise QuickbaseError(f"Failed to create record: {str(e)}")
 
     def update_record(self, table_id: str, record_id: int, data: dict) -> dict:
         """Updates an existing record in a Quickbase table.
@@ -667,18 +783,31 @@ class QuickbaseClient:
             dict: Created table information
         """
         try:
+            # Format fields according to QuickBase's API requirements
+            formatted_fields = []
+            if fields:
+                for field in fields:
+                    formatted_field = {
+                        "fieldType": field.get("type", "text"),  # Default to text if not specified
+                        "label": field.get("name", ""),
+                        "description": field.get("description", ""),
+                        "properties": field.get("properties", {})
+                    }
+                    formatted_fields.append(formatted_field)
+
             payload = {
                 "name": name,
                 "description": description or "",
-                "fields": fields or [],
+                "fields": formatted_fields,
                 **(options or {})
             }
+            
             response = self.session.post(f"{self.base_url}/apps/{app_id}/tables", json=payload)
-            response.raise_for_status()
-            return response.json()
+            return self._handle_response(response)
+        except QuickbaseError:
+            raise
         except Exception as e:
-            print(f"Failed to create table: {str(e)}")
-            return {}
+            raise QuickbaseError(f"Failed to create table: {str(e)}")
 
     def update_table(self, table_id: str, name: Optional[str] = None, description: Optional[str] = None, options: Optional[dict] = None) -> dict:
         """Updates an existing QuickBase table.
@@ -1227,10 +1356,8 @@ async def handle_list_tools() -> list[types.Tool]:
                         "description": "The ID of the Quickbase table",
                     },
                     "data": {
-                        "type": "object",
+                        "type": "string",
                         "description": "The data for the new record",
-                        "properties": {},
-                        "additionalProperties": True,
                     },
                 },
                 "required": ["table_id", "data"],
@@ -1433,331 +1560,353 @@ async def handle_list_tools() -> list[types.Tool]:
 
 @server.call_tool()
 async def handle_call_tool(name: str, arguments: dict[str, str]) -> list[types.TextContent]:
-    if name == "list_tables":
-        try:
-            app_id = os.getenv('QUICKBASE_APP_ID')
-            tables = qb_client.session.get(f"{qb_client.base_url}/tables?appId={app_id}").json()
-            formatted_tables = []
-            for table in tables:
-                formatted_tables.append({
-                    "id": table.get("id"),
-                    "name": table.get("name"),
-                    "description": table.get("description", "")
-                })
+    try:
+        if name == "list_tables":
+            try:
+                app_id = os.getenv('QUICKBASE_APP_ID')
+                if not app_id:
+                    raise QuickbaseError("Missing QUICKBASE_APP_ID environment variable")
+                    
+                response = qb_client.session.get(f"{qb_client.base_url}/tables?appId={app_id}")
+                tables = qb_client._handle_response(response)
+                
+                formatted_tables = []
+                for table in tables:
+                    formatted_tables.append({
+                        "id": table.get("id"),
+                        "name": table.get("name"),
+                        "description": table.get("description", "")
+                    })
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Available Tables in App {app_id}:\n{json.dumps(formatted_tables, indent=2)}"
+                    )
+                ]
+            except QuickbaseError as e:
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Error listing tables: {e.message}\nStatus: {e.status_code}\nDetails: {json.dumps(e.response, indent=2)}"
+                    )
+                ]
+        elif name == "test_connection":
+            try:
+                if qb_client.session is None:
+                    success = qb_client.connect()
+                    status = "Connected successfully" if success else "Connection failed"
+                else:
+                    status = "Already connected"
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Quickbase Connection Status: {status}\nRealm: {qb_client.realm_hostname}\nApp ID: {os.getenv('QUICKBASE_APP_ID')}"
+                    )
+                ]
+            except QuickbaseAuthenticationError as e:
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Authentication Error: {e.message}\nStatus: {e.status_code}\nDetails: {json.dumps(e.response, indent=2)}"
+                    )
+                ]
+            except QuickbaseError as e:
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Connection Error: {e.message}\nStatus: {e.status_code}\nDetails: {json.dumps(e.response, indent=2)}"
+                    )
+                ]
+        elif name == "query_records":
+            table_id = arguments.get("table_id")
+            select = arguments.get("select", [])
+            where = arguments.get("where", "")
+            options = arguments.get("options", {})
+
+            if not table_id:
+                raise ValueError("Missing 'table_id' argument")
+
+            results = qb_client.get_table_records(table_id, query={
+                "from": table_id,
+                "select": select,
+                "where": where,
+                **options
+            })
             return [
                 types.TextContent(
                     type="text",
-                    text=f"Available Tables in App {app_id}:\n{json.dumps(formatted_tables, indent=2)}"
+                    text=f"Query Results (JSON):\n{json.dumps(results, indent=2)}",
                 )
             ]
-        except Exception as e:
+        elif name == "get_table_fields":
+            table_id = arguments.get("table_id")
+            if not table_id:
+                raise ValueError("Missing 'table_id' argument")
+
+            results = qb_client.get_table_fields(table_id)
             return [
                 types.TextContent(
                     type="text",
-                    text=f"Error listing tables: {str(e)}"
+                    text=f"Table Fields (JSON):\n{json.dumps(results, indent=2)}",
                 )
             ]
-    elif name == "test_connection":
-        if qb_client.session is None:
-            success = qb_client.connect()
-            status = "Connected successfully" if success else "Connection failed"
-        else:
-            status = "Already connected"
+        elif name == "create_record":
+            table_id = arguments.get("table_id")
+            data = arguments.get("data")
+            if not table_id or not data:
+                raise ValueError("Missing 'table_id' or 'data' argument")
+
+            try:
+                # Parse the data if it's a string
+                if isinstance(data, str):
+                    data = json.loads(data)
+                
+                results = qb_client.create_record(table_id, data)
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Create Record Result (JSON):\n{json.dumps(results, indent=2)}",
+                    )
+                ]
+            except json.JSONDecodeError as e:
+                raise ValueError(f"Invalid data format: {str(e)}")
+            except QuickbaseError as e:
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Error creating record: {e.message}\nStatus: {e.status_code}\nDetails: {json.dumps(e.response, indent=2)}"
+                    )
+                ]
+        elif name == "update_record":
+            table_id = arguments.get("table_id")
+            record_id = arguments.get("record_id")
+            data = arguments.get("data")
+            if not table_id or not record_id or not data:
+                raise ValueError("Missing 'table_id', 'record_id', or 'data' argument")
+
+            results = qb_client.update_record(table_id, record_id, data)
+            return [
+                types.TextContent(
+                    type="text",
+                    text=f"Update Record Result (JSON):\n{json.dumps(results, indent=2)}",
+                )
+            ]
+        elif name == "delete_record":
+            table_id = arguments.get("table_id")
+            record_id = arguments.get("record_id")
+            if not table_id or not record_id:
+                raise ValueError("Missing 'table_id' or 'record_id' argument")
+
+            results = qb_client.delete_record(table_id, record_id)
+            return [
+                types.TextContent(
+                    type="text",
+                    text=f"Delete Record Result (JSON):\n{json.dumps(results, indent=2)}",
+                )
+            ]
+        elif name == "run_report":
+            report_id = arguments.get("report_id")
+            options = arguments.get("options", {})
+            if not report_id:
+                raise ValueError("Missing 'report_id' argument")
+
+            results = qb_client.run_report(report_id, options)
+            return [
+                types.TextContent(
+                    type="text",
+                    text=f"Report Results (JSON):\n{json.dumps(results, indent=2)}",
+                )
+            ]
+        elif name == "manage_attachments":
+            action = arguments.get("action")
+            table_id = arguments.get("table_id")
+            record_id = arguments.get("record_id")
+            attachment_id = arguments.get("attachment_id")
+            file_path = arguments.get("file_path")
+
+            if not action or not table_id or not record_id:
+                raise ValueError("Missing required arguments")
+
+            if action == "upload" and not file_path:
+                raise ValueError("Missing 'file_path' for upload action")
+            elif action in ["download", "delete"] and not attachment_id:
+                raise ValueError("Missing 'attachment_id' for download/delete action")
+
+            results = qb_client.upload_file(table_id, record_id, attachment_id, file_path)
+            return [
+                types.TextContent(
+                    type="text",
+                    text=f"Attachment Operation Result (JSON):\n{json.dumps(results, indent=2)}",
+                )
+            ]
+        elif name == "manage_users":
+            action = arguments.get("action")
+            email = arguments.get("email")
+            role_id = arguments.get("role_id")
+            options = arguments.get("options", {})
+
+            if not action or not email or not role_id:
+                raise ValueError("Missing required arguments")
+
+            results = qb_client.session.post(f"{qb_client.base_url}/users", json={"action": action, "email": email, "roleId": role_id, **options}).json()
+            return [
+                types.TextContent(
+                    type="text",
+                    text=f"User Management Result (JSON):\n{json.dumps(results, indent=2)}",
+                )
+            ]
+        elif name == "manage_forms":
+            action = arguments.get("action")
+            table_id = arguments.get("table_id")
+            form_id = arguments.get("form_id")
+            form_config = arguments.get("form_config")
+
+            if not action or not table_id or not form_id:
+                raise ValueError("Missing required arguments")
+            if action == "update" and not form_config:
+                raise ValueError("Missing 'form_config' for update action")
+
+            results = qb_client.session.post(f"{qb_client.base_url}/forms/{table_id}/{form_id}", json=form_config).json()
+            return [
+                types.TextContent(
+                    type="text",
+                    text=f"Form Management Result (JSON):\n{json.dumps(results, indent=2)}",
+                )
+            ]
+        elif name == "manage_dashboards":
+            action = arguments.get("action")
+            dashboard_id = arguments.get("dashboard_id")
+            dashboard_config = arguments.get("dashboard_config")
+            options = arguments.get("options", {})
+
+            if not action or not dashboard_id:
+                raise ValueError("Missing required arguments")
+            if action == "update" and not dashboard_config:
+                raise ValueError("Missing 'dashboard_config' for update action")
+
+            results = qb_client.session.post(f"{qb_client.base_url}/dashboards/{dashboard_id}", json={"action": action, "dashboard": dashboard_config, **options}).json()
+            return [
+                types.TextContent(
+                    type="text",
+                    text=f"Dashboard Management Result (JSON):\n{json.dumps(results, indent=2)}",
+                )
+            ]
+        elif name == "create_table":
+            app_id = arguments.get("app_id")
+            name = arguments.get("name")
+            description = arguments.get("description")
+            fields = arguments.get("fields", [])
+            options = arguments.get("options", {})
+            if not app_id or not name:
+                raise ValueError("Missing 'app_id' or 'name' argument")
+
+            try:
+                # Parse the fields if it's a string
+                if isinstance(fields, str):
+                    fields = json.loads(fields)
+                
+                results = qb_client.create_table(app_id, name, description, fields, options)
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Create Table Result (JSON):\n{json.dumps(results, indent=2)}",
+                    )
+                ]
+            except json.JSONDecodeError as e:
+                raise ValueError(f"Invalid fields format: {str(e)}")
+            except QuickbaseError as e:
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Error creating table: {e.message}\nStatus: {e.status_code}\nDetails: {json.dumps(e.response, indent=2)}"
+                    )
+                ]
+        elif name == "update_table":
+            table_id = arguments.get("table_id")
+            name = arguments.get("name")
+            description = arguments.get("description")
+            options = arguments.get("options", {})
+            if not table_id:
+                raise ValueError("Missing 'table_id' argument")
+
+            results = qb_client.update_table(table_id, name, description, options)
+            return [
+                types.TextContent(
+                    type="text",
+                    text=f"Update Table Result (JSON):\n{json.dumps(results, indent=2)}",
+                )
+            ]
+        elif name == "delete_table":
+            table_id = arguments.get("table_id")
+            if not table_id:
+                raise ValueError("Missing 'table_id' argument")
+
+            results = qb_client.delete_table(table_id)
+            return [
+                types.TextContent(
+                    type="text",
+                    text=f"Delete Table Result (JSON):\n{json.dumps(results, indent=2)}",
+                )
+            ]
+        elif name == "create_field":
+            table_id = arguments.get("table_id")
+            field_name = arguments.get("field_name")
+            field_type = arguments.get("field_type")
+            options = arguments.get("options", {})
+            if not table_id or not field_name or not field_type:
+                raise ValueError("Missing required arguments")
+
+            results = qb_client.create_field(table_id, field_name, field_type, options)
+            return [
+                types.TextContent(
+                    type="text",
+                    text=f"Create Field Result (JSON):\n{json.dumps(results, indent=2)}",
+                )
+            ]
+        elif name == "update_field":
+            table_id = arguments.get("table_id")
+            field_id = arguments.get("field_id")
+            name = arguments.get("name")
+            field_type = arguments.get("field_type")
+            options = arguments.get("options", {})
+            if not table_id or not field_id:
+                raise ValueError("Missing 'table_id' or 'field_id' argument")
+
+            results = qb_client.update_field(table_id, field_id, name, field_type, options)
+            return [
+                types.TextContent(
+                    type="text",
+                    text=f"Update Field Result (JSON):\n{json.dumps(results, indent=2)}",
+                )
+            ]
+        elif name == "delete_field":
+            table_id = arguments.get("table_id")
+            field_id = arguments.get("field_id")
+            if not table_id or not field_id:
+                raise ValueError("Missing 'table_id' or 'field_id' argument")
+
+            results = qb_client.delete_field(table_id, field_id)
+            return [
+                types.TextContent(
+                    type="text",
+                    text=f"Delete Field Result (JSON):\n{json.dumps(results, indent=2)}",
+                )
+            ]
+        raise ValueError(f"Unknown tool: {name}")
+    except QuickbaseError as e:
         return [
             types.TextContent(
                 type="text",
-                text=f"Quickbase Connection Status: {status}\nRealm: {qb_client.realm_hostname}\nApp ID: {os.getenv('QUICKBASE_APP_ID')}"
+                text=f"Error: {e.message}\nStatus: {e.status_code}\nDetails: {json.dumps(e.response, indent=2)}"
             )
         ]
-    elif name == "query_records":
-        table_id = arguments.get("table_id")
-        select = arguments.get("select", [])
-        where = arguments.get("where", "")
-        options = arguments.get("options", {})
-
-        if not table_id:
-            raise ValueError("Missing 'table_id' argument")
-
-        results = qb_client.get_table_records(table_id, query={
-            "from": table_id,
-            "select": select,
-            "where": where,
-            **options
-        })
+    except Exception as e:
         return [
             types.TextContent(
                 type="text",
-                text=f"Query Results (JSON):\n{json.dumps(results, indent=2)}",
+                text=f"Unexpected error: {str(e)}"
             )
         ]
-    elif name == "get_table_fields":
-        table_id = arguments.get("table_id")
-        if not table_id:
-            raise ValueError("Missing 'table_id' argument")
-
-        results = qb_client.get_table_fields(table_id)
-        return [
-            types.TextContent(
-                type="text",
-                text=f"Table Fields (JSON):\n{json.dumps(results, indent=2)}",
-            )
-        ]
-    elif name == "create_record":
-        table_id = arguments.get("table_id")
-        data = arguments.get("data")
-        if not table_id or not data:
-            raise ValueError("Missing 'table_id' or 'data' argument")
-
-        results = qb_client.create_record(table_id, data)
-        return [
-            types.TextContent(
-                type="text",
-                text=f"Create Record Result (JSON):\n{json.dumps(results, indent=2)}",
-            )
-        ]
-    elif name == "update_record":
-        table_id = arguments.get("table_id")
-        record_id = arguments.get("record_id")
-        data = arguments.get("data")
-        if not table_id or not record_id or not data:
-            raise ValueError("Missing 'table_id', 'record_id', or 'data' argument")
-
-        results = qb_client.update_record(table_id, record_id, data)
-        return [
-            types.TextContent(
-                type="text",
-                text=f"Update Record Result (JSON):\n{json.dumps(results, indent=2)}",
-            )
-        ]
-    elif name == "delete_record":
-        table_id = arguments.get("table_id")
-        record_id = arguments.get("record_id")
-        if not table_id or not record_id:
-            raise ValueError("Missing 'table_id' or 'record_id' argument")
-
-        results = qb_client.delete_record(table_id, record_id)
-        return [
-            types.TextContent(
-                type="text",
-                text=f"Delete Record Result (JSON):\n{json.dumps(results, indent=2)}",
-            )
-        ]
-    elif name == "run_report":
-        report_id = arguments.get("report_id")
-        options = arguments.get("options", {})
-        if not report_id:
-            raise ValueError("Missing 'report_id' argument")
-
-        results = qb_client.run_report(report_id, options)
-        return [
-            types.TextContent(
-                type="text",
-                text=f"Report Results (JSON):\n{json.dumps(results, indent=2)}",
-            )
-        ]
-    elif name == "manage_attachments":
-        action = arguments.get("action")
-        table_id = arguments.get("table_id")
-        record_id = arguments.get("record_id")
-        attachment_id = arguments.get("attachment_id")
-        file_path = arguments.get("file_path")
-
-        if not action or not table_id or not record_id:
-            raise ValueError("Missing required arguments")
-
-        if action == "upload" and not file_path:
-            raise ValueError("Missing 'file_path' for upload action")
-        elif action in ["download", "delete"] and not attachment_id:
-            raise ValueError("Missing 'attachment_id' for download/delete action")
-
-        results = qb_client.upload_file(table_id, record_id, attachment_id, file_path)
-        return [
-            types.TextContent(
-                type="text",
-                text=f"Attachment Operation Result (JSON):\n{json.dumps(results, indent=2)}",
-            )
-        ]
-    elif name == "manage_users":
-        action = arguments.get("action")
-        email = arguments.get("email")
-        role_id = arguments.get("role_id")
-        options = arguments.get("options", {})
-
-        if not action or not email or not role_id:
-            raise ValueError("Missing required arguments")
-
-        results = qb_client.session.post(f"{qb_client.base_url}/users", json={"action": action, "email": email, "roleId": role_id, **options}).json()
-        return [
-            types.TextContent(
-                type="text",
-                text=f"User Management Result (JSON):\n{json.dumps(results, indent=2)}",
-            )
-        ]
-    elif name == "manage_forms":
-        action = arguments.get("action")
-        table_id = arguments.get("table_id")
-        form_id = arguments.get("form_id")
-        form_config = arguments.get("form_config")
-
-        if not action or not table_id or not form_id:
-            raise ValueError("Missing required arguments")
-        if action == "update" and not form_config:
-            raise ValueError("Missing 'form_config' for update action")
-
-        results = qb_client.session.post(f"{qb_client.base_url}/forms/{table_id}/{form_id}", json=form_config).json()
-        return [
-            types.TextContent(
-                type="text",
-                text=f"Form Management Result (JSON):\n{json.dumps(results, indent=2)}",
-            )
-        ]
-    elif name == "manage_dashboards":
-        action = arguments.get("action")
-        dashboard_id = arguments.get("dashboard_id")
-        dashboard_config = arguments.get("dashboard_config")
-        options = arguments.get("options", {})
-
-        if not action or not dashboard_id:
-            raise ValueError("Missing required arguments")
-        if action == "update" and not dashboard_config:
-            raise ValueError("Missing 'dashboard_config' for update action")
-
-        results = qb_client.session.post(f"{qb_client.base_url}/dashboards/{dashboard_id}", json={"action": action, "dashboard": dashboard_config, **options}).json()
-        return [
-            types.TextContent(
-                type="text",
-                text=f"Dashboard Management Result (JSON):\n{json.dumps(results, indent=2)}",
-            )
-        ]
-    elif name == "create_app":
-        name = arguments.get("name")
-        description = arguments.get("description")
-        options = arguments.get("options", {})
-        if not name:
-            raise ValueError("Missing 'name' argument")
-
-        results = qb_client.create_app(name, description, options)
-        return [
-            types.TextContent(
-                type="text",
-                text=f"Create App Result (JSON):\n{json.dumps(results, indent=2)}",
-            )
-        ]
-    elif name == "update_app":
-        app_id = arguments.get("app_id")
-        name = arguments.get("name")
-        description = arguments.get("description")
-        options = arguments.get("options", {})
-        if not app_id:
-            raise ValueError("Missing 'app_id' argument")
-
-        results = qb_client.update_app(app_id, name, description, options)
-        return [
-            types.TextContent(
-                type="text",
-                text=f"Update App Result (JSON):\n{json.dumps(results, indent=2)}",
-            )
-        ]
-    elif name == "delete_app":
-        app_id = arguments.get("app_id")
-        if not app_id:
-            raise ValueError("Missing 'app_id' argument")
-
-        results = qb_client.delete_app(app_id)
-        return [
-            types.TextContent(
-                type="text",
-                text=f"Delete App Result (JSON):\n{json.dumps(results, indent=2)}",
-            )
-        ]
-    elif name == "create_table":
-        app_id = arguments.get("app_id")
-        name = arguments.get("name")
-        description = arguments.get("description")
-        fields = arguments.get("fields", [])
-        options = arguments.get("options", {})
-        if not app_id or not name:
-            raise ValueError("Missing 'app_id' or 'name' argument")
-
-        results = qb_client.create_table(app_id, name, description, fields, options)
-        return [
-            types.TextContent(
-                type="text",
-                text=f"Create Table Result (JSON):\n{json.dumps(results, indent=2)}",
-            )
-        ]
-    elif name == "update_table":
-        table_id = arguments.get("table_id")
-        name = arguments.get("name")
-        description = arguments.get("description")
-        options = arguments.get("options", {})
-        if not table_id:
-            raise ValueError("Missing 'table_id' argument")
-
-        results = qb_client.update_table(table_id, name, description, options)
-        return [
-            types.TextContent(
-                type="text",
-                text=f"Update Table Result (JSON):\n{json.dumps(results, indent=2)}",
-            )
-        ]
-    elif name == "delete_table":
-        table_id = arguments.get("table_id")
-        if not table_id:
-            raise ValueError("Missing 'table_id' argument")
-
-        results = qb_client.delete_table(table_id)
-        return [
-            types.TextContent(
-                type="text",
-                text=f"Delete Table Result (JSON):\n{json.dumps(results, indent=2)}",
-            )
-        ]
-    elif name == "create_field":
-        table_id = arguments.get("table_id")
-        field_name = arguments.get("field_name")
-        field_type = arguments.get("field_type")
-        options = arguments.get("options", {})
-        if not table_id or not field_name or not field_type:
-            raise ValueError("Missing required arguments")
-
-        results = qb_client.create_field(table_id, field_name, field_type, options)
-        return [
-            types.TextContent(
-                type="text",
-                text=f"Create Field Result (JSON):\n{json.dumps(results, indent=2)}",
-            )
-        ]
-    elif name == "update_field":
-        table_id = arguments.get("table_id")
-        field_id = arguments.get("field_id")
-        name = arguments.get("name")
-        field_type = arguments.get("field_type")
-        options = arguments.get("options", {})
-        if not table_id or not field_id:
-            raise ValueError("Missing 'table_id' or 'field_id' argument")
-
-        results = qb_client.update_field(table_id, field_id, name, field_type, options)
-        return [
-            types.TextContent(
-                type="text",
-                text=f"Update Field Result (JSON):\n{json.dumps(results, indent=2)}",
-            )
-        ]
-    elif name == "delete_field":
-        table_id = arguments.get("table_id")
-        field_id = arguments.get("field_id")
-        if not table_id or not field_id:
-            raise ValueError("Missing 'table_id' or 'field_id' argument")
-
-        results = qb_client.delete_field(table_id, field_id)
-        return [
-            types.TextContent(
-                type="text",
-                text=f"Delete Field Result (JSON):\n{json.dumps(results, indent=2)}",
-            )
-        ]
-    raise ValueError(f"Unknown tool: {name}")
 
 async def run():
     async with mcp.server.stdio.stdio_server() as (read, write):
