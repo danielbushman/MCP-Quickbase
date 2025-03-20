@@ -478,6 +478,75 @@ class QuickbaseClient:
             print(f"Failed to get app: {str(e)}")
             return {}
 
+    def create_app(self, name: str, description: Optional[str] = None, options: Optional[dict] = None) -> dict:
+        """Creates a new QuickBase application.
+
+        Args:
+            name (str): Name of the application
+            description (Optional[str]): Description of the application
+            options (Optional[dict]): Additional options for app creation
+
+        Returns:
+            dict: Created application information
+        """
+        try:
+            payload = {
+                "name": name,
+                "description": description or "",
+                **(options or {})
+            }
+            response = self.session.post(f"{self.base_url}/apps", json=payload)
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            print(f"Failed to create app: {str(e)}")
+            return {}
+
+    def update_app(self, app_id: str, name: Optional[str] = None, description: Optional[str] = None, options: Optional[dict] = None) -> dict:
+        """Updates an existing QuickBase application.
+
+        Args:
+            app_id (str): The ID of the application
+            name (Optional[str]): New name for the application
+            description (Optional[str]): New description for the application
+            options (Optional[dict]): Additional options for app update
+
+        Returns:
+            dict: Updated application information
+        """
+        try:
+            payload = {}
+            if name:
+                payload["name"] = name
+            if description is not None:
+                payload["description"] = description
+            if options:
+                payload.update(options)
+
+            response = self.session.patch(f"{self.base_url}/apps/{app_id}", json=payload)
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            print(f"Failed to update app: {str(e)}")
+            return {}
+
+    def delete_app(self, app_id: str) -> bool:
+        """Deletes a QuickBase application.
+
+        Args:
+            app_id (str): The ID of the application
+
+        Returns:
+            bool: True if deletion successful
+        """
+        try:
+            response = self.session.delete(f"{self.base_url}/apps/{app_id}")
+            response.raise_for_status()
+            return True
+        except Exception as e:
+            print(f"Failed to delete app: {str(e)}")
+            return False
+
     def get_app_tables(self, app_id: str) -> list[dict]:
         """Retrieves tables in an application.
 
@@ -582,6 +651,151 @@ class QuickbaseClient:
         except Exception as e:
             print(f"Failed to get app dashboards: {str(e)}")
             return []
+
+    # Table Operations
+    def create_table(self, app_id: str, name: str, description: Optional[str] = None, fields: Optional[List[dict]] = None, options: Optional[dict] = None) -> dict:
+        """Creates a new table in a QuickBase application.
+
+        Args:
+            app_id (str): The ID of the application
+            name (str): Name of the table
+            description (Optional[str]): Description of the table
+            fields (Optional[List[dict]]): List of field definitions
+            options (Optional[dict]): Additional options for table creation
+
+        Returns:
+            dict: Created table information
+        """
+        try:
+            payload = {
+                "name": name,
+                "description": description or "",
+                "fields": fields or [],
+                **(options or {})
+            }
+            response = self.session.post(f"{self.base_url}/apps/{app_id}/tables", json=payload)
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            print(f"Failed to create table: {str(e)}")
+            return {}
+
+    def update_table(self, table_id: str, name: Optional[str] = None, description: Optional[str] = None, options: Optional[dict] = None) -> dict:
+        """Updates an existing QuickBase table.
+
+        Args:
+            table_id (str): The ID of the table
+            name (Optional[str]): New name for the table
+            description (Optional[str]): New description for the table
+            options (Optional[dict]): Additional options for table update
+
+        Returns:
+            dict: Updated table information
+        """
+        try:
+            payload = {}
+            if name:
+                payload["name"] = name
+            if description is not None:
+                payload["description"] = description
+            if options:
+                payload.update(options)
+
+            response = self.session.patch(f"{self.base_url}/tables/{table_id}", json=payload)
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            print(f"Failed to update table: {str(e)}")
+            return {}
+
+    def delete_table(self, table_id: str) -> bool:
+        """Deletes a QuickBase table.
+
+        Args:
+            table_id (str): The ID of the table
+
+        Returns:
+            bool: True if deletion successful
+        """
+        try:
+            response = self.session.delete(f"{self.base_url}/tables/{table_id}")
+            response.raise_for_status()
+            return True
+        except Exception as e:
+            print(f"Failed to delete table: {str(e)}")
+            return False
+
+    def create_field(self, table_id: str, field_name: str, field_type: str, options: Optional[dict] = None) -> dict:
+        """Creates a new field in a QuickBase table.
+
+        Args:
+            table_id (str): The ID of the table
+            field_name (str): Name of the field
+            field_type (str): Type of the field (e.g., "text", "number", "date", etc.)
+            options (Optional[dict]): Additional field options
+
+        Returns:
+            dict: Created field information
+        """
+        try:
+            payload = {
+                "name": field_name,
+                "type": field_type,
+                **(options or {})
+            }
+            response = self.session.post(f"{self.base_url}/tables/{table_id}/fields", json=payload)
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            print(f"Failed to create field: {str(e)}")
+            return {}
+
+    def update_field(self, table_id: str, field_id: str, name: Optional[str] = None, field_type: Optional[str] = None, options: Optional[dict] = None) -> dict:
+        """Updates an existing field in a QuickBase table.
+
+        Args:
+            table_id (str): The ID of the table
+            field_id (str): The ID of the field
+            name (Optional[str]): New name for the field
+            field_type (Optional[str]): New type for the field
+            options (Optional[dict]): Additional field options
+
+        Returns:
+            dict: Updated field information
+        """
+        try:
+            payload = {}
+            if name:
+                payload["name"] = name
+            if field_type:
+                payload["type"] = field_type
+            if options:
+                payload.update(options)
+
+            response = self.session.patch(f"{self.base_url}/tables/{table_id}/fields/{field_id}", json=payload)
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            print(f"Failed to update field: {str(e)}")
+            return {}
+
+    def delete_field(self, table_id: str, field_id: str) -> bool:
+        """Deletes a field from a QuickBase table.
+
+        Args:
+            table_id (str): The ID of the table
+            field_id (str): The ID of the field
+
+        Returns:
+            bool: True if deletion successful
+        """
+        try:
+            response = self.session.delete(f"{self.base_url}/tables/{table_id}/fields/{field_id}")
+            response.raise_for_status()
+            return True
+        except Exception as e:
+            print(f"Failed to delete field: {str(e)}")
+            return False
 
 # Create a server instance
 server = Server("quickbase-mcp")
@@ -730,6 +944,228 @@ async def handle_list_tools() -> list[types.Tool]:
             inputSchema={
                 "type": "object",
                 "properties": {},
+            },
+        ),
+        types.Tool(
+            name="create_app",
+            description="Creates a new QuickBase application",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "Name of the application",
+                    },
+                    "description": {
+                        "type": "string",
+                        "description": "Description of the application",
+                    },
+                    "options": {
+                        "type": "object",
+                        "description": "Additional options for app creation",
+                        "additionalProperties": True,
+                    }
+                },
+                "required": ["name"],
+            },
+        ),
+        types.Tool(
+            name="update_app",
+            description="Updates an existing QuickBase application",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "app_id": {
+                        "type": "string",
+                        "description": "The ID of the application",
+                    },
+                    "name": {
+                        "type": "string",
+                        "description": "New name for the application",
+                    },
+                    "description": {
+                        "type": "string",
+                        "description": "New description for the application",
+                    },
+                    "options": {
+                        "type": "object",
+                        "description": "Additional options for app update",
+                        "additionalProperties": True,
+                    }
+                },
+                "required": ["app_id"],
+            },
+        ),
+        types.Tool(
+            name="delete_app",
+            description="Deletes a QuickBase application",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "app_id": {
+                        "type": "string",
+                        "description": "The ID of the application",
+                    }
+                },
+                "required": ["app_id"],
+            },
+        ),
+        types.Tool(
+            name="create_table",
+            description="Creates a new table in a QuickBase application",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "app_id": {
+                        "type": "string",
+                        "description": "The ID of the application",
+                    },
+                    "name": {
+                        "type": "string",
+                        "description": "Name of the table",
+                    },
+                    "description": {
+                        "type": "string",
+                        "description": "Description of the table",
+                    },
+                    "fields": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "name": {"type": "string"},
+                                "type": {"type": "string"},
+                                "description": {"type": "string"},
+                                "properties": {"type": "object"}
+                            },
+                            "required": ["name", "type"]
+                        },
+                        "description": "List of field definitions",
+                    },
+                    "options": {
+                        "type": "object",
+                        "description": "Additional options for table creation",
+                        "additionalProperties": True,
+                    }
+                },
+                "required": ["app_id", "name"],
+            },
+        ),
+        types.Tool(
+            name="update_table",
+            description="Updates an existing QuickBase table",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "table_id": {
+                        "type": "string",
+                        "description": "The ID of the table",
+                    },
+                    "name": {
+                        "type": "string",
+                        "description": "New name for the table",
+                    },
+                    "description": {
+                        "type": "string",
+                        "description": "New description for the table",
+                    },
+                    "options": {
+                        "type": "object",
+                        "description": "Additional options for table update",
+                        "additionalProperties": True,
+                    }
+                },
+                "required": ["table_id"],
+            },
+        ),
+        types.Tool(
+            name="delete_table",
+            description="Deletes a QuickBase table",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "table_id": {
+                        "type": "string",
+                        "description": "The ID of the table",
+                    }
+                },
+                "required": ["table_id"],
+            },
+        ),
+        types.Tool(
+            name="create_field",
+            description="Creates a new field in a QuickBase table",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "table_id": {
+                        "type": "string",
+                        "description": "The ID of the table",
+                    },
+                    "field_name": {
+                        "type": "string",
+                        "description": "Name of the field",
+                    },
+                    "field_type": {
+                        "type": "string",
+                        "description": "Type of the field (e.g., text, number, date)",
+                    },
+                    "options": {
+                        "type": "object",
+                        "description": "Additional field options",
+                        "additionalProperties": True,
+                    }
+                },
+                "required": ["table_id", "field_name", "field_type"],
+            },
+        ),
+        types.Tool(
+            name="update_field",
+            description="Updates an existing field in a QuickBase table",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "table_id": {
+                        "type": "string",
+                        "description": "The ID of the table",
+                    },
+                    "field_id": {
+                        "type": "string",
+                        "description": "The ID of the field",
+                    },
+                    "name": {
+                        "type": "string",
+                        "description": "New name for the field",
+                    },
+                    "field_type": {
+                        "type": "string",
+                        "description": "New type for the field",
+                    },
+                    "options": {
+                        "type": "object",
+                        "description": "Additional field options",
+                        "additionalProperties": True,
+                    }
+                },
+                "required": ["table_id", "field_id"],
+            },
+        ),
+        types.Tool(
+            name="delete_field",
+            description="Deletes a field from a QuickBase table",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "table_id": {
+                        "type": "string",
+                        "description": "The ID of the table",
+                    },
+                    "field_id": {
+                        "type": "string",
+                        "description": "The ID of the field",
+                    }
+                },
+                "required": ["table_id", "field_id"],
             },
         ),
         types.Tool(
@@ -1191,6 +1627,134 @@ async def handle_call_tool(name: str, arguments: dict[str, str]) -> list[types.T
             types.TextContent(
                 type="text",
                 text=f"Dashboard Management Result (JSON):\n{json.dumps(results, indent=2)}",
+            )
+        ]
+    elif name == "create_app":
+        name = arguments.get("name")
+        description = arguments.get("description")
+        options = arguments.get("options", {})
+        if not name:
+            raise ValueError("Missing 'name' argument")
+
+        results = qb_client.create_app(name, description, options)
+        return [
+            types.TextContent(
+                type="text",
+                text=f"Create App Result (JSON):\n{json.dumps(results, indent=2)}",
+            )
+        ]
+    elif name == "update_app":
+        app_id = arguments.get("app_id")
+        name = arguments.get("name")
+        description = arguments.get("description")
+        options = arguments.get("options", {})
+        if not app_id:
+            raise ValueError("Missing 'app_id' argument")
+
+        results = qb_client.update_app(app_id, name, description, options)
+        return [
+            types.TextContent(
+                type="text",
+                text=f"Update App Result (JSON):\n{json.dumps(results, indent=2)}",
+            )
+        ]
+    elif name == "delete_app":
+        app_id = arguments.get("app_id")
+        if not app_id:
+            raise ValueError("Missing 'app_id' argument")
+
+        results = qb_client.delete_app(app_id)
+        return [
+            types.TextContent(
+                type="text",
+                text=f"Delete App Result (JSON):\n{json.dumps(results, indent=2)}",
+            )
+        ]
+    elif name == "create_table":
+        app_id = arguments.get("app_id")
+        name = arguments.get("name")
+        description = arguments.get("description")
+        fields = arguments.get("fields", [])
+        options = arguments.get("options", {})
+        if not app_id or not name:
+            raise ValueError("Missing 'app_id' or 'name' argument")
+
+        results = qb_client.create_table(app_id, name, description, fields, options)
+        return [
+            types.TextContent(
+                type="text",
+                text=f"Create Table Result (JSON):\n{json.dumps(results, indent=2)}",
+            )
+        ]
+    elif name == "update_table":
+        table_id = arguments.get("table_id")
+        name = arguments.get("name")
+        description = arguments.get("description")
+        options = arguments.get("options", {})
+        if not table_id:
+            raise ValueError("Missing 'table_id' argument")
+
+        results = qb_client.update_table(table_id, name, description, options)
+        return [
+            types.TextContent(
+                type="text",
+                text=f"Update Table Result (JSON):\n{json.dumps(results, indent=2)}",
+            )
+        ]
+    elif name == "delete_table":
+        table_id = arguments.get("table_id")
+        if not table_id:
+            raise ValueError("Missing 'table_id' argument")
+
+        results = qb_client.delete_table(table_id)
+        return [
+            types.TextContent(
+                type="text",
+                text=f"Delete Table Result (JSON):\n{json.dumps(results, indent=2)}",
+            )
+        ]
+    elif name == "create_field":
+        table_id = arguments.get("table_id")
+        field_name = arguments.get("field_name")
+        field_type = arguments.get("field_type")
+        options = arguments.get("options", {})
+        if not table_id or not field_name or not field_type:
+            raise ValueError("Missing required arguments")
+
+        results = qb_client.create_field(table_id, field_name, field_type, options)
+        return [
+            types.TextContent(
+                type="text",
+                text=f"Create Field Result (JSON):\n{json.dumps(results, indent=2)}",
+            )
+        ]
+    elif name == "update_field":
+        table_id = arguments.get("table_id")
+        field_id = arguments.get("field_id")
+        name = arguments.get("name")
+        field_type = arguments.get("field_type")
+        options = arguments.get("options", {})
+        if not table_id or not field_id:
+            raise ValueError("Missing 'table_id' or 'field_id' argument")
+
+        results = qb_client.update_field(table_id, field_id, name, field_type, options)
+        return [
+            types.TextContent(
+                type="text",
+                text=f"Update Field Result (JSON):\n{json.dumps(results, indent=2)}",
+            )
+        ]
+    elif name == "delete_field":
+        table_id = arguments.get("table_id")
+        field_id = arguments.get("field_id")
+        if not table_id or not field_id:
+            raise ValueError("Missing 'table_id' or 'field_id' argument")
+
+        results = qb_client.delete_field(table_id, field_id)
+        return [
+            types.TextContent(
+                type="text",
+                text=f"Delete Field Result (JSON):\n{json.dumps(results, indent=2)}",
             )
         ]
     raise ValueError(f"Unknown tool: {name}")
