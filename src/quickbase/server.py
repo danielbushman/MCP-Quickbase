@@ -283,21 +283,41 @@ class QuickbaseClient:
 
         Returns:
             dict: Updated record metadata
+            
+        Raises:
+            QuickbaseError: If the API request fails
         """
         try:
+            # Convert to int if it's a string
+            if isinstance(record_id, str):
+                record_id = int(record_id)
+            
+            # Format the data for QuickBase API
+            formatted_data = {"3": {"value": record_id}}  # Record ID field
+            
+            # Add the other fields to update
+            for field_id, value in data.items():
+                # Convert to int if it's a string
+                if isinstance(field_id, str) and field_id.isdigit():
+                    field_id = int(field_id)
+                
+                # Skip if the field ID is already 3 (record ID field)
+                if field_id == 3:
+                    continue
+                    
+                formatted_data[str(field_id)] = {"value": value}
+            
             payload = {
                 "to": table_id,
-                "data": [{
-                    "3": {"value": record_id},  # Record ID field
-                    **data
-                }]
+                "data": [formatted_data]
             }
+            
             response = self.session.post(f"{self.base_url}/records", json=payload)
-            response.raise_for_status()
-            return response.json()
+            return self._handle_response(response)
+        except QuickbaseError:
+            raise
         except Exception as e:
-            print(f"Failed to update record: {str(e)}")
-            return {}
+            raise QuickbaseError(f"Failed to update record: {str(e)}")
 
     def delete_record(self, table_id: str, record_id: int) -> bool:
         """Deletes a record from a Quickbase table.
@@ -308,18 +328,27 @@ class QuickbaseClient:
 
         Returns:
             bool: True if deletion successful
+            
+        Raises:
+            QuickbaseError: If the API request fails
         """
         try:
-            payload = {
+            # Ensure record_id is an integer
+            if isinstance(record_id, str):
+                record_id = int(record_id)
+                
+            # Delete using direct where clause
+            delete_payload = {
                 "from": table_id,
-                "where": f"{3}.EX.'{record_id}'"  # Record ID field
+                "where": f"({3}.EX.{record_id})"
             }
-            response = self.session.delete(f"{self.base_url}/records", json=payload)
-            response.raise_for_status()
+            delete_response = self.session.delete(f"{self.base_url}/records", json=delete_payload)
+            self._handle_response(delete_response)
             return True
+        except QuickbaseError:
+            raise
         except Exception as e:
-            print(f"Failed to delete record: {str(e)}")
-            return False
+            raise QuickbaseError(f"Failed to delete record: {str(e)}")
 
     def bulk_create_records(self, table_id: str, records: List[dict]) -> dict:
         """Creates multiple records in a Quickbase table.
@@ -439,24 +468,59 @@ class QuickbaseClient:
 
         Returns:
             dict: Upload response
+            
+        Raises:
+            QuickbaseError: If the API request fails
         """
         try:
+            # Ensure numeric IDs
+            if isinstance(record_id, str):
+                record_id = int(record_id)
+            if isinstance(field_id, str):
+                field_id = int(field_id)
+                
+            # Get the filename from the path
+            import os
+            filename = os.path.basename(file_path)
+            
+            # Open the file for reading in binary mode
             with open(file_path, 'rb') as f:
-                files = {'file': f}
-                response = self.session.post(
-                    f"{self.base_url}/files",
-                    files=files,
-                    data={
-                        'tableId': table_id,
-                        'recordId': record_id,
-                        'fieldId': field_id
-                    }
-                )
-                response.raise_for_status()
-                return response.json()
+                file_content = f.read()
+                
+            # Set up headers for the multipart/form-data request
+            # Remove the default content-type header
+            headers = self.session.headers.copy()
+            if 'Content-Type' in headers:
+                del headers['Content-Type']
+                
+            # Create multipart form data with the file
+            import requests
+            from requests.packages.urllib3.filepost import encode_multipart_formdata
+            
+            # Prepare multipart form data
+            fields = {
+                'tableId': (None, table_id),
+                'recordId': (None, str(record_id)),
+                'fieldId': (None, str(field_id)),
+                'file': (filename, file_content)
+            }
+            
+            # Encode the multipart form data
+            content_type, body = encode_multipart_formdata(fields)
+            headers['Content-Type'] = content_type
+            
+            # Make the request
+            response = requests.post(
+                f"{self.base_url}/files", 
+                data=body,
+                headers=headers
+            )
+            
+            return self._handle_response(response)
+        except QuickbaseError:
+            raise
         except Exception as e:
-            print(f"Failed to upload file: {str(e)}")
-            return {}
+            raise QuickbaseError(f"Failed to upload file: {str(e)}")
 
     def download_file(self, file_id: str) -> bytes:
         """Downloads a file from QuickBase.
@@ -466,14 +530,29 @@ class QuickbaseClient:
 
         Returns:
             bytes: File contents
+            
+        Raises:
+            QuickbaseError: If the API request fails
         """
         try:
             response = self.session.get(f"{self.base_url}/files/{file_id}")
+            # Don't try to parse as JSON, as the response is binary
             response.raise_for_status()
             return response.content
+        except requests.exceptions.HTTPError as e:
+            status_code = e.response.status_code
+            try:
+                error_data = e.response.json() if e.response.content else {}
+            except:
+                error_data = {"error": str(e)}
+                
+            raise QuickbaseError(
+                f"Failed to download file: {str(e)}",
+                status_code,
+                error_data
+            )
         except Exception as e:
-            print(f"Failed to download file: {str(e)}")
-            return b""
+            raise QuickbaseError(f"Failed to download file: {str(e)}")
 
     def delete_file(self, file_id: str) -> bool:
         """Deletes a file from QuickBase.
@@ -483,14 +562,18 @@ class QuickbaseClient:
 
         Returns:
             bool: True if deletion successful
+            
+        Raises:
+            QuickbaseError: If the API request fails
         """
         try:
             response = self.session.delete(f"{self.base_url}/files/{file_id}")
-            response.raise_for_status()
+            self._handle_response(response)
             return True
+        except QuickbaseError:
+            raise
         except Exception as e:
-            print(f"Failed to delete file: {str(e)}")
-            return False
+            raise QuickbaseError(f"Failed to delete file: {str(e)}")
 
     # User Operations
     def get_user(self, user_id: str) -> dict:
@@ -783,7 +866,7 @@ class QuickbaseClient:
             dict: Created table information
         """
         try:
-            # Format fields according to QuickBase's API requirements
+            # Format fields to match QuickBase API requirements
             formatted_fields = []
             if fields:
                 for field in fields:
@@ -802,7 +885,8 @@ class QuickbaseClient:
                 **(options or {})
             }
             
-            response = self.session.post(f"{self.base_url}/apps/{app_id}/tables", json=payload)
+            # Send appId as a query parameter
+            response = self.session.post(f"{self.base_url}/tables?appId={app_id}", json=payload)
             return self._handle_response(response)
         except QuickbaseError:
             raise
@@ -865,66 +949,119 @@ class QuickbaseClient:
 
         Returns:
             dict: Created field information
+            
+        Raises:
+            QuickbaseError: If the API request fails
         """
         try:
+            # Format payload to match QuickBase API requirements
             payload = {
-                "name": field_name,
-                "type": field_type,
+                "label": field_name,
+                "fieldType": field_type,
+                "properties": options.get("properties", {}),
                 **(options or {})
             }
-            response = self.session.post(f"{self.base_url}/tables/{table_id}/fields", json=payload)
-            response.raise_for_status()
-            return response.json()
+            # Use the query parameter format for table_id
+            response = self.session.post(f"{self.base_url}/fields?tableId={table_id}", json=payload)
+            return self._handle_response(response)
+        except QuickbaseError:
+            raise
         except Exception as e:
-            print(f"Failed to create field: {str(e)}")
-            return {}
+            raise QuickbaseError(f"Failed to create field: {str(e)}")
 
-    def update_field(self, table_id: str, field_id: str, name: Optional[str] = None, field_type: Optional[str] = None, options: Optional[dict] = None) -> dict:
+    def update_field(self, table_id: str, field_id: int, name: Optional[str] = None, field_type: Optional[str] = None, options: Optional[dict] = None) -> dict:
         """Updates an existing field in a QuickBase table.
 
         Args:
             table_id (str): The ID of the table
-            field_id (str): The ID of the field
+            field_id (int): The ID of the field
             name (Optional[str]): New name for the field
             field_type (Optional[str]): New type for the field
             options (Optional[dict]): Additional field options
 
         Returns:
             dict: Updated field information
+            
+        Raises:
+            QuickbaseError: If the API request fails
         """
         try:
-            payload = {}
+            # Ensure field_id is an integer
+            if isinstance(field_id, str):
+                field_id = int(field_id)
+                
+            # Get current field info to determine the field type if not provided
+            if not field_type:
+                get_field_response = self.session.get(f"{self.base_url}/fields?tableId={table_id}")
+                fields_data = self._handle_response(get_field_response)
+                
+                # Find the specific field
+                target_field = None
+                for field in fields_data:
+                    if field.get("id") == field_id:
+                        target_field = field
+                        break
+                        
+                if not target_field:
+                    raise QuickbaseError(f"Field with ID {field_id} not found in table {table_id}")
+                
+                field_type = target_field.get("fieldType", "text")
+            
+            # First create a complete field object to modify
+            update_payload = {}
+            
+            # Add required properties
+            update_payload["fieldType"] = field_type
+            
+            # Add label if provided
             if name:
-                payload["name"] = name
-            if field_type:
-                payload["type"] = field_type
+                update_payload["label"] = name
+                
+            # Add optional properties
             if options:
-                payload.update(options)
-
-            response = self.session.patch(f"{self.base_url}/tables/{table_id}/fields/{field_id}", json=payload)
-            response.raise_for_status()
-            return response.json()
+                for key, value in options.items():
+                    update_payload[key] = value
+            
+            # Make the API call to update the field
+            # We need to update the specific field ID
+            url = f"{self.base_url}/fields/{field_id}?tableId={table_id}"
+            # According to QuickBase's API documentation, PATCH is used for field updates
+            response = self.session.patch(url, json=update_payload)
+            return self._handle_response(response)
+        except QuickbaseError:
+            raise
         except Exception as e:
-            print(f"Failed to update field: {str(e)}")
-            return {}
+            raise QuickbaseError(f"Failed to update field: {str(e)}")
 
-    def delete_field(self, table_id: str, field_id: str) -> bool:
+    def delete_field(self, table_id: str, field_id: int) -> bool:
         """Deletes a field from a QuickBase table.
 
         Args:
             table_id (str): The ID of the table
-            field_id (str): The ID of the field
+            field_id (int): The ID of the field
 
         Returns:
             bool: True if deletion successful
+            
+        Raises:
+            QuickbaseError: If the API request fails
         """
         try:
-            response = self.session.delete(f"{self.base_url}/tables/{table_id}/fields/{field_id}")
-            response.raise_for_status()
+            # Ensure field_id is an integer
+            if isinstance(field_id, str):
+                field_id = int(field_id)
+                
+            url = f"{self.base_url}/fields?tableId={table_id}"
+            payload = {
+                "fieldIds": [field_id]
+            }
+            response = self.session.delete(url, json=payload)
+            self._handle_response(response)
             return True
+        except QuickbaseError:
+            raise
         except Exception as e:
-            print(f"Failed to delete field: {str(e)}")
-            return False
+            raise QuickbaseError(f"Failed to delete field: {str(e)}")
 
 # Create a server instance
 server = Server("quickbase-mcp")
@@ -946,6 +1083,7 @@ async def handle_list_resources() -> list[types.Resource]:
         types.Resource(
             name="tables",
             description="Tables in the Quickbase application",
+            uri="quickbase://tables",
             properties={
                 "type": "object",
                 "properties": {
@@ -963,6 +1101,7 @@ async def handle_list_resources() -> list[types.Resource]:
         types.Resource(
             name="reports",
             description="Reports in the Quickbase application",
+            uri="quickbase://reports",
             properties={
                 "type": "object",
                 "properties": {
@@ -984,6 +1123,7 @@ async def handle_list_resources() -> list[types.Resource]:
         types.Resource(
             name="forms",
             description="Forms in the Quickbase application",
+            uri="quickbase://forms",
             properties={
                 "type": "object",
                 "properties": {
@@ -1059,14 +1199,7 @@ async def handle_list_tools() -> list[types.Tool]:
     Each tool specifies its arguments using JSON Schema validation.
     """
     return [
-        types.Tool(
-            name="list_tables",
-            description="Lists all tables in the Quickbase application",
-            inputSchema={
-                "type": "object",
-                "properties": {},
-            },
-        ),
+        # Connection Operations
         types.Tool(
             name="test_connection",
             description="Tests the connection to Quickbase",
@@ -1075,6 +1208,8 @@ async def handle_list_tools() -> list[types.Tool]:
                 "properties": {},
             },
         ),
+        
+        # App Operations
         types.Tool(
             name="create_app",
             description="Creates a new QuickBase application",
@@ -1137,6 +1272,16 @@ async def handle_list_tools() -> list[types.Tool]:
                     }
                 },
                 "required": ["app_id"],
+            },
+        ),
+        
+        # Table Operations
+        types.Tool(
+            name="list_tables",
+            description="Lists all tables in the Quickbase application",
+            inputSchema={
+                "type": "object",
+                "properties": {},
             },
         ),
         types.Tool(
@@ -1221,6 +1366,22 @@ async def handle_list_tools() -> list[types.Tool]:
                 "required": ["table_id"],
             },
         ),
+        
+        # Field Operations
+        types.Tool(
+            name="get_table_fields",
+            description="Retrieves field information for a specific Quickbase table",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "table_id": {
+                        "type": "string",
+                        "description": "The ID of the Quickbase table",
+                    },
+                },
+                "required": ["table_id"],
+            },
+        ),
         types.Tool(
             name="create_field",
             description="Creates a new field in a QuickBase table",
@@ -1297,6 +1458,8 @@ async def handle_list_tools() -> list[types.Tool]:
                 "required": ["table_id", "field_id"],
             },
         ),
+        
+        # Record Operations
         types.Tool(
             name="query_records",
             description="Executes a query against a Quickbase table",
@@ -1327,20 +1490,6 @@ async def handle_list_tools() -> list[types.Tool]:
                             }
                         }
                     }
-                },
-                "required": ["table_id"],
-            },
-        ),
-        types.Tool(
-            name="get_table_fields",
-            description="Retrieves field information for a specific Quickbase table",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "table_id": {
-                        "type": "string",
-                        "description": "The ID of the Quickbase table",
-                    },
                 },
                 "required": ["table_id"],
             },
@@ -1406,6 +1555,133 @@ async def handle_list_tools() -> list[types.Tool]:
             },
         ),
         types.Tool(
+            name="bulk_create_records",
+            description="Creates multiple records in a Quickbase table",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "table_id": {
+                        "type": "string",
+                        "description": "The ID of the Quickbase table",
+                    },
+                    "records": {
+                        "type": "array",
+                        "description": "Array of record data to insert",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": True
+                        }
+                    },
+                },
+                "required": ["table_id", "records"],
+            },
+        ),
+        types.Tool(
+            name="bulk_update_records",
+            description="Updates multiple records in a Quickbase table",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "table_id": {
+                        "type": "string",
+                        "description": "The ID of the Quickbase table",
+                    },
+                    "records": {
+                        "type": "array",
+                        "description": "Array of record data to update (must include record IDs)",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": True
+                        }
+                    },
+                },
+                "required": ["table_id", "records"],
+            },
+        ),
+        types.Tool(
+            name="bulk_delete_records",
+            description="Deletes multiple records from a Quickbase table",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "table_id": {
+                        "type": "string",
+                        "description": "The ID of the Quickbase table",
+                    },
+                    "record_ids": {
+                        "type": "array",
+                        "description": "Array of record IDs to delete",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                },
+                "required": ["table_id", "record_ids"],
+            },
+        ),
+        
+        # File Operations
+        types.Tool(
+            name="upload_file",
+            description="Uploads a file to a field in a Quickbase record",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "table_id": {
+                        "type": "string",
+                        "description": "The ID of the Quickbase table",
+                    },
+                    "record_id": {
+                        "type": "string",
+                        "description": "The ID of the record",
+                    },
+                    "field_id": {
+                        "type": "string",
+                        "description": "The ID of the field (must be a file attachment field)",
+                    },
+                    "file_path": {
+                        "type": "string",
+                        "description": "Path to the file to upload",
+                    }
+                },
+                "required": ["table_id", "record_id", "field_id", "file_path"],
+            },
+        ),
+        types.Tool(
+            name="download_file",
+            description="Downloads a file from Quickbase",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "file_id": {
+                        "type": "string",
+                        "description": "The ID of the file to download",
+                    },
+                    "output_path": {
+                        "type": "string",
+                        "description": "Path where the file should be saved",
+                    }
+                },
+                "required": ["file_id", "output_path"],
+            },
+        ),
+        types.Tool(
+            name="delete_file",
+            description="Deletes a file from Quickbase",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "file_id": {
+                        "type": "string",
+                        "description": "The ID of the file to delete",
+                    }
+                },
+                "required": ["file_id"],
+            },
+        ),
+        
+        # Report Operations
+        types.Tool(
             name="run_report",
             description="Executes a Quickbase report",
             inputSchema={
@@ -1436,35 +1712,42 @@ async def handle_list_tools() -> list[types.Tool]:
                 "required": ["report_id"],
             },
         ),
+        
+        # User & Role Operations
         types.Tool(
-            name="manage_attachments",
-            description="Manages file attachments for Quickbase records",
+            name="get_user",
+            description="Retrieves user information from Quickbase",
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "action": {
+                    "user_id": {
                         "type": "string",
-                        "description": "The action to perform (upload/download/delete)",
-                        "enum": ["upload", "download", "delete"]
-                    },
-                    "table_id": {
-                        "type": "string",
-                        "description": "The ID of the Quickbase table",
-                    },
-                    "record_id": {
-                        "type": "string",
-                        "description": "The ID of the record",
-                    },
-                    "attachment_id": {
-                        "type": "string",
-                        "description": "The ID of the attachment (required for download/delete)",
-                    },
-                    "file_path": {
-                        "type": "string",
-                        "description": "The path to the file (required for upload)",
-                    },
+                        "description": "The ID of the user",
+                    }
                 },
-                "required": ["action", "table_id", "record_id"],
+                "required": ["user_id"],
+            },
+        ),
+        types.Tool(
+            name="get_current_user",
+            description="Retrieves current user information from Quickbase",
+            inputSchema={
+                "type": "object",
+                "properties": {},
+            },
+        ),
+        types.Tool(
+            name="get_user_roles",
+            description="Retrieves roles for a specific user",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "user_id": {
+                        "type": "string",
+                        "description": "The ID of the user",
+                    }
+                },
+                "required": ["user_id"],
             },
         ),
         types.Tool(
@@ -1496,6 +1779,8 @@ async def handle_list_tools() -> list[types.Tool]:
                 "required": ["action", "email", "role_id"],
             },
         ),
+        
+        # Form & Dashboard Operations
         types.Tool(
             name="manage_forms",
             description="Manages Quickbase forms and their configurations",
@@ -1684,26 +1969,42 @@ async def handle_call_tool(name: str, arguments: dict[str, str]) -> list[types.T
             if not table_id or not record_id or not data:
                 raise ValueError("Missing 'table_id', 'record_id', or 'data' argument")
 
-            results = qb_client.update_record(table_id, record_id, data)
-            return [
-                types.TextContent(
-                    type="text",
-                    text=f"Update Record Result (JSON):\n{json.dumps(results, indent=2)}",
-                )
-            ]
+            try:
+                results = qb_client.update_record(table_id, record_id, data)
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Update Record Result (JSON):\n{json.dumps(results, indent=2)}",
+                    )
+                ]
+            except QuickbaseError as e:
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Error updating record: {e.message}\nStatus: {e.status_code}\nDetails: {json.dumps(e.response, indent=2)}"
+                    )
+                ]
         elif name == "delete_record":
             table_id = arguments.get("table_id")
             record_id = arguments.get("record_id")
             if not table_id or not record_id:
                 raise ValueError("Missing 'table_id' or 'record_id' argument")
 
-            results = qb_client.delete_record(table_id, record_id)
-            return [
-                types.TextContent(
-                    type="text",
-                    text=f"Delete Record Result (JSON):\n{json.dumps(results, indent=2)}",
-                )
-            ]
+            try:
+                results = qb_client.delete_record(table_id, record_id)
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Delete Record Result (JSON):\n{json.dumps(results, indent=2)}",
+                    )
+                ]
+            except QuickbaseError as e:
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Error deleting record: {e.message}\nStatus: {e.status_code}\nDetails: {json.dumps(e.response, indent=2)}"
+                    )
+                ]
         elif name == "run_report":
             report_id = arguments.get("report_id")
             options = arguments.get("options", {})
@@ -1717,6 +2018,94 @@ async def handle_call_tool(name: str, arguments: dict[str, str]) -> list[types.T
                     text=f"Report Results (JSON):\n{json.dumps(results, indent=2)}",
                 )
             ]
+        elif name == "upload_file":
+            table_id = arguments.get("table_id")
+            record_id = arguments.get("record_id")
+            field_id = arguments.get("field_id")
+            file_path = arguments.get("file_path")
+
+            if not table_id or not record_id or not field_id or not file_path:
+                raise ValueError("Missing required arguments: table_id, record_id, field_id, and file_path are all required")
+
+            try:
+                # Convert IDs to integers if they're strings
+                if isinstance(record_id, str):
+                    record_id = int(record_id)
+                if isinstance(field_id, str):
+                    field_id = int(field_id)
+                    
+                results = qb_client.upload_file(table_id, record_id, field_id, file_path)
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"File Upload Result (JSON):\n{json.dumps(results, indent=2)}",
+                    )
+                ]
+            except QuickbaseError as e:
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Error uploading file: {e.message}\nStatus: {e.status_code}\nDetails: {json.dumps(e.response, indent=2)}"
+                    )
+                ]
+            except Exception as e:
+                raise ValueError(f"Error uploading file: {str(e)}")
+                
+        elif name == "download_file":
+            file_id = arguments.get("file_id")
+            output_path = arguments.get("output_path")
+
+            if not file_id or not output_path:
+                raise ValueError("Missing required arguments: file_id and output_path are required")
+
+            try:
+                # Get the file content
+                file_content = qb_client.download_file(file_id)
+                
+                # Save the file to the specified path
+                with open(output_path, 'wb') as f:
+                    f.write(file_content)
+                    
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"File downloaded successfully and saved to: {output_path}"
+                    )
+                ]
+            except QuickbaseError as e:
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Error downloading file: {e.message}\nStatus: {e.status_code}\nDetails: {json.dumps(e.response, indent=2)}"
+                    )
+                ]
+            except Exception as e:
+                raise ValueError(f"Error downloading file: {str(e)}")
+                
+        elif name == "delete_file":
+            file_id = arguments.get("file_id")
+
+            if not file_id:
+                raise ValueError("Missing required argument: file_id")
+
+            try:
+                result = qb_client.delete_file(file_id)
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"File deletion {'successful' if result else 'failed'}"
+                    )
+                ]
+            except QuickbaseError as e:
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Error deleting file: {e.message}\nStatus: {e.status_code}\nDetails: {json.dumps(e.response, indent=2)}"
+                    )
+                ]
+            except Exception as e:
+                raise ValueError(f"Error deleting file: {str(e)}")
+                
         elif name == "manage_attachments":
             action = arguments.get("action")
             table_id = arguments.get("table_id")
@@ -1731,14 +2120,53 @@ async def handle_call_tool(name: str, arguments: dict[str, str]) -> list[types.T
                 raise ValueError("Missing 'file_path' for upload action")
             elif action in ["download", "delete"] and not attachment_id:
                 raise ValueError("Missing 'attachment_id' for download/delete action")
-
-            results = qb_client.upload_file(table_id, record_id, attachment_id, file_path)
-            return [
-                types.TextContent(
-                    type="text",
-                    text=f"Attachment Operation Result (JSON):\n{json.dumps(results, indent=2)}",
-                )
-            ]
+                
+            try:
+                if action == "upload":
+                    # We now have a dedicated upload_file tool
+                    field_id = attachment_id  # For backwards compatibility
+                    if isinstance(record_id, str):
+                        record_id = int(record_id)
+                    if isinstance(field_id, str):
+                        field_id = int(field_id)
+                    results = qb_client.upload_file(table_id, record_id, field_id, file_path)
+                    return [
+                        types.TextContent(
+                            type="text",
+                            text=f"File Upload Result (JSON):\n{json.dumps(results, indent=2)}",
+                        )
+                    ]
+                elif action == "download":
+                    # We now have a dedicated download_file tool
+                    file_content = qb_client.download_file(attachment_id)
+                    with open(file_path, 'wb') as f:
+                        f.write(file_content)
+                    return [
+                        types.TextContent(
+                            type="text",
+                            text=f"File downloaded successfully and saved to: {file_path}"
+                        )
+                    ]
+                elif action == "delete":
+                    # We now have a dedicated delete_file tool
+                    result = qb_client.delete_file(attachment_id)
+                    return [
+                        types.TextContent(
+                            type="text",
+                            text=f"File deletion {'successful' if result else 'failed'}"
+                        )
+                    ]
+                else:
+                    raise ValueError(f"Unknown action: {action}")
+            except QuickbaseError as e:
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Error with file operation: {e.message}\nStatus: {e.status_code}\nDetails: {json.dumps(e.response, indent=2)}"
+                    )
+                ]
+            except Exception as e:
+                raise ValueError(f"Error with file operation: {str(e)}")
         elif name == "manage_users":
             action = arguments.get("action")
             email = arguments.get("email")
@@ -1748,13 +2176,199 @@ async def handle_call_tool(name: str, arguments: dict[str, str]) -> list[types.T
             if not action or not email or not role_id:
                 raise ValueError("Missing required arguments")
 
-            results = qb_client.session.post(f"{qb_client.base_url}/users", json={"action": action, "email": email, "roleId": role_id, **options}).json()
-            return [
-                types.TextContent(
-                    type="text",
-                    text=f"User Management Result (JSON):\n{json.dumps(results, indent=2)}",
-                )
-            ]
+            try:
+                results = qb_client.session.post(f"{qb_client.base_url}/users", json={"action": action, "email": email, "roleId": role_id, **options})
+                result_json = qb_client._handle_response(results)
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"User Management Result (JSON):\n{json.dumps(result_json, indent=2)}",
+                    )
+                ]
+            except QuickbaseError as e:
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Error managing users: {e.message}\nStatus: {e.status_code}\nDetails: {json.dumps(e.response, indent=2)}"
+                    )
+                ]
+            except Exception as e:
+                raise ValueError(f"Error managing users: {str(e)}")
+        elif name == "bulk_create_records":
+            table_id = arguments.get("table_id")
+            records = arguments.get("records")
+            
+            if not table_id or not records:
+                raise ValueError("Missing required arguments: table_id and records")
+            
+            try:
+                # Format the records according to QuickBase API expectations
+                formatted_records = []
+                for record in records:
+                    formatted_record = {}
+                    for field_id, value in record.items():
+                        # Convert field_id to string if it's an integer
+                        field_id_str = str(field_id)
+                        formatted_record[field_id_str] = {"value": value}
+                    formatted_records.append(formatted_record)
+                
+                results = qb_client.bulk_create_records(table_id, formatted_records)
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Bulk Create Records Result (JSON):\n{json.dumps(results, indent=2)}",
+                    )
+                ]
+            except QuickbaseError as e:
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Error creating records: {e.message}\nStatus: {e.status_code}\nDetails: {json.dumps(e.response, indent=2)}"
+                    )
+                ]
+            except Exception as e:
+                raise ValueError(f"Error creating records: {str(e)}")
+                
+        elif name == "bulk_update_records":
+            table_id = arguments.get("table_id")
+            records = arguments.get("records")
+            
+            if not table_id or not records:
+                raise ValueError("Missing required arguments: table_id and records")
+                
+            try:
+                # Format the records according to QuickBase API expectations
+                formatted_records = []
+                for record in records:
+                    formatted_record = {}
+                    for field_id, value in record.items():
+                        # Make sure the record ID (field 3) is included
+                        if field_id == "3" or field_id == 3:
+                            record_id = value
+                            formatted_record["3"] = {"value": record_id}
+                        else:
+                            # Convert field_id to string if it's an integer
+                            field_id_str = str(field_id)
+                            formatted_record[field_id_str] = {"value": value}
+                    formatted_records.append(formatted_record)
+                
+                results = qb_client.bulk_update_records(table_id, formatted_records)
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Bulk Update Records Result (JSON):\n{json.dumps(results, indent=2)}",
+                    )
+                ]
+            except QuickbaseError as e:
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Error updating records: {e.message}\nStatus: {e.status_code}\nDetails: {json.dumps(e.response, indent=2)}"
+                    )
+                ]
+            except Exception as e:
+                raise ValueError(f"Error updating records: {str(e)}")
+                
+        elif name == "bulk_delete_records":
+            table_id = arguments.get("table_id")
+            record_ids = arguments.get("record_ids")
+            
+            if not table_id or not record_ids:
+                raise ValueError("Missing required arguments: table_id and record_ids")
+                
+            try:
+                # Convert string IDs to integers if needed
+                int_record_ids = []
+                for rid in record_ids:
+                    if isinstance(rid, str):
+                        int_record_ids.append(int(rid))
+                    else:
+                        int_record_ids.append(rid)
+                        
+                result = qb_client.bulk_delete_records(table_id, int_record_ids)
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Bulk Delete Records Result: {'Success' if result else 'Failed'}"
+                    )
+                ]
+            except QuickbaseError as e:
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Error deleting records: {e.message}\nStatus: {e.status_code}\nDetails: {json.dumps(e.response, indent=2)}"
+                    )
+                ]
+            except Exception as e:
+                raise ValueError(f"Error deleting records: {str(e)}")
+                
+        elif name == "get_user":
+            user_id = arguments.get("user_id")
+            
+            if not user_id:
+                raise ValueError("Missing required argument: user_id")
+                
+            try:
+                result = qb_client.get_user(user_id)
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"User Information (JSON):\n{json.dumps(result, indent=2)}",
+                    )
+                ]
+            except QuickbaseError as e:
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Error getting user: {e.message}\nStatus: {e.status_code}\nDetails: {json.dumps(e.response, indent=2)}"
+                    )
+                ]
+            except Exception as e:
+                raise ValueError(f"Error getting user: {str(e)}")
+                
+        elif name == "get_current_user":
+            try:
+                result = qb_client.get_current_user()
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Current User Information (JSON):\n{json.dumps(result, indent=2)}",
+                    )
+                ]
+            except QuickbaseError as e:
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Error getting current user: {e.message}\nStatus: {e.status_code}\nDetails: {json.dumps(e.response, indent=2)}"
+                    )
+                ]
+            except Exception as e:
+                raise ValueError(f"Error getting current user: {str(e)}")
+                
+        elif name == "get_user_roles":
+            user_id = arguments.get("user_id")
+            
+            if not user_id:
+                raise ValueError("Missing required argument: user_id")
+                
+            try:
+                result = qb_client.get_user_roles(user_id)
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"User Roles (JSON):\n{json.dumps(result, indent=2)}",
+                    )
+                ]
+            except QuickbaseError as e:
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Error getting user roles: {e.message}\nStatus: {e.status_code}\nDetails: {json.dumps(e.response, indent=2)}"
+                    )
+                ]
+            except Exception as e:
+                raise ValueError(f"Error getting user roles: {str(e)}")
+                
         elif name == "manage_forms":
             action = arguments.get("action")
             table_id = arguments.get("table_id")
@@ -1766,13 +2380,29 @@ async def handle_call_tool(name: str, arguments: dict[str, str]) -> list[types.T
             if action == "update" and not form_config:
                 raise ValueError("Missing 'form_config' for update action")
 
-            results = qb_client.session.post(f"{qb_client.base_url}/forms/{table_id}/{form_id}", json=form_config).json()
-            return [
-                types.TextContent(
-                    type="text",
-                    text=f"Form Management Result (JSON):\n{json.dumps(results, indent=2)}",
-                )
-            ]
+            try:
+                if action == "get":
+                    response = qb_client.session.get(f"{qb_client.base_url}/forms/{table_id}/{form_id}")
+                    results = qb_client._handle_response(response)
+                else:  # "update"
+                    response = qb_client.session.post(f"{qb_client.base_url}/forms/{table_id}/{form_id}", json=form_config)
+                    results = qb_client._handle_response(response)
+                    
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Form Management Result (JSON):\n{json.dumps(results, indent=2)}",
+                    )
+                ]
+            except QuickbaseError as e:
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Error managing form: {e.message}\nStatus: {e.status_code}\nDetails: {json.dumps(e.response, indent=2)}"
+                    )
+                ]
+            except Exception as e:
+                raise ValueError(f"Error managing form: {str(e)}")
         elif name == "manage_dashboards":
             action = arguments.get("action")
             dashboard_id = arguments.get("dashboard_id")
@@ -1784,13 +2414,32 @@ async def handle_call_tool(name: str, arguments: dict[str, str]) -> list[types.T
             if action == "update" and not dashboard_config:
                 raise ValueError("Missing 'dashboard_config' for update action")
 
-            results = qb_client.session.post(f"{qb_client.base_url}/dashboards/{dashboard_id}", json={"action": action, "dashboard": dashboard_config, **options}).json()
-            return [
-                types.TextContent(
-                    type="text",
-                    text=f"Dashboard Management Result (JSON):\n{json.dumps(results, indent=2)}",
-                )
-            ]
+            try:
+                if action == "get":
+                    response = qb_client.session.get(f"{qb_client.base_url}/dashboards/{dashboard_id}")
+                    results = qb_client._handle_response(response)
+                else:  # "update"
+                    response = qb_client.session.post(
+                        f"{qb_client.base_url}/dashboards/{dashboard_id}", 
+                        json={"action": action, "dashboard": dashboard_config, **options}
+                    )
+                    results = qb_client._handle_response(response)
+                    
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Dashboard Management Result (JSON):\n{json.dumps(results, indent=2)}",
+                    )
+                ]
+            except QuickbaseError as e:
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Error managing dashboard: {e.message}\nStatus: {e.status_code}\nDetails: {json.dumps(e.response, indent=2)}"
+                    )
+                ]
+            except Exception as e:
+                raise ValueError(f"Error managing dashboard: {str(e)}")
         elif name == "create_table":
             app_id = arguments.get("app_id")
             name = arguments.get("name")
@@ -1801,11 +2450,19 @@ async def handle_call_tool(name: str, arguments: dict[str, str]) -> list[types.T
                 raise ValueError("Missing 'app_id' or 'name' argument")
 
             try:
-                # Parse the fields if it's a string
-                if isinstance(fields, str):
-                    fields = json.loads(fields)
-                
-                results = qb_client.create_table(app_id, name, description, fields, options)
+                # Format fields to match QuickBase API requirements
+                formatted_fields = []
+                if fields:
+                    for field in fields:
+                        formatted_field = {
+                            "fieldType": field.get("type", "text"),  # Default to text if not specified
+                            "label": field.get("name", ""),
+                            "description": field.get("description", ""),
+                            "properties": field.get("properties", {})
+                        }
+                        formatted_fields.append(formatted_field)
+
+                results = qb_client.create_table(app_id, name, description, formatted_fields, options)
                 return [
                     types.TextContent(
                         type="text",
@@ -1856,13 +2513,21 @@ async def handle_call_tool(name: str, arguments: dict[str, str]) -> list[types.T
             if not table_id or not field_name or not field_type:
                 raise ValueError("Missing required arguments")
 
-            results = qb_client.create_field(table_id, field_name, field_type, options)
-            return [
-                types.TextContent(
-                    type="text",
-                    text=f"Create Field Result (JSON):\n{json.dumps(results, indent=2)}",
-                )
-            ]
+            try:
+                results = qb_client.create_field(table_id, field_name, field_type, options)
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Create Field Result (JSON):\n{json.dumps(results, indent=2)}",
+                    )
+                ]
+            except QuickbaseError as e:
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Error creating field: {e.message}\nStatus: {e.status_code}\nDetails: {json.dumps(e.response, indent=2)}"
+                    )
+                ]
         elif name == "update_field":
             table_id = arguments.get("table_id")
             field_id = arguments.get("field_id")
@@ -1872,26 +2537,42 @@ async def handle_call_tool(name: str, arguments: dict[str, str]) -> list[types.T
             if not table_id or not field_id:
                 raise ValueError("Missing 'table_id' or 'field_id' argument")
 
-            results = qb_client.update_field(table_id, field_id, name, field_type, options)
-            return [
-                types.TextContent(
-                    type="text",
-                    text=f"Update Field Result (JSON):\n{json.dumps(results, indent=2)}",
-                )
-            ]
+            try:
+                results = qb_client.update_field(table_id, field_id, name, field_type, options)
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Update Field Result (JSON):\n{json.dumps(results, indent=2)}",
+                    )
+                ]
+            except QuickbaseError as e:
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Error updating field: {e.message}\nStatus: {e.status_code}\nDetails: {json.dumps(e.response, indent=2)}"
+                    )
+                ]
         elif name == "delete_field":
             table_id = arguments.get("table_id")
             field_id = arguments.get("field_id")
             if not table_id or not field_id:
                 raise ValueError("Missing 'table_id' or 'field_id' argument")
 
-            results = qb_client.delete_field(table_id, field_id)
-            return [
-                types.TextContent(
-                    type="text",
-                    text=f"Delete Field Result (JSON):\n{json.dumps(results, indent=2)}",
-                )
-            ]
+            try:
+                results = qb_client.delete_field(table_id, field_id)
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Delete Field Result (JSON):\n{json.dumps(results, indent=2)}",
+                    )
+                ]
+            except QuickbaseError as e:
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Error deleting field: {e.message}\nStatus: {e.status_code}\nDetails: {json.dumps(e.response, indent=2)}"
+                    )
+                ]
         raise ValueError(f"Unknown tool: {name}")
     except QuickbaseError as e:
         return [
