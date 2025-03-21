@@ -2,21 +2,40 @@
 """
 Test script for Quickbase file operations.
 This script demonstrates how to use the Quickbase MCP tools for file operations.
+
+Usage:
+    1. Ensure you have the following environment variables set:
+        - QUICKBASE_TABLE_ID: The ID of a Quickbase table with a file attachment field
+        - QUICKBASE_RECORD_ID: The ID of a record in the table
+        - QUICKBASE_FILE_FIELD_ID: The ID of a file attachment field in the table
+    2. Run the script: python test_file_operations.py
 """
 
 import asyncio
 import os
 import tempfile
+from dotenv import load_dotenv
 from src.quickbase.server import handle_call_tool
 
 async def test_file_operations():
     """Test the file operations tools."""
-    print("Testing Quickbase file operations...\n")
+    # Load environment variables
+    load_dotenv()
     
-    # Replace these with your actual Quickbase IDs
-    TABLE_ID = "YOUR_TABLE_ID"
-    RECORD_ID = "YOUR_RECORD_ID"
-    FIELD_ID = "YOUR_FIELD_ID"
+    # Get Quickbase IDs from environment variables or use defaults
+    TABLE_ID = os.getenv("QUICKBASE_TABLE_ID")
+    RECORD_ID = os.getenv("QUICKBASE_RECORD_ID")
+    FIELD_ID = os.getenv("QUICKBASE_FILE_FIELD_ID")
+    
+    if not all([TABLE_ID, RECORD_ID, FIELD_ID]):
+        print("ERROR: Missing required environment variables.")
+        print("Please set QUICKBASE_TABLE_ID, QUICKBASE_RECORD_ID, and QUICKBASE_FILE_FIELD_ID")
+        return
+    
+    print("Testing Quickbase file operations...\n")
+    print(f"Using TABLE_ID: {TABLE_ID}")
+    print(f"Using RECORD_ID: {RECORD_ID}")
+    print(f"Using FIELD_ID: {FIELD_ID}")
     
     # Create a temporary test file to upload
     with tempfile.NamedTemporaryFile(suffix=".txt", delete=False) as temp:

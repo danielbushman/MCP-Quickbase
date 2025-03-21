@@ -220,15 +220,21 @@ class QuickbaseClient:
             return []
 
     # Record Operations
-    def get_table_records(self, table_id: str, query: Optional[dict] = None) -> dict:
-        """Retrieves records from a Quickbase table.
+    def get_table_records(self, table_id: str, query: Optional[dict] = None, 
+                         paginate: bool = False, max_records: int = 1000) -> dict:
+        """Retrieves records from a Quickbase table with optional pagination.
 
         Args:
             table_id (str): The ID of the Quickbase table
             query (Optional[dict]): Query parameters for filtering records
+            paginate (bool): Whether to automatically handle pagination
+            max_records (int): Maximum number of records to return when paginating
 
         Returns:
             dict: Table records and metadata
+            
+        Raises:
+            QuickbaseError: If the API request fails
         """
         try:
             if not query:
@@ -237,13 +243,87 @@ class QuickbaseClient:
                     "select": [3],  # Default to record ID field
                     "where": ""
                 }
+            
+            # If not paginating, just make a single request
+            if not paginate:
+                response = self.session.post(f"{self.base_url}/records/query", json=query)
+                response.raise_for_status()
+                return response.json()
                 
-            response = self.session.post(f"{self.base_url}/records/query", json=query)
-            response.raise_for_status()
-            return response.json()
+            # Handle pagination
+            all_data = []
+            metadata = {}
+            fields = []
+            total_fetched = 0
+            
+            # Initialize options if not present
+            if "options" not in query:
+                query["options"] = {}
+                
+            # Start with skip = 0 if not specified
+            if "skip" not in query["options"]:
+                query["options"]["skip"] = 0
+                
+            # Set default page size
+            page_size = query["options"].get("top", 100)
+            query["options"]["top"] = page_size
+            
+            while total_fetched < max_records:
+                # Make the API call
+                response = self.session.post(f"{self.base_url}/records/query", json=query)
+                response.raise_for_status()
+                result = response.json()
+                
+                # Store metadata from the first response
+                if not metadata and "metadata" in result:
+                    metadata = result["metadata"]
+                    
+                # Store fields from the first response
+                if not fields and "fields" in result:
+                    fields = result["fields"]
+                    
+                # Get the data
+                if "data" in result:
+                    page_data = result["data"]
+                    all_data.extend(page_data)
+                    total_fetched += len(page_data)
+                    
+                    # If we got fewer records than requested, we've reached the end
+                    if len(page_data) < page_size:
+                        break
+                        
+                    # Update skip for the next page
+                    query["options"]["skip"] += page_size
+                else:
+                    # No data in response
+                    break
+                    
+            # Combine the results
+            return {
+                "data": all_data,
+                "metadata": metadata,
+                "fields": fields,
+                "pagination": {
+                    "total_records_fetched": total_fetched,
+                    "max_records": max_records,
+                    "page_size": page_size
+                }
+            }
+        except requests.exceptions.RequestException as e:
+            if hasattr(e, 'response') and e.response is not None:
+                status_code = e.response.status_code
+                try:
+                    error_data = e.response.json()
+                except:
+                    error_data = {"message": str(e)}
+                raise QuickbaseError(
+                    f"Failed to query records: {str(e)}",
+                    status_code,
+                    error_data
+                )
+            raise QuickbaseError(f"Failed to query records: {str(e)}")
         except Exception as e:
-            print(f"Failed to query records: {str(e)}")
-            return {"data": []}
+            raise QuickbaseError(f"Failed to query records: {str(e)}")
 
     def create_record(self, table_id: str, data: dict) -> dict:
         """Creates a new record in a Quickbase table.
@@ -1487,7 +1567,7 @@ async def handle_list_tools() -> list[types.Tool]:
         # Record Operations
         types.Tool(
             name="query_records",
-            description="Executes a query against a Quickbase table",
+            description="Executes a query against a Quickbase table with optional pagination",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -1507,13 +1587,34 @@ async def handle_list_tools() -> list[types.Tool]:
                     "options": {
                         "type": "object",
                         "properties": {
-                            "skip": {"type": "integer"},
-                            "top": {"type": "integer"},
+                            "skip": {"type": "integer", "description": "Number of records to skip"},
+                            "top": {"type": "integer", "description": "Number of records to retrieve per page"},
                             "groupBy": {
                                 "type": "array",
-                                "items": {"type": "string"}
+                                "items": {"type": "string"},
+                                "description": "Fields to group results by"
+                            },
+                            "orderBy": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "fieldId": {"type": "string"},
+                                        "order": {"type": "string", "enum": ["ASC", "DESC"]}
+                                    }
+                                },
+                                "description": "Fields to order results by"
                             }
-                        }
+                        },
+                        "description": "Query options for filtering, ordering, and pagination"
+                    },
+                    "paginate": {
+                        "type": "boolean",
+                        "description": "Whether to automatically handle pagination for large result sets",
+                    },
+                    "max_records": {
+                        "type": "string",
+                        "description": "Maximum number of records to return when paginating (default: 1000)",
                     }
                 },
                 "required": ["table_id"],
@@ -1956,22 +2057,49 @@ async def handle_call_tool(name: str, arguments: dict[str, str]) -> list[types.T
             select = arguments.get("select", [])
             where = arguments.get("where", "")
             options = arguments.get("options", {})
+            paginate = arguments.get("paginate", False)
+            max_records = int(arguments.get("max_records", 1000))
 
             if not table_id:
                 raise ValueError("Missing 'table_id' argument")
 
-            results = qb_client.get_table_records(table_id, query={
-                "from": table_id,
-                "select": select,
-                "where": where,
-                **options
-            })
-            return [
-                types.TextContent(
-                    type="text",
-                    text=f"Query Results (JSON):\n{json.dumps(results, indent=2)}",
+            try:
+                results = qb_client.get_table_records(
+                    table_id, 
+                    query={
+                        "from": table_id,
+                        "select": select,
+                        "where": where,
+                        "options": options
+                    },
+                    paginate=paginate,
+                    max_records=max_records
                 )
-            ]
+                
+                # Format the output for better readability
+                record_count = len(results.get("data", []))
+                metadata = results.get("metadata", {})
+                pagination_info = results.get("pagination", {})
+                
+                summary = f"Retrieved {record_count} records from table {table_id}"
+                if paginate:
+                    summary += f" (paginated: {pagination_info.get('total_records_fetched', 0)} records fetched)"
+                
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"{summary}\n\nQuery Results (JSON):\n{json.dumps(results, indent=2)}",
+                    )
+                ]
+            except QuickbaseError as e:
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Error querying records: {e.message}\nStatus: {e.status_code}\nDetails: {json.dumps(e.response, indent=2)}"
+                    )
+                ]
+            except Exception as e:
+                raise ValueError(f"Error querying records: {str(e)}")
         elif name == "get_table_fields":
             table_id = arguments.get("table_id")
             if not table_id:
