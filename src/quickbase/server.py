@@ -509,9 +509,11 @@ class QuickbaseClient:
             content_type, body = encode_multipart_formdata(fields)
             headers['Content-Type'] = content_type
             
-            # Make the request
+            # According to the API documentation, the correct endpoint is /files/{tableId}/{recordId}/{fieldId}/{versionNumber}
+            # We'll use version 0 for new files
+            version = 0
             response = requests.post(
-                f"{self.base_url}/files", 
+                f"{self.base_url}/files/{table_id}/{record_id}/{field_id}/{version}", 
                 data=body,
                 headers=headers
             )
@@ -522,11 +524,14 @@ class QuickbaseClient:
         except Exception as e:
             raise QuickbaseError(f"Failed to upload file: {str(e)}")
 
-    def download_file(self, file_id: str) -> bytes:
+    def download_file(self, table_id: str, record_id: int, field_id: int, version: int = 0) -> bytes:
         """Downloads a file from QuickBase.
 
         Args:
-            file_id (str): The ID of the file to download
+            table_id (str): The ID of the Quickbase table
+            record_id (int): The record ID
+            field_id (int): The field ID containing the file
+            version (int, optional): The version of the file to download. Defaults to 0 (latest).
 
         Returns:
             bytes: File contents
@@ -535,7 +540,16 @@ class QuickbaseClient:
             QuickbaseError: If the API request fails
         """
         try:
-            response = self.session.get(f"{self.base_url}/files/{file_id}")
+            # Ensure numeric IDs
+            if isinstance(record_id, str):
+                record_id = int(record_id)
+            if isinstance(field_id, str):
+                field_id = int(field_id)
+            if isinstance(version, str):
+                version = int(version)
+                
+            # According to the API documentation, the correct endpoint is /files/{tableId}/{recordId}/{fieldId}/{versionNumber}
+            response = self.session.get(f"{self.base_url}/files/{table_id}/{record_id}/{field_id}/{version}")
             # Don't try to parse as JSON, as the response is binary
             response.raise_for_status()
             return response.content
@@ -554,11 +568,14 @@ class QuickbaseClient:
         except Exception as e:
             raise QuickbaseError(f"Failed to download file: {str(e)}")
 
-    def delete_file(self, file_id: str) -> bool:
+    def delete_file(self, table_id: str, record_id: int, field_id: int, version: int = 0) -> bool:
         """Deletes a file from QuickBase.
 
         Args:
-            file_id (str): The ID of the file to delete
+            table_id (str): The ID of the Quickbase table
+            record_id (int): The record ID
+            field_id (int): The field ID containing the file
+            version (int, optional): The version of the file to delete. Defaults to 0 (latest).
 
         Returns:
             bool: True if deletion successful
@@ -567,7 +584,16 @@ class QuickbaseClient:
             QuickbaseError: If the API request fails
         """
         try:
-            response = self.session.delete(f"{self.base_url}/files/{file_id}")
+            # Ensure numeric IDs
+            if isinstance(record_id, str):
+                record_id = int(record_id)
+            if isinstance(field_id, str):
+                field_id = int(field_id)
+            if isinstance(version, str):
+                version = int(version)
+                
+            # According to the API documentation, the correct endpoint is /files/{tableId}/{recordId}/{fieldId}/{versionNumber}
+            response = self.session.delete(f"{self.base_url}/files/{table_id}/{record_id}/{field_id}/{version}")
             self._handle_response(response)
             return True
         except QuickbaseError:
@@ -1023,10 +1049,9 @@ class QuickbaseClient:
                     update_payload[key] = value
             
             # Make the API call to update the field
-            # We need to update the specific field ID
+            # According to QuickBase's API documentation, POST is used for field updates to /fields/{fieldId}
             url = f"{self.base_url}/fields/{field_id}?tableId={table_id}"
-            # According to QuickBase's API documentation, PATCH is used for field updates
-            response = self.session.patch(url, json=update_payload)
+            response = self.session.post(url, json=update_payload)
             return self._handle_response(response)
         except QuickbaseError:
             raise
@@ -1649,34 +1674,58 @@ async def handle_list_tools() -> list[types.Tool]:
         ),
         types.Tool(
             name="download_file",
-            description="Downloads a file from Quickbase",
+            description="Downloads a file from a field in a Quickbase record",
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "file_id": {
+                    "table_id": {
                         "type": "string",
-                        "description": "The ID of the file to download",
+                        "description": "The ID of the Quickbase table",
+                    },
+                    "record_id": {
+                        "type": "string",
+                        "description": "The ID of the record",
+                    },
+                    "field_id": {
+                        "type": "string",
+                        "description": "The ID of the field (must be a file attachment field)",
+                    },
+                    "version": {
+                        "type": "string",
+                        "description": "The version of the file to download (default 0 for latest)",
                     },
                     "output_path": {
                         "type": "string",
                         "description": "Path where the file should be saved",
                     }
                 },
-                "required": ["file_id", "output_path"],
+                "required": ["table_id", "record_id", "field_id", "output_path"],
             },
         ),
         types.Tool(
             name="delete_file",
-            description="Deletes a file from Quickbase",
+            description="Deletes a file from a field in a Quickbase record",
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "file_id": {
+                    "table_id": {
                         "type": "string",
-                        "description": "The ID of the file to delete",
+                        "description": "The ID of the Quickbase table",
+                    },
+                    "record_id": {
+                        "type": "string",
+                        "description": "The ID of the record",
+                    },
+                    "field_id": {
+                        "type": "string",
+                        "description": "The ID of the field (must be a file attachment field)",
+                    },
+                    "version": {
+                        "type": "string",
+                        "description": "The version of the file to delete (default 0 for latest)",
                     }
                 },
-                "required": ["file_id"],
+                "required": ["table_id", "record_id", "field_id"],
             },
         ),
         
@@ -2052,15 +2101,18 @@ async def handle_call_tool(name: str, arguments: dict[str, str]) -> list[types.T
                 raise ValueError(f"Error uploading file: {str(e)}")
                 
         elif name == "download_file":
-            file_id = arguments.get("file_id")
+            table_id = arguments.get("table_id")
+            record_id = arguments.get("record_id")
+            field_id = arguments.get("field_id")
+            version = arguments.get("version", 0)
             output_path = arguments.get("output_path")
 
-            if not file_id or not output_path:
-                raise ValueError("Missing required arguments: file_id and output_path are required")
+            if not table_id or not record_id or not field_id or not output_path:
+                raise ValueError("Missing required arguments: table_id, record_id, field_id, and output_path are required")
 
             try:
                 # Get the file content
-                file_content = qb_client.download_file(file_id)
+                file_content = qb_client.download_file(table_id, record_id, field_id, version)
                 
                 # Save the file to the specified path
                 with open(output_path, 'wb') as f:
@@ -2083,13 +2135,24 @@ async def handle_call_tool(name: str, arguments: dict[str, str]) -> list[types.T
                 raise ValueError(f"Error downloading file: {str(e)}")
                 
         elif name == "delete_file":
-            file_id = arguments.get("file_id")
+            table_id = arguments.get("table_id")
+            record_id = arguments.get("record_id")
+            field_id = arguments.get("field_id")
+            version = arguments.get("version", 0)
 
-            if not file_id:
-                raise ValueError("Missing required argument: file_id")
+            if not table_id or not record_id or not field_id:
+                raise ValueError("Missing required arguments: table_id, record_id, and field_id are all required")
 
             try:
-                result = qb_client.delete_file(file_id)
+                # Convert IDs to integers if they're strings
+                if isinstance(record_id, str):
+                    record_id = int(record_id)
+                if isinstance(field_id, str):
+                    field_id = int(field_id)
+                if isinstance(version, str):
+                    version = int(version)
+                    
+                result = qb_client.delete_file(table_id, record_id, field_id, version)
                 return [
                     types.TextContent(
                         type="text",
