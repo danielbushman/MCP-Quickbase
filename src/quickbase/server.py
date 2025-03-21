@@ -7,7 +7,10 @@
 # ///
 import asyncio
 import json
-from typing import Any, Optional, List, Dict, Union
+import time
+import functools
+import logging
+from typing import Any, Optional, List, Dict, Union, Callable, TypeVar
 import os
 import requests
 from dotenv import load_dotenv
@@ -15,7 +18,22 @@ from dotenv import load_dotenv
 import mcp.types as types
 from mcp.server import Server, NotificationOptions
 from mcp.server.models import InitializationOptions
+
+# Import our utility modules
+from .retry import retry
+from .cache import app_cache, table_cache, field_cache, cached
+from .logging_utils import log_request, log_response
 import mcp.server.stdio
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger('quickbase_mcp')
+
+# Type variables for generic types
+T = TypeVar('T')
 
 class QuickbaseError(Exception):
     """Base exception for QuickBase API errors."""
@@ -45,16 +63,109 @@ class QuickbaseServerError(QuickbaseError):
     """Raised when QuickBase server encounters an error."""
     pass
 
+def retry(max_tries: int = 3, delay: float = 1.0, backoff: float = 2.0, 
+          exceptions: tuple = (QuickbaseServerError, QuickbaseRateLimitError, requests.ConnectionError)):
+    """
+    Retry decorator with exponential backoff for API requests.
+    
+    Args:
+        max_tries (int): Maximum number of attempts (default: 3)
+        delay (float): Initial delay between retries in seconds (default: 1.0)
+        backoff (float): Backoff multiplier (default: 2.0)
+        exceptions (tuple): Exceptions to catch and retry (default: QuickbaseServerError, 
+                            QuickbaseRateLimitError, requests.ConnectionError)
+    
+    Returns:
+        Callable: Decorated function with retry logic
+    """
+    def decorator(func: Callable[..., T]) -> Callable[..., T]:
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs) -> T:
+            mtries, mdelay = max_tries, delay
+            last_exception = None
+            
+            while mtries > 0:
+                try:
+                    return func(*args, **kwargs)
+                except exceptions as e:
+                    last_exception = e
+                    mtries -= 1
+                    if mtries == 0:
+                        break
+                        
+                    sleep_time = mdelay
+                    
+                    # If rate limited and response contains retry-after header, use that value
+                    if isinstance(e, QuickbaseRateLimitError) and hasattr(e, 'response'):
+                        response_headers = getattr(e, 'response', {}).get('headers', {})
+                        retry_after = response_headers.get('retry-after', None)
+                        if retry_after:
+                            try:
+                                sleep_time = float(retry_after)
+                            except (ValueError, TypeError):
+                                pass
+                    
+                    logger.warning(f"Retrying '{func.__name__}' in {sleep_time:.2f}s due to {e.__class__.__name__}: {str(e)}")
+                    time.sleep(sleep_time)
+                    mdelay *= backoff
+                    
+            if last_exception:
+                logger.error(f"Function '{func.__name__}' failed after {max_tries} tries: {str(last_exception)}")
+                raise last_exception
+                
+        return wrapper
+    return decorator
+
 class QuickbaseClient:
     """Handles Quickbase operations and caching using the v1 REST API."""
     
     def __init__(self):
         self.base_url = "https://api.quickbase.com/v1"
         self.session = requests.Session()
-        self.schema_cache: dict[str, Any] = {}
-        self.workflow_cache: dict[str, Any] = {}
         self.realm_hostname = None
         self.user_token = None
+        
+        # Set up logging
+        self.logger = logging.getLogger(__name__)
+        
+        # Use Cache instances instead of simple dictionaries
+        self.use_cache = True
+        
+    def configure_cache(self, enabled: bool = True, clear: bool = False):
+        """Configure cache behavior.
+        
+        Args:
+            enabled (bool): Whether to enable caching
+            clear (bool): Whether to clear all caches
+        """
+        self.use_cache = enabled
+        
+        if clear:
+            self.logger.info("Clearing all caches")
+            app_cache.clear()
+            table_cache.clear()
+            field_cache.clear()
+
+    def _request(self, method: str, endpoint: str, **kwargs) -> requests.Response:
+        """Makes an API request with proper logging.
+        
+        Args:
+            method (str): HTTP method
+            endpoint (str): API endpoint
+            **kwargs: Additional request parameters
+            
+        Returns:
+            requests.Response: The response object
+        """
+        url = f"{self.base_url}/{endpoint.lstrip('/')}"
+        
+        # Log the request
+        log_request(method, url, 
+                   headers=kwargs.get('headers'), 
+                   data=kwargs.get('json') or kwargs.get('data'))
+        
+        # Make the request
+        return self.session.request(method, url, **kwargs)
 
     def _handle_response(self, response: requests.Response) -> Any:
         """Handles API response and raises appropriate exceptions.
@@ -72,6 +183,9 @@ class QuickbaseClient:
             QuickbaseRateLimitError: If rate limit exceeded
             QuickbaseServerError: If server error occurs
         """
+        # Log the response
+        log_response(response)
+        
         try:
             response.raise_for_status()
             return response.json()
@@ -177,9 +291,23 @@ class QuickbaseClient:
         Raises:
             QuickbaseError: If the API request fails
         """
+        # Check cache first if caching is enabled
+        if self.use_cache:
+            cache_key = f"fields_{table_id}"
+            cached_fields = field_cache.get(cache_key)
+            if cached_fields is not None:
+                self.logger.debug(f"Cache hit for table fields: {table_id}")
+                return cached_fields
+                
         try:
-            response = self.session.get(f"{self.base_url}/fields?tableId={table_id}")
-            return self._handle_response(response)
+            response = self._request("GET", f"fields?tableId={table_id}")
+            fields = self._handle_response(response)
+            
+            # Cache the fields
+            if self.use_cache:
+                field_cache.set(f"fields_{table_id}", fields)
+                
+            return fields
         except QuickbaseError:
             raise
         except Exception as e:
@@ -193,14 +321,31 @@ class QuickbaseClient:
 
         Returns:
             dict: Complete table schema
+            
+        Raises:
+            QuickbaseError: If the API request fails
         """
+        # Check cache first if caching is enabled
+        if self.use_cache:
+            cache_key = f"schema_{table_id}"
+            cached_schema = table_cache.get(cache_key)
+            if cached_schema is not None:
+                self.logger.debug(f"Cache hit for table schema: {table_id}")
+                return cached_schema
+                
         try:
-            response = self.session.get(f"{self.base_url}/tables/{table_id}/schema")
-            response.raise_for_status()
-            return response.json()
+            response = self._request("GET", f"tables/{table_id}/schema")
+            schema = self._handle_response(response)
+            
+            # Cache the schema
+            if self.use_cache:
+                table_cache.set(f"schema_{table_id}", schema)
+                
+            return schema
+        except QuickbaseError:
+            raise
         except Exception as e:
-            print(f"Failed to get table schema: {str(e)}")
-            return {}
+            raise QuickbaseError(f"Failed to get table schema: {str(e)}")
 
     def get_table_relationships(self, table_id: str) -> list[dict]:
         """Retrieves relationships for a table.
@@ -220,6 +365,7 @@ class QuickbaseClient:
             return []
 
     # Record Operations
+    @retry(exceptions=[requests.exceptions.RequestException], max_tries=3, delay=1.0, backoff=2.0)
     def get_table_records(self, table_id: str, query: Optional[dict] = None, 
                          paginate: bool = False, max_records: int = 1000) -> dict:
         """Retrieves records from a Quickbase table with optional pagination.
@@ -235,6 +381,9 @@ class QuickbaseClient:
             
         Raises:
             QuickbaseError: If the API request fails
+            
+        Note:
+            This method uses retry logic to handle transient errors
         """
         try:
             if not query:
@@ -430,6 +579,7 @@ class QuickbaseClient:
         except Exception as e:
             raise QuickbaseError(f"Failed to delete record: {str(e)}")
 
+    @retry(exceptions=[requests.exceptions.RequestException], max_tries=3, delay=1.0, backoff=2.0)
     def bulk_create_records(self, table_id: str, records: List[dict]) -> dict:
         """Creates multiple records in a Quickbase table.
 
@@ -439,19 +589,47 @@ class QuickbaseClient:
 
         Returns:
             dict: Created records metadata
+            
+        Raises:
+            QuickbaseError: If creation fails
+            
+        Note:
+            This method uses retry logic to handle transient errors
+            The method also clears any cached queries for this table
         """
         try:
             payload = {
                 "to": table_id,
                 "data": records
             }
-            response = self.session.post(f"{self.base_url}/records", json=payload)
-            response.raise_for_status()
-            return response.json()
+            response = self._request("POST", "records", json=payload)
+            result = self._handle_response(response)
+            
+            # Clear cache for this table
+            if self.use_cache:
+                # Create a pattern to clear all keys related to this table
+                pattern = f"_{table_id}"
+                field_cache.clear_pattern(pattern)
+                
+            return result
+        except requests.exceptions.HTTPError as e:
+            status_code = e.response.status_code
+            error_message = str(e)
+            try:
+                error_data = e.response.json()
+                error_message = error_data.get('message', str(e))
+            except:
+                pass
+            
+            raise QuickbaseError(
+                message=f"Failed to bulk create records: {error_message}",
+                status_code=status_code,
+                response=e.response
+            )
         except Exception as e:
-            print(f"Failed to bulk create records: {str(e)}")
-            return {}
+            raise QuickbaseError(message=f"Failed to bulk create records: {str(e)}")
 
+    @retry(exceptions=[requests.exceptions.RequestException], max_tries=3, delay=1.0, backoff=2.0)
     def bulk_update_records(self, table_id: str, records: List[dict]) -> dict:
         """Updates multiple records in a Quickbase table.
 
@@ -461,19 +639,47 @@ class QuickbaseClient:
 
         Returns:
             dict: Updated records metadata
+            
+        Raises:
+            QuickbaseError: If update fails
+            
+        Note:
+            This method uses retry logic to handle transient errors
+            The method also clears any cached queries for this table
         """
         try:
             payload = {
                 "to": table_id,
                 "data": records
             }
-            response = self.session.post(f"{self.base_url}/records", json=payload)
-            response.raise_for_status()
-            return response.json()
+            response = self._request("POST", "records", json=payload)
+            result = self._handle_response(response)
+            
+            # Clear cache for this table
+            if self.use_cache:
+                # Create a pattern to clear all keys related to this table
+                pattern = f"_{table_id}"
+                field_cache.clear_pattern(pattern)
+                
+            return result
+        except requests.exceptions.HTTPError as e:
+            status_code = e.response.status_code
+            error_message = str(e)
+            try:
+                error_data = e.response.json()
+                error_message = error_data.get('message', str(e))
+            except:
+                pass
+            
+            raise QuickbaseError(
+                message=f"Failed to bulk update records: {error_message}",
+                status_code=status_code,
+                response=e.response
+            )
         except Exception as e:
-            print(f"Failed to bulk update records: {str(e)}")
-            return {}
+            raise QuickbaseError(message=f"Failed to bulk update records: {str(e)}")
 
+    @retry(exceptions=[requests.exceptions.RequestException], max_tries=3, delay=1.0, backoff=2.0)
     def bulk_delete_records(self, table_id: str, record_ids: List[int]) -> bool:
         """Deletes multiple records from a Quickbase table.
 
@@ -483,6 +689,13 @@ class QuickbaseClient:
 
         Returns:
             bool: True if deletion successful
+            
+        Raises:
+            QuickbaseError: If deletion fails
+            
+        Note:
+            This method uses retry logic to handle transient errors
+            The method also clears any cached queries for this table
         """
         try:
             record_ids_str = "','".join(map(str, record_ids))
@@ -490,12 +703,32 @@ class QuickbaseClient:
                 "from": table_id,
                 "where": f"{3}.EX.'{record_ids_str}'"  # Record ID field
             }
-            response = self.session.delete(f"{self.base_url}/records", json=payload)
-            response.raise_for_status()
+            response = self._request("DELETE", "records", json=payload)
+            self._handle_response(response)
+            
+            # Clear cache for this table
+            if self.use_cache:
+                # Create a pattern to clear all keys related to this table
+                pattern = f"_{table_id}"
+                field_cache.clear_pattern(pattern)
+                
             return True
+        except requests.exceptions.HTTPError as e:
+            status_code = e.response.status_code
+            error_message = str(e)
+            try:
+                error_data = e.response.json()
+                error_message = error_data.get('message', str(e))
+            except:
+                pass
+            
+            raise QuickbaseError(
+                message=f"Failed to bulk delete records: {error_message}",
+                status_code=status_code,
+                response=e.response
+            )
         except Exception as e:
-            print(f"Failed to bulk delete records: {str(e)}")
-            return False
+            raise QuickbaseError(message=f"Failed to bulk delete records: {str(e)}")
 
     # Report Operations
     def get_report(self, report_id: str) -> dict:
@@ -573,28 +806,32 @@ class QuickbaseClient:
             if 'Content-Type' in headers:
                 del headers['Content-Type']
                 
-            # Create multipart form data with the file
+            # Import requests and multipart tools
             import requests
-            from requests.packages.urllib3.filepost import encode_multipart_formdata
-            
-            # Prepare multipart form data
-            fields = {
-                'tableId': (None, table_id),
-                'recordId': (None, str(record_id)),
-                'fieldId': (None, str(field_id)),
-                'file': (filename, file_content)
-            }
-            
-            # Encode the multipart form data
-            content_type, body = encode_multipart_formdata(fields)
-            headers['Content-Type'] = content_type
+            from requests_toolbelt import MultipartEncoder
             
             # According to the API documentation, the correct endpoint is /files/{tableId}/{recordId}/{fieldId}/{versionNumber}
             # We'll use version 0 for new files
             version = 0
+            
+            # Use MultipartEncoder for proper multipart form handling
+            multipart_data = MultipartEncoder(
+                fields={
+                    'file': (filename, file_content, 'application/octet-stream')
+                }
+            )
+            
+            # Set the proper content-type header
+            headers = self.session.headers.copy()
+            headers['Content-Type'] = multipart_data.content_type
+            
+            # Build URL
+            url = f"{self.base_url}/files/{table_id}/{record_id}/{field_id}/{version}"
+            
+            # Send the request with properly encoded multipart data
             response = requests.post(
-                f"{self.base_url}/files/{table_id}/{record_id}/{field_id}/{version}", 
-                data=body,
+                url,
+                data=multipart_data,
                 headers=headers
             )
             
@@ -793,6 +1030,9 @@ class QuickbaseClient:
 
         Returns:
             dict: Created application information
+            
+        Raises:
+            QuickbaseError: If creation fails
         """
         try:
             payload = {
@@ -803,9 +1043,22 @@ class QuickbaseClient:
             response = self.session.post(f"{self.base_url}/apps", json=payload)
             response.raise_for_status()
             return response.json()
+        except requests.exceptions.HTTPError as e:
+            status_code = e.response.status_code
+            error_message = str(e)
+            try:
+                error_data = e.response.json()
+                error_message = error_data.get('message', str(e))
+            except:
+                pass
+            
+            raise QuickbaseError(
+                message=f"Failed to create app: {error_message}",
+                status_code=status_code,
+                response=e.response
+            )
         except Exception as e:
-            print(f"Failed to create app: {str(e)}")
-            return {}
+            raise QuickbaseError(message=f"Failed to create app: {str(e)}")
 
     def update_app(self, app_id: str, name: Optional[str] = None, description: Optional[str] = None, options: Optional[dict] = None) -> dict:
         """Updates an existing QuickBase application.
@@ -818,6 +1071,9 @@ class QuickbaseClient:
 
         Returns:
             dict: Updated application information
+            
+        Raises:
+            QuickbaseError: If update fails
         """
         try:
             payload = {}
@@ -830,10 +1086,27 @@ class QuickbaseClient:
 
             response = self.session.patch(f"{self.base_url}/apps/{app_id}", json=payload)
             response.raise_for_status()
-            return response.json()
+            
+            # Get the updated app details
+            app_response = self.session.get(f"{self.base_url}/apps/{app_id}")
+            app_response.raise_for_status()
+            return app_response.json()
+        except requests.exceptions.HTTPError as e:
+            status_code = e.response.status_code
+            error_message = str(e)
+            try:
+                error_data = e.response.json()
+                error_message = error_data.get('message', str(e))
+            except:
+                pass
+            
+            raise QuickbaseError(
+                message=f"Failed to update app: {error_message}",
+                status_code=status_code,
+                response=e.response
+            )
         except Exception as e:
-            print(f"Failed to update app: {str(e)}")
-            return {}
+            raise QuickbaseError(message=f"Failed to update app: {str(e)}")
 
     def delete_app(self, app_id: str) -> bool:
         """Deletes a QuickBase application.
@@ -843,14 +1116,74 @@ class QuickbaseClient:
 
         Returns:
             bool: True if deletion successful
+            
+        Raises:
+            QuickbaseError: If deletion fails
         """
         try:
             response = self.session.delete(f"{self.base_url}/apps/{app_id}")
             response.raise_for_status()
             return True
+        except requests.exceptions.HTTPError as e:
+            status_code = e.response.status_code
+            error_message = str(e)
+            try:
+                error_data = e.response.json()
+                error_message = error_data.get('message', str(e))
+            except:
+                pass
+            
+            raise QuickbaseError(
+                message=f"Failed to delete app: {error_message}",
+                status_code=status_code,
+                response=e.response
+            )
         except Exception as e:
-            print(f"Failed to delete app: {str(e)}")
-            return False
+            raise QuickbaseError(message=f"Failed to delete app: {str(e)}")
+            
+    def copy_app(self, app_id: str, name: str, description: str = None, properties: dict = None) -> dict:
+        """Copies a QuickBase application.
+
+        Args:
+            app_id (str): The ID of the source application
+            name (str): The name for the new application
+            description (str, optional): Description for the new application
+            properties (dict, optional): Additional properties for the new application
+
+        Returns:
+            dict: The newly created application's details
+        """
+        try:
+            payload = {
+                "name": name,
+                "sourceAppId": app_id
+            }
+            
+            if description:
+                payload["description"] = description
+                
+            if properties:
+                payload.update(properties)
+                
+            response = self.session.post(f"{self.base_url}/apps/copy", json=payload)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.HTTPError as e:
+            status_code = e.response.status_code
+            error_message = str(e)
+            try:
+                error_data = e.response.json()
+                error_message = error_data.get('message', str(e))
+            except:
+                pass
+            
+            raise QuickbaseError(
+                message=f"Failed to copy app: {error_message}",
+                status_code=status_code,
+                response=e.response
+            )
+        except Exception as e:
+            raise QuickbaseError(message=f"Failed to copy app: {str(e)}")
 
     def get_app_tables(self, app_id: str) -> list[dict]:
         """Retrieves tables in an application.
@@ -860,14 +1193,31 @@ class QuickbaseClient:
 
         Returns:
             list[dict]: List of tables in the application
+            
+        Raises:
+            QuickbaseError: If the API request fails
         """
+        # Check cache first if caching is enabled
+        if self.use_cache:
+            cache_key = f"app_tables_{app_id}"
+            cached_tables = app_cache.get(cache_key)
+            if cached_tables is not None:
+                self.logger.debug(f"Cache hit for app tables: {app_id}")
+                return cached_tables
+                
         try:
-            response = self.session.get(f"{self.base_url}/apps/{app_id}/tables")
-            response.raise_for_status()
-            return response.json()
+            response = self._request("GET", f"apps/{app_id}/tables")
+            tables = self._handle_response(response)
+            
+            # Cache the tables
+            if self.use_cache:
+                app_cache.set(f"app_tables_{app_id}", tables)
+                
+            return tables
+        except QuickbaseError:
+            raise
         except Exception as e:
-            print(f"Failed to get app tables: {str(e)}")
-            return []
+            raise QuickbaseError(f"Failed to get app tables: {str(e)}")
 
     def get_app_roles(self, app_id: str) -> list[dict]:
         """Retrieves roles in an application.
@@ -1010,6 +1360,9 @@ class QuickbaseClient:
 
         Returns:
             dict: Updated table information
+            
+        Raises:
+            QuickbaseError: If update fails
         """
         try:
             payload = {}
@@ -1023,9 +1376,22 @@ class QuickbaseClient:
             response = self.session.patch(f"{self.base_url}/tables/{table_id}", json=payload)
             response.raise_for_status()
             return response.json()
+        except requests.exceptions.HTTPError as e:
+            status_code = e.response.status_code
+            error_message = str(e)
+            try:
+                error_data = e.response.json()
+                error_message = error_data.get('message', str(e))
+            except:
+                pass
+            
+            raise QuickbaseError(
+                message=f"Failed to update table: {error_message}",
+                status_code=status_code,
+                response=e.response
+            )
         except Exception as e:
-            print(f"Failed to update table: {str(e)}")
-            return {}
+            raise QuickbaseError(message=f"Failed to update table: {str(e)}")
 
     def delete_table(self, table_id: str) -> bool:
         """Deletes a QuickBase table.
@@ -1035,14 +1401,30 @@ class QuickbaseClient:
 
         Returns:
             bool: True if deletion successful
+            
+        Raises:
+            QuickbaseError: If deletion fails
         """
         try:
             response = self.session.delete(f"{self.base_url}/tables/{table_id}")
             response.raise_for_status()
             return True
+        except requests.exceptions.HTTPError as e:
+            status_code = e.response.status_code
+            error_message = str(e)
+            try:
+                error_data = e.response.json()
+                error_message = error_data.get('message', str(e))
+            except:
+                pass
+            
+            raise QuickbaseError(
+                message=f"Failed to delete table: {error_message}",
+                status_code=status_code,
+                response=e.response
+            )
         except Exception as e:
-            print(f"Failed to delete table: {str(e)}")
-            return False
+            raise QuickbaseError(message=f"Failed to delete table: {str(e)}")
 
     def create_field(self, table_id: str, field_name: str, field_type: str, options: Optional[dict] = None) -> dict:
         """Creates a new field in a QuickBase table.
@@ -1313,6 +1695,23 @@ async def handle_list_tools() -> list[types.Tool]:
                 "properties": {},
             },
         ),
+        types.Tool(
+            name="configure_cache",
+            description="Configures caching behavior for Quickbase operations",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "enabled": {
+                        "type": "boolean",
+                        "description": "Whether to enable caching (default: true)"
+                    },
+                    "clear": {
+                        "type": "boolean",
+                        "description": "Whether to clear all existing caches (default: false)"
+                    }
+                },
+            },
+        ),
         
         # App Operations
         types.Tool(
@@ -1377,6 +1776,33 @@ async def handle_list_tools() -> list[types.Tool]:
                     }
                 },
                 "required": ["app_id"],
+            },
+        ),
+        types.Tool(
+            name="copy_app",
+            description="Copies a QuickBase application",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "app_id": {
+                        "type": "string",
+                        "description": "The ID of the source application to copy",
+                    },
+                    "name": {
+                        "type": "string",
+                        "description": "Name for the new application",
+                    },
+                    "description": {
+                        "type": "string",
+                        "description": "Description for the new application",
+                    },
+                    "properties": {
+                        "type": "object",
+                        "description": "Additional properties for the new application",
+                        "additionalProperties": True,
+                    }
+                },
+                "required": ["app_id", "name"],
             },
         ),
         
@@ -2764,6 +3190,155 @@ async def handle_call_tool(name: str, arguments: dict[str, str]) -> list[types.T
                         text=f"Error deleting field: {e.message}\nStatus: {e.status_code}\nDetails: {json.dumps(e.response, indent=2)}"
                     )
                 ]
+        elif name == "create_app":
+            app_name = arguments.get("name")
+            description = arguments.get("description")
+            options = arguments.get("options", {})
+            
+            if not app_name:
+                raise ValueError("Missing required argument: 'name' is required")
+
+            try:
+                results = qb_client.create_app(app_name, description, options)
+                # Convert response to JSON serializable dict if needed
+                if hasattr(results, 'json'):
+                    results = results.json()
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Create App Result (JSON):\n{json.dumps(results, indent=2)}",
+                    )
+                ]
+            except QuickbaseError as e:
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Error creating app: {e.message}\nStatus: {e.status_code}\nDetails: {json.dumps(e.response, indent=2)}"
+                    )
+                ]
+            except Exception as e:
+                raise ValueError(f"Error creating app: {str(e)}")
+
+        elif name == "update_app":
+            app_id = arguments.get("app_id")
+            app_name = arguments.get("name")
+            description = arguments.get("description")
+            options = arguments.get("options", {})
+            
+            if not app_id:
+                raise ValueError("Missing required argument: 'app_id' is required")
+
+            try:
+                # First patch the app
+                payload = {}
+                if app_name:
+                    payload["name"] = app_name
+                if description is not None:
+                    payload["description"] = description
+                if options:
+                    payload.update(options)
+
+                response = qb_client.session.patch(f"{qb_client.base_url}/apps/{app_id}", json=payload)
+                response.raise_for_status()
+                
+                # Then get the updated app details
+                app_response = qb_client.session.get(f"{qb_client.base_url}/apps/{app_id}")
+                app_response.raise_for_status()
+                results = app_response.json()
+                
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Update App Result (JSON):\n{json.dumps(results, indent=2)}",
+                    )
+                ]
+            except QuickbaseError as e:
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Error updating app: {e.message}\nStatus: {e.status_code}\nDetails: {json.dumps(e.response, indent=2)}"
+                    )
+                ]
+            except Exception as e:
+                raise ValueError(f"Error updating app: {str(e)}")
+
+        elif name == "delete_app":
+            app_id = arguments.get("app_id")
+            
+            if not app_id:
+                raise ValueError("Missing required argument: 'app_id' is required")
+
+            try:
+                # Direct call to delete the app
+                response = qb_client.session.delete(f"{qb_client.base_url}/apps/{app_id}")
+                response.raise_for_status()
+                
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Delete App Result: Success"
+                    )
+                ]
+            except QuickbaseError as e:
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Error deleting app: {e.message}\nStatus: {e.status_code}\nDetails: {json.dumps(e.response, indent=2)}"
+                    )
+                ]
+            except Exception as e:
+                raise ValueError(f"Error deleting app: {str(e)}")
+                
+        elif name == "copy_app":
+            app_id = arguments.get("app_id")
+            app_name = arguments.get("name")
+            description = arguments.get("description")
+            properties = arguments.get("properties", {})
+            
+            if not app_id or not app_name:
+                raise ValueError("Missing required arguments: 'app_id' and 'name' are required")
+
+            try:
+                results = qb_client.copy_app(app_id, app_name, description, properties)
+                # Convert response to JSON serializable dict if needed
+                if hasattr(results, 'json'):
+                    results = results.json()
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Copy App Result (JSON):\n{json.dumps(results, indent=2)}",
+                    )
+                ]
+            except QuickbaseError as e:
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Error copying app: {e.message}\nStatus: {e.status_code}\nDetails: {json.dumps(e.response, indent=2)}"
+                    )
+                ]
+            except Exception as e:
+                raise ValueError(f"Error copying app: {str(e)}")
+                
+        elif name == "configure_cache":
+            enabled = arguments.get("enabled", True)
+            clear = arguments.get("clear", False)
+            
+            try:
+                # Call the configure_cache method on the client
+                qb_client.configure_cache(enabled=enabled, clear=clear)
+                
+                cache_status = "enabled" if enabled else "disabled"
+                clear_status = "cleared" if clear else "preserved"
+                
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Cache configuration updated successfully. Caching is now {cache_status} and existing caches were {clear_status}."
+                    )
+                ]
+            except Exception as e:
+                raise ValueError(f"Error configuring cache: {str(e)}")
+                
         raise ValueError(f"Unknown tool: {name}")
     except QuickbaseError as e:
         return [
