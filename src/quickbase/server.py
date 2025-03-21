@@ -355,14 +355,31 @@ class QuickbaseClient:
 
         Returns:
             list[dict]: List of table relationships
+            
+        Raises:
+            QuickbaseError: If the API request fails
         """
+        # Check cache first if caching is enabled
+        if self.use_cache:
+            cache_key = f"relationships_{table_id}"
+            cached_relationships = table_cache.get(cache_key)
+            if cached_relationships is not None:
+                self.logger.debug(f"Cache hit for table relationships: {table_id}")
+                return cached_relationships
+                
         try:
-            response = self.session.get(f"{self.base_url}/tables/{table_id}/relationships")
-            response.raise_for_status()
-            return response.json()
+            response = self._request("GET", f"tables/{table_id}/relationships")
+            relationships = self._handle_response(response)
+            
+            # Cache the relationships
+            if self.use_cache:
+                table_cache.set(f"relationships_{table_id}", relationships)
+                
+            return relationships
+        except QuickbaseError:
+            raise
         except Exception as e:
-            print(f"Failed to get table relationships: {str(e)}")
-            return []
+            raise QuickbaseError(f"Failed to get table relationships: {str(e)}")
 
     # Record Operations
     @retry(exceptions=[requests.exceptions.RequestException], max_tries=3, delay=1.0, backoff=2.0)
@@ -1011,14 +1028,31 @@ class QuickbaseClient:
 
         Returns:
             dict: Application information
+            
+        Raises:
+            QuickbaseError: If the API request fails
         """
+        # Check cache first if caching is enabled
+        if self.use_cache:
+            cache_key = f"app_{app_id}"
+            cached_app = app_cache.get(cache_key)
+            if cached_app is not None:
+                self.logger.debug(f"Cache hit for app: {app_id}")
+                return cached_app
+                
         try:
-            response = self.session.get(f"{self.base_url}/apps/{app_id}")
-            response.raise_for_status()
-            return response.json()
+            response = self._request("GET", f"apps/{app_id}")
+            app_data = self._handle_response(response)
+            
+            # Cache the app data
+            if self.use_cache:
+                app_cache.set(f"app_{app_id}", app_data)
+                
+            return app_data
+        except QuickbaseError:
+            raise
         except Exception as e:
-            print(f"Failed to get app: {str(e)}")
-            return {}
+            raise QuickbaseError(f"Failed to get app: {str(e)}")
 
     def create_app(self, name: str, description: Optional[str] = None, options: Optional[dict] = None) -> dict:
         """Creates a new QuickBase application.
@@ -1227,14 +1261,31 @@ class QuickbaseClient:
 
         Returns:
             list[dict]: List of roles in the application
+            
+        Raises:
+            QuickbaseError: If the API request fails
         """
+        # Check cache first if caching is enabled
+        if self.use_cache:
+            cache_key = f"app_roles_{app_id}"
+            cached_roles = app_cache.get(cache_key)
+            if cached_roles is not None:
+                self.logger.debug(f"Cache hit for app roles: {app_id}")
+                return cached_roles
+                
         try:
-            response = self.session.get(f"{self.base_url}/apps/{app_id}/roles")
-            response.raise_for_status()
-            return response.json()
+            response = self._request("GET", f"apps/{app_id}/roles")
+            roles = self._handle_response(response)
+            
+            # Cache the roles
+            if self.use_cache:
+                app_cache.set(f"app_roles_{app_id}", roles)
+                
+            return roles
+        except QuickbaseError:
+            raise
         except Exception as e:
-            print(f"Failed to get app roles: {str(e)}")
-            return []
+            raise QuickbaseError(f"Failed to get app roles: {str(e)}")
 
     # Form Operations
     def get_form(self, table_id: str, form_id: str) -> dict:
@@ -1246,14 +1297,31 @@ class QuickbaseClient:
 
         Returns:
             dict: Form information
+            
+        Raises:
+            QuickbaseError: If the API request fails
         """
+        # Check cache first if caching is enabled
+        if self.use_cache:
+            cache_key = f"form_{table_id}_{form_id}"
+            cached_form = table_cache.get(cache_key)
+            if cached_form is not None:
+                self.logger.debug(f"Cache hit for form: {table_id}/{form_id}")
+                return cached_form
+                
         try:
-            response = self.session.get(f"{self.base_url}/forms/{table_id}/{form_id}")
-            response.raise_for_status()
-            return response.json()
+            response = self._request("GET", f"forms/{table_id}/{form_id}")
+            form = self._handle_response(response)
+            
+            # Cache the form
+            if self.use_cache:
+                table_cache.set(f"form_{table_id}_{form_id}", form)
+                
+            return form
+        except QuickbaseError:
+            raise
         except Exception as e:
-            print(f"Failed to get form: {str(e)}")
-            return {}
+            raise QuickbaseError(f"Failed to get form: {str(e)}")
 
     def get_table_forms(self, table_id: str) -> list[dict]:
         """Retrieves forms for a table.
@@ -1263,13 +1331,31 @@ class QuickbaseClient:
 
         Returns:
             list[dict]: List of forms for the table
+            
+        Raises:
+            QuickbaseError: If the API request fails
         """
+        # Check cache first if caching is enabled
+        if self.use_cache:
+            cache_key = f"table_forms_{table_id}"
+            cached_forms = table_cache.get(cache_key)
+            if cached_forms is not None:
+                self.logger.debug(f"Cache hit for table forms: {table_id}")
+                return cached_forms
+                
         try:
-            response = self.session.get(f"{self.base_url}/tables/{table_id}/forms")
-            response.raise_for_status()
-            return response.json()
+            response = self._request("GET", f"tables/{table_id}/forms")
+            forms = self._handle_response(response)
+            
+            # Cache the forms
+            if self.use_cache:
+                table_cache.set(f"table_forms_{table_id}", forms)
+                
+            return forms
+        except QuickbaseError:
+            raise
         except Exception as e:
-            print(f"Failed to get table forms: {str(e)}")
+            raise QuickbaseError(f"Failed to get table forms: {str(e)}")
             return []
 
     # Dashboard Operations
@@ -1281,14 +1367,31 @@ class QuickbaseClient:
 
         Returns:
             dict: Dashboard information
+            
+        Raises:
+            QuickbaseError: If the API request fails
         """
+        # Check cache first if caching is enabled
+        if self.use_cache:
+            cache_key = f"dashboard_{dashboard_id}"
+            cached_dashboard = app_cache.get(cache_key)
+            if cached_dashboard is not None:
+                self.logger.debug(f"Cache hit for dashboard: {dashboard_id}")
+                return cached_dashboard
+                
         try:
-            response = self.session.get(f"{self.base_url}/dashboards/{dashboard_id}")
-            response.raise_for_status()
-            return response.json()
+            response = self._request("GET", f"dashboards/{dashboard_id}")
+            dashboard = self._handle_response(response)
+            
+            # Cache the dashboard
+            if self.use_cache:
+                app_cache.set(f"dashboard_{dashboard_id}", dashboard)
+                
+            return dashboard
+        except QuickbaseError:
+            raise
         except Exception as e:
-            print(f"Failed to get dashboard: {str(e)}")
-            return {}
+            raise QuickbaseError(f"Failed to get dashboard: {str(e)}")
 
     def get_app_dashboards(self, app_id: str) -> list[dict]:
         """Retrieves dashboards in an application.
@@ -1298,14 +1401,31 @@ class QuickbaseClient:
 
         Returns:
             list[dict]: List of dashboards in the application
+            
+        Raises:
+            QuickbaseError: If the API request fails
         """
+        # Check cache first if caching is enabled
+        if self.use_cache:
+            cache_key = f"app_dashboards_{app_id}"
+            cached_dashboards = app_cache.get(cache_key)
+            if cached_dashboards is not None:
+                self.logger.debug(f"Cache hit for app dashboards: {app_id}")
+                return cached_dashboards
+                
         try:
-            response = self.session.get(f"{self.base_url}/apps/{app_id}/dashboards")
-            response.raise_for_status()
-            return response.json()
+            response = self._request("GET", f"apps/{app_id}/dashboards")
+            dashboards = self._handle_response(response)
+            
+            # Cache the dashboards
+            if self.use_cache:
+                app_cache.set(f"app_dashboards_{app_id}", dashboards)
+                
+            return dashboards
+        except QuickbaseError:
+            raise
         except Exception as e:
-            print(f"Failed to get app dashboards: {str(e)}")
-            return []
+            raise QuickbaseError(f"Failed to get app dashboards: {str(e)}")
 
     # Table Operations
     def create_table(self, app_id: str, name: str, description: Optional[str] = None, fields: Optional[List[dict]] = None, options: Optional[dict] = None) -> dict:

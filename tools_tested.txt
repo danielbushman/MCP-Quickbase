@@ -91,7 +91,7 @@ The following operations return 404 errors, suggesting they may not be supported
 - Implemented with test scripts: 18 (added configure_cache)
 - Improved error handling: 9 (app tools, table tools, bulk record operations)
 - Added retry mechanism: 4 (bulk_create_records, bulk_update_records, bulk_delete_records, get_table_records)
-- Added caching: 3 (app_tables, table_schema, fields)
+- Added caching: 8 (app_tables, table_schema, fields, app, table_relationships, app_roles, forms, dashboards)
 - API limitations: 10
 
 ## Next Steps
@@ -106,7 +106,7 @@ The following operations return 404 errors, suggesting they may not be supported
 8. ✅ Add better logging of API requests/responses
 9. ✅ Implement caching for frequently accessed data
 10. ✅ Add configure_cache tool to control caching behavior
-11. Test the cache and retry functionality with dedicated test scripts
-12. Implement caching for additional operations (reports, forms, etc.)
+11. ✅ Test the cache and retry functionality with dedicated test scripts
+12. ✅ Implement caching for additional operations (apps, forms, dashboards, etc.)
 13. Add comprehensive documentation with examples for each tool
 14. Implement additional optimizations for API rate limiting
