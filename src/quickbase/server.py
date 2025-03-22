@@ -2381,7 +2381,7 @@ async def run():
             write,
             InitializationOptions(
                 server_name="quickbase-mcp",
-                server_version="0.1.0",
+                server_version="1.0.0",
                 capabilities=server.get_capabilities(
                     notification_options=NotificationOptions(),
                     experimental_capabilities={},
