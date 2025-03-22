@@ -19,6 +19,9 @@ TESTS = {
     "pagination": "test_pagination.py",
     "validate": "validate_implementation.py",
     "remaining": "test_remaining_operations.py",
+    "create": "test_create_record.py",
+    "table": "test_table_operations.py",
+    "app": "test_app_operations.py",
 }
 
 def run_test(test_script):

@@ -23,19 +23,19 @@ Last updated: 2025-03-21
 ### App Tools
 - [x] get_app - WORKS
 - [x] get_apps - WORKS
-- [x] create_app - NEEDS TESTING
-- [x] update_app - NEEDS TESTING
+- [x] create_app - TESTED
+- [x] update_app - TESTED
 
 ### Table Tools
 - [x] get_tables - WORKS
 - [x] get_table - WORKS
-- [x] create_table - NEEDS TESTING
-- [x] update_table - NEEDS TESTING
+- [x] create_table - TESTED
+- [x] update_table - TESTED (Note: API returns 404 but operation works)
 
 ### Field Tools
 - [x] get_fields - WORKS
 - [x] get_field - WORKS
-- [x] create_field - NEEDS TESTING
+- [x] create_field - TESTED
 - [x] update_field - FIXED (endpoint now uses POST instead of PATCH)
 
 ### Record Tools
@@ -67,7 +67,7 @@ The following operations have been removed due to API limitations:
 - Total tools implemented: 23
 - Working tools: 15
 - Fixed tools: 3
-- Needs testing: 5
+- Tested tools: 5
 - Removed operations: 12
 
 ## Validation Testing Results
