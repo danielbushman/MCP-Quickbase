@@ -48,25 +48,35 @@ cp .env.example .env
 node src/quickbase/server.js
 ```
 
-### Testing the Connection
+### Running Tests
+
+All tests are located in the `tests/` directory. You can use the test runner to run specific tests or all tests:
 
 ```bash
-python test_connection.py
+# Run all tests
+python tests/run_tests.py --all
+
+# Run specific tests
+python tests/run_tests.py connection pagination file
+
+# Run the comprehensive validation script
+python tests/run_tests.py validate
 ```
 
-### Testing Specific Tools
+Individual test scripts can also be run directly:
 
 ```bash
-python test_mcp_tool.py list_tools
-python test_mcp_tool.py test_connection
-python test_mcp_tool.py query_records '{"table_id": "abc123", "select": ["field1", "field2"], "where": "field1 = \\"value\\""}'
+# Test connection
+python tests/test_connection.py
+
+# Test file operations
+python tests/test_file_operations.py
+
+# Test pagination
+python tests/test_pagination.py
 ```
 
-### Testing File Operations
-
-```bash
-python test_file_operations.py
-```
+For more information about tests, see [tests/README.md](tests/README.md).
 
 ## Available Tool Categories
 
