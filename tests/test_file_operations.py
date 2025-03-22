@@ -13,7 +13,13 @@ Usage:
 
 import asyncio
 import os
+import sys
 import tempfile
+from pathlib import Path
+
+# Add parent directory to path to import modules properly
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 from dotenv import load_dotenv
 from src.quickbase.server import handle_call_tool
 

@@ -10,8 +10,12 @@ import os
 import sys
 import time
 import uuid
+from pathlib import Path
 from dotenv import load_dotenv
 import subprocess
+
+# Add parent directory to path to import modules properly
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 # Set up test environment
 test_env_file = ".env.test"
@@ -26,7 +30,8 @@ load_dotenv(test_env_file)
 try:
     from src.quickbase.server import handle_call_tool, __version__
 except ImportError:
-    print("Error importing server module. Make sure you're in the right directory.")
+    print("Error importing server module. Make sure parent directory is in your Python path.")
+    print("Current paths:", sys.path)
     sys.exit(1)
 
 # Required environment variables
