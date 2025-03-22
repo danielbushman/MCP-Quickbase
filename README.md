@@ -4,15 +4,16 @@ A Model Context Protocol (MCP) integration for interacting with the [Quickbase J
 
 ## Overview
 
-This MCP integration provides a standardized interface for AI assistants to interact with Quickbase's API through the Model Context Protocol. It supports a comprehensive set of operations for managing apps, tables, fields, records, files, and more.
+This MCP integration provides a standardized interface for AI assistants to interact with Quickbase's API through the Model Context Protocol. It supports a wide range of operations for managing apps, tables, fields, records, files, and reports with Quickbase.
 
 ## Features
 
-- **Complete API Coverage**: Access to all major Quickbase API endpoints
+- **Focused API Coverage**: Access to supported and well-tested Quickbase API endpoints
 - **Structured Data**: All responses are formatted consistently for easy parsing
-- **File Operations**: Upload, download, and manage file attachments
+- **File Operations**: Upload and download file attachments
 - **Error Handling**: Detailed error messages with status codes and descriptions
 - **Bulk Operations**: Support for efficient batch record operations
+- **Pagination**: Support for handling large result sets
 
 ## Prerequisites
 
@@ -76,36 +77,36 @@ python test_file_operations.py
 ### App Tools
 - `get_app`: Get details about a specific app
 - `get_apps`: List all available apps
-- `create_app`, `update_app`, `delete_app`, `copy_app`: Manage app lifecycle
+- `create_app`, `update_app`: Create and update applications
 
 ### Table Tools
 - `get_table`, `get_tables`: Retrieve table information
-- `create_table`, `update_table`, `delete_table`: Manage tables
+- `create_table`, `update_table`: Create and update tables
 
 ### Field Tools
 - `get_field`, `get_fields`: Retrieve field information
-- `create_field`, `update_field`, `delete_field`: Manage fields
+- `create_field`, `update_field`: Create and update fields
 
 ### Record Tools
 - `get_record`, `query_records`: Retrieve record data
-- `create_record`, `update_record`, `delete_record`: Individual record operations
-- `bulk_create_records`, `bulk_update_records`, `bulk_delete_records`: Efficient batch operations
+- `create_record`, `update_record`: Individual record operations
+- `bulk_create_records`, `bulk_update_records`: Efficient batch operations
 
 ### File Tools
 - `upload_file`: Upload a file to a record field
 - `download_file`: Download a file from a record field
-- `delete_file`: Delete a file from a record field
 - `manage_attachments`: High-level attachment management
-
-### User Tools
-- `get_user`, `get_current_user`, `get_user_roles`: User management functions
-
-### Form & Dashboard Tools
-- `get_forms`, `get_form`: Access form configurations
-- `get_dashboards`, `get_dashboard`: Access dashboard configurations
 
 ### Report Tools
 - `run_report`: Execute Quickbase reports
+
+## API Limitations
+
+The following operations have been removed due to API limitations:
+- Delete operations (delete_app, delete_table, delete_field, delete_record, bulk_delete_records, delete_file)
+- User operations (get_user, get_current_user, get_user_roles, manage_users)
+- Form operations (manage_forms)
+- Dashboard operations (manage_dashboards)
 
 ## Environment Variables
 

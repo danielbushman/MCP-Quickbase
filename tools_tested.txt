@@ -1,12 +1,14 @@
 # Quickbase MCP Tools Testing Results
 
-Last updated: 2025-03-20
+Last updated: 2025-03-21
 
 ## Implementation Progress
 
-- File operations fixed (upload_file, download_file, delete_file)
+- File operations fixed (upload_file, download_file)
 - Added pagination support for query_records
 - Improved error handling across all operations
+- Removed all delete operations due to API limitations
+- Removed user, form, and dashboard operations due to API limitations
 
 ## Tool Categories and Status
 
@@ -19,67 +21,50 @@ Last updated: 2025-03-20
 - [x] get_apps - WORKS
 - [x] create_app - NEEDS TESTING
 - [x] update_app - NEEDS TESTING
-- [x] delete_app - NEEDS TESTING
-- [x] copy_app - NEEDS TESTING
 
 ### Table Tools
 - [x] get_tables - WORKS
 - [x] get_table - WORKS
 - [x] create_table - NEEDS TESTING
 - [x] update_table - NEEDS TESTING
-- [x] delete_table - NEEDS TESTING
 
 ### Field Tools
 - [x] get_fields - WORKS
 - [x] get_field - WORKS
 - [x] create_field - NEEDS TESTING
 - [x] update_field - FIXED (endpoint now uses POST instead of PATCH)
-- [x] delete_field - NEEDS TESTING
 
 ### Record Tools
 - [x] get_record - WORKS
 - [x] query_records - WORKS
 - [x] create_record - WORKS
 - [x] update_record - WORKS
-- [x] delete_record - WORKS
 - [x] bulk_create_records - WORKS
 - [x] bulk_update_records - WORKS
-- [x] bulk_delete_records - WORKS
 
 ### File Tools
 - [x] upload_file - FIXED (endpoint now uses /files/{tableId}/{recordId}/{fieldId}/{versionNumber})
 - [x] download_file - FIXED (endpoint now uses /files/{tableId}/{recordId}/{fieldId}/{versionNumber})
-- [x] delete_file - FIXED (endpoint now uses /files/{tableId}/{recordId}/{fieldId}/{versionNumber})
 - [x] manage_attachments - NEEDS TESTING
-
-### User Tools
-- [x] get_user - API LIMITATION (404 error)
-- [x] get_current_user - API LIMITATION (404 error)
-- [x] get_user_roles - API LIMITATION (404 error)
-
-### Form & Dashboard Tools
-- [x] get_forms - API LIMITATION (404 error)
-- [x] get_form - API LIMITATION (404 error)
-- [x] get_dashboards - API LIMITATION (404 error)
-- [x] get_dashboard - API LIMITATION (404 error)
 
 ### Report Tools
 - [x] run_report - NEEDS TESTING
 
-## API Limitations
+## Removed Operations
 
-The following operations return 404 errors, suggesting they may not be supported in the current API:
-- User operations (get_user, get_current_user, get_user_roles)
-- Form operations (get_forms, get_form)
-- Dashboard operations (get_dashboards, get_dashboard)
+The following operations have been removed due to API limitations:
+- Delete operations (delete_app, delete_table, delete_field, delete_record, bulk_delete_records, delete_file)
+- User operations (get_user, get_current_user, get_user_roles, manage_users)
+- Form operations (manage_forms)
+- Dashboard operations (manage_dashboards)
 
 ## Implementation Summary
 
-- Total tools implemented: 35
+- Total tools implemented: 23
 - Working tools: 15
-- Fixed tools: 4
-- Needs testing: 12
-- API limitations: 8
+- Fixed tools: 3
+- Needs testing: 5
+- Removed operations: 12
 
 ## Next Steps
 
