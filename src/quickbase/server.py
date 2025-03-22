@@ -7,8 +7,10 @@
 # ///
 import asyncio
 import json
-from typing import Any, Optional, List, Dict, Union
+from typing import Any, Optional, List, Dict, Union, Tuple
 import os
+import sys
+import re
 import requests
 from dotenv import load_dotenv
 
@@ -16,6 +18,54 @@ import mcp.types as types
 from mcp.server import Server, NotificationOptions
 from mcp.server.models import InitializationOptions
 import mcp.server.stdio
+
+# Version information
+__version__ = "1.0.0"
+__min_python_version__ = (3, 8)
+__min_node_version__ = "14.0.0"
+
+def check_version_compatibility() -> bool:
+    """
+    Check if the current environment is compatible with this version of the MCP integration.
+    
+    Returns:
+        bool: True if compatible, False otherwise
+    """
+    # Check Python version
+    current_python = sys.version_info[:2]
+    if current_python < __min_python_version__:
+        print(f"Error: Python {__min_python_version__[0]}.{__min_python_version__[1]} or higher is required. "
+              f"You have Python {current_python[0]}.{current_python[1]}.")
+        return False
+        
+    # Check Node.js version if possible (when running in Node.js environment)
+    try:
+        node_path = os.environ.get("NODE_PATH", "")
+        if node_path:
+            # This is a simple check that assumes the Node.js version is available in the environment
+            node_version = os.environ.get("NODE_VERSION", "")
+            if node_version and parse_version(node_version) < parse_version(__min_node_version__):
+                print(f"Warning: Node.js {__min_node_version__} or higher is recommended. "
+                      f"You have Node.js {node_version}.")
+    except Exception:
+        # Ignore Node.js version check errors
+        pass
+        
+    return True
+
+def parse_version(version_str: str) -> Tuple[int, ...]:
+    """
+    Parse a version string into a tuple of integers.
+    
+    Args:
+        version_str (str): The version string to parse
+        
+    Returns:
+        Tuple[int, ...]: The parsed version as a tuple of integers
+    """
+    # Extract digits from version string
+    match = re.findall(r'\d+', version_str)
+    return tuple(int(x) for x in match)
 
 class QuickbaseError(Exception):
     """Base exception for QuickBase API errors."""
@@ -2375,13 +2425,32 @@ async def handle_call_tool(name: str, arguments: dict[str, str]) -> list[types.T
         ]
 
 async def run():
+    # Check version compatibility
+    if not check_version_compatibility():
+        print("Version compatibility check failed. Exiting.")
+        return
+    
+    print(f"Starting Quickbase MCP Integration v{__version__}")
+    
+    # Load environment variables
+    load_dotenv()
+    
+    # Check for required environment variables
+    required_vars = ["QUICKBASE_REALM_HOST", "QUICKBASE_USER_TOKEN", "QUICKBASE_APP_ID"]
+    missing_vars = [var for var in required_vars if not os.getenv(var)]
+    
+    if missing_vars:
+        print(f"Error: Missing required environment variables: {', '.join(missing_vars)}")
+        print("Please set these in your .env file or environment.")
+        return
+    
     async with mcp.server.stdio.stdio_server() as (read, write):
         await server.run(
             read,
             write,
             InitializationOptions(
                 server_name="quickbase-mcp",
-                server_version="1.0.0",
+                server_version=__version__,
                 capabilities=server.get_capabilities(
                     notification_options=NotificationOptions(),
                     experimental_capabilities={},
