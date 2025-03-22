@@ -191,7 +191,16 @@ class QuickbaseClient:
             self.user_token = os.getenv('QUICKBASE_USER_TOKEN')
             
             if not self.realm_hostname or not self.user_token:
-                raise QuickbaseAuthenticationError("Missing required environment variables")
+                missing_vars = []
+                if not self.realm_hostname:
+                    missing_vars.append('QUICKBASE_REALM_HOST')
+                if not self.user_token:
+                    missing_vars.append('QUICKBASE_USER_TOKEN')
+                
+                error_msg = f"Missing required environment variables: {', '.join(missing_vars)}. "
+                error_msg += "Please check your .env file or environment settings."
+                print(f"Authentication Error: {error_msg}", file=sys.stderr)
+                raise QuickbaseAuthenticationError(error_msg)
                 
             # Set up default headers for all requests
             self.session.headers.update({
@@ -203,16 +212,49 @@ class QuickbaseClient:
             # Test connection by getting app info instead of user info
             app_id = os.getenv('QUICKBASE_APP_ID')
             if not app_id:
-                raise QuickbaseAuthenticationError("Missing QUICKBASE_APP_ID environment variable")
+                error_msg = "Missing QUICKBASE_APP_ID environment variable. Please add it to your .env file."
+                print(f"Authentication Error: {error_msg}", file=sys.stderr)
+                raise QuickbaseAuthenticationError(error_msg)
                 
+            print(f"Attempting to connect to Quickbase realm: {self.realm_hostname}", file=sys.stderr)
+            print(f"Testing connection with app ID: {app_id}", file=sys.stderr)
+            
             response = self.session.get(f"{self.base_url}/apps/{app_id}")
-            self._handle_response(response)
-            return True
+            
+            try:
+                self._handle_response(response)
+                print("Successfully connected to Quickbase API!", file=sys.stderr)
+                return True
+            except QuickbaseAuthenticationError as auth_error:
+                # Extract more diagnostic information
+                status_code = auth_error.status_code
+                error_data = auth_error.response
+                
+                # Enhanced error message with detailed diagnostics
+                error_msg = f"Authentication failed with status code {status_code}.\n"
+                error_msg += f"Realm: {self.realm_hostname}\n"
+                error_msg += f"App ID: {app_id}\n"
+                error_msg += "Possible causes:\n"
+                error_msg += "1. Invalid user token\n"
+                error_msg += "2. Token does not have permissions for this app\n"
+                error_msg += "3. App ID is incorrect\n"
+                error_msg += "4. Realm hostname is incorrect\n"
+                
+                if error_data and isinstance(error_data, dict):
+                    if 'message' in error_data:
+                        error_msg += f"\nAPI Error: {error_data.get('message')}\n"
+                    if 'description' in error_data:
+                        error_msg += f"Description: {error_data.get('description')}\n"
+                
+                print(f"Authentication Error: {error_msg}", file=sys.stderr)
+                raise QuickbaseAuthenticationError(error_msg, status_code, error_data)
             
         except QuickbaseAuthenticationError:
             raise
         except Exception as e:
-            raise QuickbaseError(f"Connection failed: {str(e)}")
+            error_msg = f"Connection failed: {str(e)}"
+            print(f"Error: {error_msg}", file=sys.stderr)
+            raise QuickbaseError(error_msg)
 
     # Table Operations
     def get_table_fields(self, table_id: str) -> list[dict]:
@@ -1297,15 +1339,82 @@ class QuickbaseClient:
 # Create a server instance
 server = Server("quickbase-mcp")
 
+# Log version information
+print(f"Quickbase MCP Integration Version: {__version__}", file=sys.stderr)
+print(f"Minimum Python Version: {__min_python_version__}", file=sys.stderr)
+print(f"Minimum Node.js Version: {__min_node_version__}", file=sys.stderr)
+
+# Helper function to check for .env file
+def check_env_file():
+    """Check if the .env file exists and provide instructions if not."""
+    env_file = os.path.join(os.getcwd(), '.env')
+    example_file = os.path.join(os.getcwd(), '.env.example')
+    
+    if not os.path.exists(env_file):
+        print("WARNING: .env file not found!", file=sys.stderr)
+        
+        if os.path.exists(example_file):
+            print("\nAn .env.example file was found. Please create an .env file:", file=sys.stderr)
+            print("1. Copy .env.example to .env", file=sys.stderr)
+            print("   cp .env.example .env", file=sys.stderr)
+            print("2. Edit the .env file with your Quickbase credentials", file=sys.stderr)
+            print("   - Set QUICKBASE_REALM_HOST to your Quickbase realm (e.g., your-company.quickbase.com)", file=sys.stderr)
+            print("   - Set QUICKBASE_USER_TOKEN to your Quickbase user token", file=sys.stderr)
+            print("   - Set QUICKBASE_APP_ID to your Quickbase application ID", file=sys.stderr)
+        else:
+            print("\nNo .env or .env.example file found. Please create an .env file with the following content:", file=sys.stderr)
+            print("QUICKBASE_REALM_HOST=your-realm.quickbase.com", file=sys.stderr)
+            print("QUICKBASE_USER_TOKEN=your_user_token_here", file=sys.stderr)
+            print("QUICKBASE_APP_ID=your_app_id_here", file=sys.stderr)
+            
+        return False
+    return True
+
 # Load environment variables
+print("Loading environment variables...", file=sys.stderr)
+env_file_exists = check_env_file()
 load_dotenv()
 
+# Check for required environment variables before connecting
+missing_vars = []
+for var in ['QUICKBASE_REALM_HOST', 'QUICKBASE_USER_TOKEN', 'QUICKBASE_APP_ID']:
+    if not os.getenv(var):
+        missing_vars.append(var)
+
+if missing_vars:
+    print(f"WARNING: Missing required environment variables: {', '.join(missing_vars)}", file=sys.stderr)
+    print("The Quickbase MCP integration requires the following environment variables:", file=sys.stderr)
+    print("  QUICKBASE_REALM_HOST - Your Quickbase realm (e.g., your-company.quickbase.com)", file=sys.stderr)
+    print("  QUICKBASE_USER_TOKEN - Your Quickbase user token", file=sys.stderr)
+    print("  QUICKBASE_APP_ID - The ID of your Quickbase application", file=sys.stderr)
+    print("\nPlease set these variables in your .env file or environment.", file=sys.stderr)
+    print("The server will start in limited functionality mode.", file=sys.stderr)
+
 # Configure with Quickbase credentials from environment variables
+connected = False
 qb_client = QuickbaseClient()
-if not qb_client.connect():
-    print("Failed to initialize Quickbase connection")
-    # Optionally exit here if Quickbase is required
-    # sys.exit(1)
+
+try:
+    if qb_client.connect():
+        connected = True
+        print("Successfully initialized Quickbase connection!", file=sys.stderr)
+    else:
+        print("Failed to initialize Quickbase connection", file=sys.stderr)
+except QuickbaseAuthenticationError as auth_error:
+    print(f"Authentication Error: {auth_error}", file=sys.stderr)
+    print("Server will start in limited functionality mode - only test_connection tool will be available.", file=sys.stderr)
+except Exception as e:
+    print(f"ERROR: Failed to initialize Quickbase connection: {str(e)}", file=sys.stderr)
+    print("Server will start in limited functionality mode - only test_connection tool will be available.", file=sys.stderr)
+
+# Server will continue to run even if authentication fails, but with limited functionality
+if not connected:
+    print("\nTROUBLESHOOTING TIPS:", file=sys.stderr)
+    print("1. Check that your .env file exists and contains the correct variables", file=sys.stderr)
+    print("2. Verify your user token has access to the specified app", file=sys.stderr)
+    print("3. Confirm your realm hostname is correct (should be in format 'realm.quickbase.com')", file=sys.stderr)
+    print("4. Make sure your app ID is valid", file=sys.stderr)
+    print("5. Check network connectivity to Quickbase API", file=sys.stderr)
 
 @server.list_resources()
 async def handle_list_resources() -> list[types.Resource]:
@@ -1912,30 +2021,95 @@ async def handle_call_tool(name: str, arguments: dict[str, str]) -> list[types.T
                     )
                 ]
         elif name == "test_connection":
+            # Enhanced test_connection tool with detailed diagnostics
             try:
+                # Check environment variables first
+                realm = os.getenv('QUICKBASE_REALM_HOST')
+                token = os.getenv('QUICKBASE_USER_TOKEN')
+                app_id = os.getenv('QUICKBASE_APP_ID')
+                
+                # Prepare diagnostic info
+                env_vars_status = []
+                for var, value in [
+                    ("QUICKBASE_REALM_HOST", realm),
+                    ("QUICKBASE_USER_TOKEN", token),
+                    ("QUICKBASE_APP_ID", app_id)
+                ]:
+                    if not value:
+                        env_vars_status.append(f"❌ {var}: Missing")
+                    else:
+                        # Mask token for security
+                        if var == "QUICKBASE_USER_TOKEN" and value:
+                            masked = value[:4] + "..." + value[-4:] if len(value) > 8 else "****"
+                            env_vars_status.append(f"✅ {var}: {masked}")
+                        else:
+                            env_vars_status.append(f"✅ {var}: {value}")
+                
+                env_status = "\n".join(env_vars_status)
+                
+                # Check for connection status
+                if not realm or not token or not app_id:
+                    return [
+                        types.TextContent(
+                            type="text",
+                            text=f"Quickbase Connection: FAILED\n\nEnvironment Variables Check:\n{env_status}\n\nMissing required environment variables. Please update your .env file with the required credentials."
+                        )
+                    ]
+                
+                # Test actual connection
                 if qb_client.session is None:
                     success = qb_client.connect()
                     status = "Connected successfully" if success else "Connection failed"
                 else:
-                    status = "Already connected"
+                    # Try a simple API call to verify connection is working
+                    try:
+                        response = qb_client.session.get(f"{qb_client.base_url}/apps/{app_id}")
+                        response.raise_for_status()
+                        status = "Already connected"
+                    except Exception:
+                        status = "Reconnecting..."
+                        success = qb_client.connect()
+                        status = "Connected successfully" if success else "Connection failed"
+                
+                # Return detailed connection information
                 return [
                     types.TextContent(
                         type="text",
-                        text=f"Quickbase Connection Status: {status}\nRealm: {qb_client.realm_hostname}\nApp ID: {os.getenv('QUICKBASE_APP_ID')}"
+                        text=f"Quickbase Connection Status: {status}\n\nEnvironment Variables Check:\n{env_status}\n\nAPI Connection:\nRealm: {realm}\nEndpoint: {qb_client.base_url}\nApp ID: {app_id}\nVersion: {__version__}"
                     )
                 ]
             except QuickbaseAuthenticationError as e:
+                error_detail = ""
+                if e.response and isinstance(e.response, dict):
+                    if 'message' in e.response:
+                        error_detail += f"\nAPI Error: {e.response.get('message')}"
+                    if 'description' in e.response:
+                        error_detail += f"\nDescription: {e.response.get('description')}"
+                
+                troubleshooting = "\nTroubleshooting Steps:\n"
+                troubleshooting += "1. Verify your user token is correct and not expired\n"
+                troubleshooting += "2. Confirm the token has access to the specified app\n"
+                troubleshooting += "3. Check that the realm hostname is correct\n"
+                troubleshooting += "4. Ensure the app ID exists and is accessible with your token"
+                
                 return [
                     types.TextContent(
                         type="text",
-                        text=f"Authentication Error: {e.message}\nStatus: {e.status_code}\nDetails: {json.dumps(e.response, indent=2)}"
+                        text=f"Authentication Error: {e.message}\nStatus Code: {e.status_code}{error_detail}{troubleshooting}"
                     )
                 ]
             except QuickbaseError as e:
                 return [
                     types.TextContent(
                         type="text",
-                        text=f"Connection Error: {e.message}\nStatus: {e.status_code}\nDetails: {json.dumps(e.response, indent=2)}"
+                        text=f"Connection Error: {e.message}\nStatus: {e.status_code}\nDetails: {json.dumps(e.response, indent=2)}\n\nPlease verify your Quickbase credentials and network connectivity."
+                    )
+                ]
+            except Exception as e:
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Unexpected Error: {str(e)}\n\nPlease check your .env file and network connectivity."
                     )
                 ]
         elif name == "query_records":
