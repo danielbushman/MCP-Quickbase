@@ -129,11 +129,25 @@ MCP_SERVER_PORT=3535
 
 ## Error Handling
 
-The integration provides detailed error messages with:
+The integration provides comprehensive error handling with:
 - Error type classification
 - HTTP status codes
 - Detailed error messages from Quickbase API
 - Suggested solutions
+- Parameter validation
+- JSON data validation
+- Proper handling of API request errors
+
+### Common Error Scenarios
+- Missing required parameters
+- Invalid JSON data format
+- Non-existent table or field IDs
+- Invalid WHERE clause syntax
+- Authentication failures
+- Permission issues
+- Network connectivity problems
+
+All error responses include helpful diagnostic information to assist with troubleshooting.
 
 ## Contributing
 

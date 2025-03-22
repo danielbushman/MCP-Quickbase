@@ -45,7 +45,8 @@ test_results = {
     "passed": 0,
     "failed": 0,
     "errors": [],
-    "created_record_id": None
+    "created_record_id": None,
+    "error_tests_passed": 0
 }
 
 # Unique identifier for this test run
@@ -75,7 +76,7 @@ def stop_server():
         server_process.terminate()
         server_process = None
 
-async def run_test(name, tool, arguments, validator=None, expected_error=None):
+async def run_test(name, tool, arguments, validator=None, expected_error=None, is_error_test=False):
     """Run a single test and record the result"""
     print(f"\n--- Testing {name} ---")
     print(f"Tool: {tool}")
@@ -94,7 +95,15 @@ async def run_test(name, tool, arguments, validator=None, expected_error=None):
             else:
                 print(content.text)
         
-        if expected_error:
+        # Check if expected_error is in the result text (for errors returned in response)
+        if expected_error and any(expected_error in content.text for content in result):
+            print(f"PASS: Got expected error in response: '{expected_error}'")
+            if is_error_test:
+                test_results["error_tests_passed"] += 1
+            else:
+                test_results["passed"] += 1
+            return result
+        elif expected_error:
             print(f"FAIL: Expected error '{expected_error}' but got success")
             test_results["failed"] += 1
             return None
@@ -102,20 +111,29 @@ async def run_test(name, tool, arguments, validator=None, expected_error=None):
         if validator:
             if validator(result):
                 print("PASS")
-                test_results["passed"] += 1
+                if is_error_test:
+                    test_results["error_tests_passed"] += 1
+                else:
+                    test_results["passed"] += 1
             else:
                 print("FAIL: Validation failed")
                 test_results["failed"] += 1
                 test_results["errors"].append(f"{name}: Validation failed")
         else:
             print("PASS")
-            test_results["passed"] += 1
+            if is_error_test:
+                test_results["error_tests_passed"] += 1
+            else:
+                test_results["passed"] += 1
             
         return result
     except Exception as e:
         if expected_error and str(e).find(expected_error) >= 0:
             print(f"PASS: Got expected error: {str(e)}")
-            test_results["passed"] += 1
+            if is_error_test:
+                test_results["error_tests_passed"] += 1
+            else:
+                test_results["passed"] += 1
         else:
             print(f"ERROR: {str(e)}")
             test_results["failed"] += 1
@@ -332,6 +350,84 @@ async def test_create_table():
         lambda r: any("Create Table Result" in c.text for c in r)
     )
 
+# Error Handling Tests
+
+async def test_missing_table_id():
+    """Test error handling for missing table_id"""
+    return await run_test(
+        "Missing Table ID Error", 
+        "query_records", 
+        {
+            # Deliberately omit required table_id
+            "select": ["3", "6", "7"],
+            "where": "",
+            "options": {"top": 10}
+        },
+        validator=lambda r: any("Missing" in c.text and "table_id" in c.text for c in r),
+        is_error_test=True
+    )
+
+async def test_invalid_table_id():
+    """Test error handling for invalid table_id"""
+    return await run_test(
+        "Invalid Table ID Error", 
+        "query_records", 
+        {
+            "table_id": "invalid_table_id_12345",
+            "select": ["3", "6", "7"],
+            "where": "",
+            "options": {"top": 10}
+        },
+        # Check for error message in response
+        lambda r: any("Error" in c.text for c in r),
+        is_error_test=True
+    )
+
+async def test_invalid_field_id():
+    """Test error handling for invalid field ID"""
+    return await run_test(
+        "Invalid Field ID Error", 
+        "create_record", 
+        {
+            "table_id": TABLE_ID,
+            "data": json.dumps({
+                "999999": {"value": "Invalid field ID test"}
+            })
+        },
+        # Check for error message in response
+        lambda r: any("Error" in c.text for c in r),
+        is_error_test=True
+    )
+
+async def test_invalid_json_data():
+    """Test error handling for invalid JSON data"""
+    return await run_test(
+        "Invalid JSON Data Error", 
+        "create_record", 
+        {
+            "table_id": TABLE_ID,
+            "data": "{invalid json data}"
+        },
+        expected_error="Invalid data format",
+        is_error_test=True
+    )
+
+async def test_invalid_where_syntax():
+    """Test error handling for invalid WHERE syntax"""
+    return await run_test(
+        "Invalid WHERE Syntax Error", 
+        "query_records", 
+        {
+            "table_id": TABLE_ID,
+            "select": ["3", "6", "7"],
+            "where": "INVALID WHERE SYNTAX",
+            "options": {"top": 10}
+        },
+        # Check for error message in response
+        lambda r: any("Error" in c.text for c in r),
+        is_error_test=True
+    )
+
 async def run_all_tests():
     """Run all tests in sequence"""
     print("====================================================")
@@ -345,6 +441,8 @@ async def run_all_tests():
     start_server()
     
     try:
+        print("\n=== FUNCTIONALITY TESTS ===\n")
+        
         # Core functionality tests
         await test_connection()
         await test_list_tables()
@@ -364,6 +462,15 @@ async def run_all_tests():
         # Table/field management tests (optional)
         # await test_create_table()
         
+        print("\n=== ERROR HANDLING TESTS ===\n")
+        
+        # Error handling tests
+        await test_missing_table_id()
+        await test_invalid_table_id()
+        await test_invalid_field_id()
+        await test_invalid_json_data()
+        await test_invalid_where_syntax()
+        
     finally:
         stop_server()
     
@@ -371,7 +478,8 @@ async def run_all_tests():
     print("\n====================================================")
     print("  Test Summary")
     print("====================================================")
-    print(f"Tests passed: {test_results['passed']}")
+    print(f"Functionality tests passed: {test_results['passed']}")
+    print(f"Error handling tests passed: {test_results['error_tests_passed']}")
     print(f"Tests failed: {test_results['failed']}")
     
     if test_results["errors"]:
@@ -379,6 +487,11 @@ async def run_all_tests():
         for error in test_results["errors"]:
             print(f"- {error}")
     
+    total_passed = test_results['passed'] + test_results['error_tests_passed']
+    total_tests = total_passed + test_results['failed']
+    
+    print(f"\nTotal tests: {total_tests}")
+    print(f"Success rate: {(total_passed / total_tests) * 100:.1f}%")
     print("\nValidation " + ("PASSED" if test_results["failed"] == 0 else "FAILED"))
     print("====================================================")
     
