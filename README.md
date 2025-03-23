@@ -1,5 +1,7 @@
 # Quickbase MCP Integration
 
+**DISCLAIMER: This is an unofficial, independent project not affiliated with, sponsored, or endorsed by Quickbase, Inc. This integration is provided "as-is" without warranty of any kind and is not supported by Quickbase. Users are responsible for their own compliance with all applicable laws, regulations, and security requirements when using this integration.**
+
 A Model Context Protocol (MCP) integration for interacting with the [Quickbase JSON RESTful API](https://developer.quickbase.com/).
 
 ## Overview
@@ -39,6 +41,37 @@ cd MCP-Quickbase
 cp .env.example .env
 # Edit .env with your credentials
 ```
+
+## Quick Start
+
+For those who just want to try this connector with Claude or Claude Code:
+
+1. Install dependencies and set up the server:
+```bash
+# Install all dependencies
+npm install
+pip install -r requirements.txt
+
+# Create a .env file with your Quickbase credentials
+echo "QUICKBASE_REALM_HOST=your-realm.quickbase.com
+QUICKBASE_USER_TOKEN=your_user_token_here
+QUICKBASE_APP_ID=your_app_id_here" > .env
+```
+
+2. Start the MCP server:
+```bash
+node src/quickbase/server.js
+```
+
+3. In Claude or Claude Code, use the connector:
+```
+# In Claude, add the Quickbase connector via the connections menu
+# In Claude Code, use this command
+claude code --connections quickbase=localhost:3535
+```
+
+Now you can use Quickbase tools in your Claude session! Example prompt:
+"List all tables in my Quickbase app using the quickbase connector."
 
 ## Usage
 
