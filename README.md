@@ -143,13 +143,15 @@ For more information about tests, see [tests/README.md](tests/README.md).
 ### Report Tools
 - `run_report`: Execute Quickbase reports
 
-## API Limitations
+## Not implemented
 
-The following operations have been removed due to API limitations:
+The following operations are not implemented:
 - Delete operations (delete_app, delete_table, delete_field, delete_record, bulk_delete_records, delete_file)
 - User operations (get_user, get_current_user, get_user_roles, manage_users)
 - Form operations (manage_forms)
 - Dashboard operations (manage_dashboards)
+- Pipelines operations (manage_pipelines)
+- FastField Form operations (manage_fast_field_form)
 
 ## Environment Variables
 
