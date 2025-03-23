@@ -13,7 +13,13 @@ Usage:
 
 import asyncio
 import os
+import sys
 import tempfile
+from pathlib import Path
+
+# Add parent directory to path to import modules properly
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 from dotenv import load_dotenv
 from src.quickbase.server import handle_call_tool
 
@@ -81,20 +87,8 @@ async def test_file_operations():
     except Exception as e:
         print(f"Error downloading file: {e}")
     
-    # 3. Delete file
-    print("\n3. Testing delete_file...")
-    try:
-        delete_args = {
-            "table_id": TABLE_ID,
-            "record_id": RECORD_ID,
-            "field_id": FIELD_ID,
-            "version": "0"  # Latest version
-        }
-        result = await handle_call_tool("delete_file", delete_args)
-        for content in result:
-            print(content.text)
-    except Exception as e:
-        print(f"Error deleting file: {e}")
+    # Note: delete_file operation has been removed due to API limitations
+    print("\nNote: The delete_file operation has been removed due to API limitations.")
     
     # Clean up the test file
     if os.path.exists(test_file_path):

@@ -7,6 +7,12 @@ This script demonstrates how to use pagination for large result sets.
 import asyncio
 import json
 import os
+import sys
+from pathlib import Path
+
+# Add parent directory to path to import modules properly
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 from dotenv import load_dotenv
 from src.quickbase.server import handle_call_tool
 

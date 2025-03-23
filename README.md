@@ -4,15 +4,16 @@ A Model Context Protocol (MCP) integration for interacting with the [Quickbase J
 
 ## Overview
 
-This MCP integration provides a standardized interface for AI assistants to interact with Quickbase's API through the Model Context Protocol. It supports a comprehensive set of operations for managing apps, tables, fields, records, files, and more.
+This MCP integration provides a standardized interface for AI assistants to interact with Quickbase's API through the Model Context Protocol. It supports a wide range of operations for managing apps, tables, fields, records, files, and reports with Quickbase.
 
 ## Features
 
-- **Complete API Coverage**: Access to all major Quickbase API endpoints
+- **Focused API Coverage**: Access to supported and well-tested Quickbase API endpoints
 - **Structured Data**: All responses are formatted consistently for easy parsing
-- **File Operations**: Upload, download, and manage file attachments
+- **File Operations**: Upload and download file attachments
 - **Error Handling**: Detailed error messages with status codes and descriptions
 - **Bulk Operations**: Support for efficient batch record operations
+- **Pagination**: Support for handling large result sets
 
 ## Prerequisites
 
@@ -47,25 +48,35 @@ cp .env.example .env
 node src/quickbase/server.js
 ```
 
-### Testing the Connection
+### Running Tests
+
+All tests are located in the `tests/` directory. You can use the test runner to run specific tests or all tests:
 
 ```bash
-python test_connection.py
+# Run all tests
+python tests/run_tests.py --all
+
+# Run specific tests
+python tests/run_tests.py connection pagination file
+
+# Run the comprehensive validation script
+python tests/run_tests.py validate
 ```
 
-### Testing Specific Tools
+Individual test scripts can also be run directly:
 
 ```bash
-python test_mcp_tool.py list_tools
-python test_mcp_tool.py test_connection
-python test_mcp_tool.py query_records '{"table_id": "abc123", "select": ["field1", "field2"], "where": "field1 = \\"value\\""}'
+# Test connection
+python tests/test_connection.py
+
+# Test file operations
+python tests/test_file_operations.py
+
+# Test pagination
+python tests/test_pagination.py
 ```
 
-### Testing File Operations
-
-```bash
-python test_file_operations.py
-```
+For more information about tests, see [tests/README.md](tests/README.md).
 
 ## Available Tool Categories
 
@@ -76,36 +87,36 @@ python test_file_operations.py
 ### App Tools
 - `get_app`: Get details about a specific app
 - `get_apps`: List all available apps
-- `create_app`, `update_app`, `delete_app`, `copy_app`: Manage app lifecycle
+- `create_app`, `update_app`: Create and update applications
 
 ### Table Tools
 - `get_table`, `get_tables`: Retrieve table information
-- `create_table`, `update_table`, `delete_table`: Manage tables
+- `create_table`, `update_table`: Create and update tables
 
 ### Field Tools
 - `get_field`, `get_fields`: Retrieve field information
-- `create_field`, `update_field`, `delete_field`: Manage fields
+- `create_field`, `update_field`: Create and update fields
 
 ### Record Tools
 - `get_record`, `query_records`: Retrieve record data
-- `create_record`, `update_record`, `delete_record`: Individual record operations
-- `bulk_create_records`, `bulk_update_records`, `bulk_delete_records`: Efficient batch operations
+- `create_record`, `update_record`: Individual record operations
+- `bulk_create_records`, `bulk_update_records`: Efficient batch operations
 
 ### File Tools
 - `upload_file`: Upload a file to a record field
 - `download_file`: Download a file from a record field
-- `delete_file`: Delete a file from a record field
 - `manage_attachments`: High-level attachment management
-
-### User Tools
-- `get_user`, `get_current_user`, `get_user_roles`: User management functions
-
-### Form & Dashboard Tools
-- `get_forms`, `get_form`: Access form configurations
-- `get_dashboards`, `get_dashboard`: Access dashboard configurations
 
 ### Report Tools
 - `run_report`: Execute Quickbase reports
+
+## API Limitations
+
+The following operations have been removed due to API limitations:
+- Delete operations (delete_app, delete_table, delete_field, delete_record, bulk_delete_records, delete_file)
+- User operations (get_user, get_current_user, get_user_roles, manage_users)
+- Form operations (manage_forms)
+- Dashboard operations (manage_dashboards)
 
 ## Environment Variables
 
@@ -128,11 +139,25 @@ MCP_SERVER_PORT=3535
 
 ## Error Handling
 
-The integration provides detailed error messages with:
+The integration provides comprehensive error handling with:
 - Error type classification
 - HTTP status codes
 - Detailed error messages from Quickbase API
 - Suggested solutions
+- Parameter validation
+- JSON data validation
+- Proper handling of API request errors
+
+### Common Error Scenarios
+- Missing required parameters
+- Invalid JSON data format
+- Non-existent table or field IDs
+- Invalid WHERE clause syntax
+- Authentication failures
+- Permission issues
+- Network connectivity problems
+
+All error responses include helpful diagnostic information to assist with troubleshooting.
 
 ## Contributing
 
