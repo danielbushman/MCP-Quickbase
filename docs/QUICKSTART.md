@@ -16,7 +16,7 @@ This guide will help you get started with the Quickbase MCP Connector quickly.
 1. **Clone the repository**
 
 ```bash
-git clone https://github.com/yourusername/Quickbase-MCP-connector.git
+git clone https://github.com/danielbushman/Quickbase-MCP-connector.git
 cd Quickbase-MCP-connector
 ```
 

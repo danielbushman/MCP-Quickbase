@@ -27,7 +27,7 @@ This MCP connector provides a standardized interface for AI assistants to integr
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/Quickbase-MCP-connector.git
+git clone https://github.com/danielbushman/Quickbase-MCP-connector.git
 cd Quickbase-MCP-connector
 ```
 
