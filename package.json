@@ -1,7 +1,7 @@
 {
   "name": "mcp-quickbase-connector",
   "version": "1.0.0",
-  "description": "MCP server for Quickbase integration",
+  "description": "MCP connector for Quickbase API",
   "main": "src/quickbase/server.js",
   "bin": {
     "quickbase": "./src/quickbase/server.js"

@@ -1,6 +1,6 @@
-# Quickbase MCP Integration: Quick Start Guide
+# Quickbase MCP Connector: Quick Start Guide
 
-This guide will help you get started with the Quickbase MCP Integration quickly.
+This guide will help you get started with the Quickbase MCP Connector quickly.
 
 ## Prerequisites
 
@@ -16,8 +16,8 @@ This guide will help you get started with the Quickbase MCP Integration quickly.
 1. **Clone the repository**
 
 ```bash
-git clone https://github.com/yourusername/MCP-Quickbase.git
-cd MCP-Quickbase
+git clone https://github.com/yourusername/Quickbase-MCP-connector.git
+cd Quickbase-MCP-connector
 ```
 
 2. **Run the setup script**
@@ -66,7 +66,7 @@ If successful, you should see:
 Connection successful!
 ```
 
-### Using the Quickbase MCP Integration
+### Using the Quickbase MCP Connector
 
 Once the server is running, you can use the MCP tools to interact with your Quickbase app:
 
@@ -110,7 +110,7 @@ python query_example.py
 
 ## Available Tools
 
-The Quickbase MCP Integration provides these main tools:
+The Quickbase MCP Connector provides these main tools:
 
 ### App Operations
 - `test_connection`: Test your connection to Quickbase

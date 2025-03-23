@@ -1,6 +1,6 @@
-# Quickbase MCP Integration Tests
+# Quickbase MCP Connector Tests
 
-This directory contains tests for verifying the Quickbase MCP integration.
+This directory contains tests for verifying the Quickbase MCP connector.
 
 ## Test Files
 
@@ -20,7 +20,7 @@ This directory contains tests for verifying the Quickbase MCP integration.
 To run the comprehensive validation script:
 
 ```bash
-cd /path/to/MCP-Quickbase
+cd /path/to/Quickbase-MCP-connector
 python tests/validate_implementation.py
 ```
 
