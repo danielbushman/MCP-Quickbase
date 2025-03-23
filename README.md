@@ -1,12 +1,12 @@
-# Quickbase MCP Integration
+# Quickbase MCP Connector
 
-**DISCLAIMER: This is an unofficial, independent project not affiliated with, sponsored, or endorsed by Quickbase, Inc. This integration is provided "as-is" without warranty of any kind and is not supported by Quickbase. Users are responsible for their own compliance with all applicable laws, regulations, and security requirements when using this integration.**
+**DISCLAIMER: This is an unofficial, independent project not affiliated with, sponsored, or endorsed by Quickbase, Inc. This connector is provided "as-is" without warranty of any kind and is not supported by Quickbase. Users are responsible for their own compliance with all applicable laws, regulations, and security requirements when using this connector.**
 
-A Model Context Protocol (MCP) integration for interacting with the [Quickbase JSON RESTful API](https://developer.quickbase.com/).
+A Model Context Protocol (MCP) connector for integrating with the [Quickbase JSON RESTful API](https://developer.quickbase.com/).
 
 ## Overview
 
-This MCP integration provides a standardized interface for AI assistants to interact with Quickbase's API through the Model Context Protocol. It supports a wide range of operations for managing apps, tables, fields, records, files, and reports with Quickbase.
+This MCP connector provides a standardized interface for AI assistants to integrate with Quickbase's API through the Model Context Protocol. It supports a wide range of operations for managing apps, tables, fields, records, files, and reports with Quickbase.
 
 ## Features
 
@@ -172,7 +172,7 @@ MCP_SERVER_PORT=3535
 
 ## Error Handling
 
-The integration provides comprehensive error handling with:
+The connector provides comprehensive error handling with:
 - Error type classification
 - HTTP status codes
 - Detailed error messages from Quickbase API
