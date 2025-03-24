@@ -1,6 +1,6 @@
 # Quickbase MCP Connector
 
-A Model Context Protocol (MCP) connector for integrating with the [Quickbase JSON RESTful API](https://developer.quickbase.com/).
+A [Model Context Protocol (MCP)](https://modelcontextprotocol.io/introduction) connector for integrating with the [Quickbase JSON RESTful API](https://developer.quickbase.com/).
 
 **DISCLAIMER: This is an unofficial, independent project not affiliated with, sponsored, or endorsed by Quickbase, Inc. This connector is provided "as-is" without warranty of any kind and is not supported by Quickbase. Users are responsible for their own compliance with all applicable laws, regulations, and security requirements when using this connector.**
 
@@ -102,44 +102,6 @@ claude mcp add quickbase node src/quickbase/server.js
 Now you can use Quickbase tools in your Claude session! Example prompt:
 "List all tables in my Quickbase app using the quickbase connector."
 
-## Usage
-
-### Starting the MCP Server
-
-```bash
-node src/quickbase/server.js
-```
-
-### Running Tests
-
-All tests are located in the `tests/` directory. You can use the test runner to run specific tests or all tests:
-
-```bash
-# Run all tests
-python tests/run_tests.py --all
-
-# Run specific tests
-python tests/run_tests.py connection pagination file
-
-# Run the comprehensive validation script
-python tests/run_tests.py validate
-```
-
-Individual test scripts can also be run directly:
-
-```bash
-# Test connection
-python tests/test_connection.py
-
-# Test file operations
-python tests/test_file_operations.py
-
-# Test pagination
-python tests/test_pagination.py
-```
-
-For more information about tests, see [tests/README.md](tests/README.md).
-
 ## Available Tool Categories
 
 ### Connection Tools
@@ -181,6 +143,48 @@ The following operations are not implemented:
 - Dashboard operations (manage_dashboards)
 - Pipelines operations (manage_pipelines)
 - FastField Form operations (manage_fast_field_form)
+
+## For Developers & Contributors
+
+### Starting the MCP Server Manually
+
+If you need to manually start the server (for development or debugging):
+
+```bash
+node src/quickbase/server.js
+```
+
+### Running Tests
+
+This section is primarily for contributors who want to verify their changes or run the test suite.
+
+All tests are located in the `tests/` directory. You can use the test runner to run specific tests or all tests:
+
+```bash
+# Run all tests
+python tests/run_tests.py --all
+
+# Run specific tests
+python tests/run_tests.py connection pagination file
+
+# Run the comprehensive validation script
+python tests/run_tests.py validate
+```
+
+Individual test scripts can also be run directly:
+
+```bash
+# Test connection
+python tests/test_connection.py
+
+# Test file operations
+python tests/test_file_operations.py
+
+# Test pagination
+python tests/test_pagination.py
+```
+
+For more information about tests, see [tests/README.md](tests/README.md).
 
 ## Environment Variables
 
