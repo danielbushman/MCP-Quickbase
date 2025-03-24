@@ -67,7 +67,7 @@ node src/quickbase/server.js
 ```
 # In Claude, add the Quickbase connector via the connections menu
 # In Claude Code, use this command
-claude code --connections quickbase=localhost:3535
+claude mcp add quickbase node src/quickbase/server.js
 ```
 
 Now you can use Quickbase tools in your Claude session! Example prompt:
