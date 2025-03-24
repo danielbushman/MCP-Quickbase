@@ -54,9 +54,8 @@ For those who just want to try this connector with Claude or Claude Code:
 
 1. Install dependencies and set up the server:
 ```bash
-# Install all dependencies
-npm install
-pip install -r requirements.txt
+# Run the setup script to install all dependencies
+./setup.sh
 
 # Create a .env file with your Quickbase credentials
 echo "QUICKBASE_REALM_HOST=your-realm.quickbase.com
