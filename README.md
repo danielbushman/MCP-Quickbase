@@ -89,10 +89,7 @@ Add the following configuration:
 3. Using with Claude Code:
 
 ```bash
-# First, start the MCP server
-node src/quickbase/server.js
-
-# In a separate terminal, connect Claude Code
+# This single command both registers and starts the MCP server
 claude mcp add quickbase node src/quickbase/server.js
 ```
 
