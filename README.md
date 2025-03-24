@@ -1,8 +1,8 @@
 # Quickbase MCP Connector
 
-**DISCLAIMER: This is an unofficial, independent project not affiliated with, sponsored, or endorsed by Quickbase, Inc. This connector is provided "as-is" without warranty of any kind and is not supported by Quickbase. Users are responsible for their own compliance with all applicable laws, regulations, and security requirements when using this connector.**
-
 A Model Context Protocol (MCP) connector for integrating with the [Quickbase JSON RESTful API](https://developer.quickbase.com/).
+
+**DISCLAIMER: This is an unofficial, independent project not affiliated with, sponsored, or endorsed by Quickbase, Inc. This connector is provided "as-is" without warranty of any kind and is not supported by Quickbase. Users are responsible for their own compliance with all applicable laws, regulations, and security requirements when using this connector.**
 
 ## Overview
 
@@ -10,12 +10,18 @@ This MCP connector provides a standardized interface for AI assistants to integr
 
 ## Features
 
-- **Focused API Coverage**: Access to supported and well-tested Quickbase API endpoints
-- **Structured Data**: All responses are formatted consistently for easy parsing
-- **File Operations**: Upload and download file attachments
-- **Error Handling**: Detailed error messages with status codes and descriptions
-- **Bulk Operations**: Support for efficient batch record operations
-- **Pagination**: Support for handling large result sets
+### For Users
+- **AI-Powered Quickbase Access**: Talk to your Quickbase data directly through Claude
+- **Data Management**: Create, view, and update your apps, tables, and records through natural language
+- **File Handling**: Upload and download file attachments to your records
+- **Report Access**: Run your Quickbase reports and get the results directly in chat
+- **Large Dataset Support**: Handles pagination automatically when querying large numbers of records
+
+### For Developers
+- **Comprehensive API Coverage**: Access to core Quickbase API functionality
+- **Structured Responses**: Consistent response formatting for reliable parsing
+- **Batch Operations**: Efficient handling of bulk record operations
+- **Error Diagnostics**: Detailed error messages with status codes and troubleshooting information
 
 ## Prerequisites
 
