@@ -6,7 +6,7 @@ A Model Context Protocol (MCP) connector for integrating with the [Quickbase JSO
 
 ## Overview
 
-This MCP connector provides a standardized interface for AI assistants to integrate with Quickbase's API through the Model Context Protocol. It supports a wide range of operations for managing apps, tables, fields, records, files, and reports with Quickbase.
+This connector uses the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/introduction) to enable AI assistants like Claude to interact with Quickbase's API. It supports a wide range of operations for managing apps, tables, fields, records, files, and reports with Quickbase.
 
 ## Features
 
