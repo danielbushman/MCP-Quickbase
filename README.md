@@ -58,15 +58,36 @@ QUICKBASE_USER_TOKEN=your_user_token_here
 QUICKBASE_APP_ID=your_app_id_here" > .env
 ```
 
-2. Start the MCP server:
-```bash
-node src/quickbase/server.js
+2. Using with Claude Desktop (recommended):
+
+Create a config file for Claude Desktop that automatically starts the server:
+
+```json
+// ~/.config/anthropic/claude-config.json
+{
+  "mcpServers": {
+    "quickbase": {
+      "command": "/path/to/node",
+      "args": [
+        "/path/to/Quickbase-MCP-connector/src/quickbase/server.js"
+      ],
+      "env": {
+        "QUICKBASE_REALM": "your-realm",
+        "QUICKBASE_USER_TOKEN": "your-user-token",
+        "QUICKBASE_APP_ID": "your-app-id"
+      }
+    }
+  }
+}
 ```
 
-3. In Claude or Claude Code, use the connector:
-```
-# In Claude, add the Quickbase connector via the connections menu
-# In Claude Code, use this command
+3. Using with Claude Code:
+
+```bash
+# First, start the MCP server
+node src/quickbase/server.js
+
+# In a separate terminal, connect Claude Code
 claude mcp add quickbase node src/quickbase/server.js
 ```
 
