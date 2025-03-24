@@ -60,10 +60,15 @@ QUICKBASE_APP_ID=your_app_id_here" > .env
 
 2. Using with Claude Desktop (recommended):
 
-Create a config file for Claude Desktop that automatically starts the server:
+Create a config file for Claude Desktop that automatically starts the server. The configuration file location depends on your operating system:
+
+- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+- **Linux**: `~/.config/Claude/claude_desktop_config.json`
+
+Add the following configuration:
 
 ```json
-// ~/.config/anthropic/claude-config.json
 {
   "mcpServers": {
     "quickbase": {
