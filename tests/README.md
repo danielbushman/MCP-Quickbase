@@ -41,7 +41,7 @@ python tests/test_pagination.py
 
 Tests require proper configuration in a `.env.test` file in the project root. Copy `.env.example` to `.env.test` and populate with your test credentials:
 
-```
+```bash
 QUICKBASE_REALM_HOST=your-realm.quickbase.com
 QUICKBASE_USER_TOKEN=your_user_token_here
 QUICKBASE_APP_ID=your_app_id_here

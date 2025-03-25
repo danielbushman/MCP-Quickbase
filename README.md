@@ -11,6 +11,7 @@ This connector uses the [Model Context Protocol (MCP)](https://modelcontextproto
 ## Features
 
 ### For Users
+
 - **AI-Powered Quickbase Access**: Talk to your Quickbase data directly through Claude
 - **Data Management**: Create, view, and update your apps, tables, and records through natural language
 - **File Handling**: Upload and download file attachments to your records
@@ -18,6 +19,7 @@ This connector uses the [Model Context Protocol (MCP)](https://modelcontextproto
 - **Large Dataset Support**: Handles pagination automatically when querying large numbers of records
 
 ### For Developers
+
 - **Comprehensive API Coverage**: Access to core Quickbase API functionality
 - **Structured Responses**: Consistent response formatting for reliable parsing
 - **Batch Operations**: Efficient handling of bulk record operations
@@ -104,38 +106,46 @@ Now you can use Quickbase tools in your Claude session! Example prompt:
 ## Available Tool Categories
 
 ### Connection Tools
+
 - `test_connection`: Verify your Quickbase API connection
 - `check_auth`: Check authentication status and permissions
 
 ### App Tools
+
 - `get_app`: Get details about a specific app
 - `get_apps`: List all available apps
 - `create_app`, `update_app`: Create and update applications
 
 ### Table Tools
+
 - `get_table`, `get_tables`: Retrieve table information
 - `create_table`, `update_table`: Create and update tables
 
 ### Field Tools
+
 - `get_field`, `get_fields`: Retrieve field information
 - `create_field`, `update_field`: Create and update fields
 
 ### Record Tools
+
 - `get_record`, `query_records`: Retrieve record data
 - `create_record`, `update_record`: Individual record operations
 - `bulk_create_records`, `bulk_update_records`: Efficient batch operations
 
 ### File Tools
+
 - `upload_file`: Upload a file to a record field
 - `download_file`: Download a file from a record field
 - `manage_attachments`: High-level attachment management
 
 ### Report Tools
+
 - `run_report`: Execute Quickbase reports
 
 ## Not implemented
 
 The following operations are not implemented:
+
 - Delete operations (delete_app, delete_table, delete_field, delete_record, bulk_delete_records, delete_file)
 - User operations (get_user, get_current_user, get_user_roles, manage_users)
 - Form operations (manage_forms)
@@ -187,7 +197,7 @@ For more information about tests, see [tests/README.md](tests/README.md).
 
 ## Environment Variables
 
-The following environment variables need to be configured:
+The following environment variables may need to be configured:
 
 ```
 # Quickbase API Credentials
@@ -207,6 +217,7 @@ MCP_SERVER_PORT=3535
 ## Error Handling
 
 The connector provides comprehensive error handling with:
+
 - Error type classification
 - HTTP status codes
 - Detailed error messages from Quickbase API
@@ -216,6 +227,7 @@ The connector provides comprehensive error handling with:
 - Proper handling of API request errors
 
 ### Common Error Scenarios
+
 - Missing required parameters
 - Invalid JSON data format
 - Non-existent table or field IDs

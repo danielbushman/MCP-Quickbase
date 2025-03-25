@@ -41,7 +41,7 @@ This documentation provides details on how to use the Model Context Protocol (MC
 
 All QuickBase API tools require authentication. Before using any tool, you must set up your authentication credentials:
 
-```
+```bash
 QUICKBASE_REALM_HOST=your-realm.quickbase.com
 QUICKBASE_USER_TOKEN=your-user-token
 QUICKBASE_APP_ID=your-app-id
@@ -60,6 +60,7 @@ The QuickBase MCP tools use a structured error handling system with the followin
 - `QuickbaseServerError`: Server-side errors (5xx)
 
 Errors include:
+
 - Message: A descriptive error message
 - Status code: The HTTP status code
 - Response details: The full response from the API
@@ -77,10 +78,12 @@ The cache has a default Time-To-Live (TTL) of 300 seconds (5 minutes). You can c
 ### Retry Mechanisms
 
 Many operations include automatic retry mechanisms for transient errors:
+
 - HTTP status codes 429, 500, 502, 503, 504
 - Network connectivity issues
 
 The retry mechanism uses exponential backoff with jitter to avoid overwhelming the API. The following operations have retry logic:
+
 - `bulk_create_records`
 - `bulk_update_records`
 - `query_records` (with pagination)
