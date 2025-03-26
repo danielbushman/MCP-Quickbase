@@ -500,13 +500,31 @@ Creates a new record in a Quickbase table.
 
 **Parameters:**
 - `table_id` (string, required): The ID of the table
-- `data` (string, required): The data for the new record in JSON format
+- `data` (string or object, required): The data for the new record. Can be provided in two formats:
+  - Simple format: `{"field_id": "value", ...}`
+  - Quickbase API format: `{"field_id": {"value": "value"}, ...}`
 
-**Example:**
+**Example 1: Simple format (recommended)**
 ```
 mcp__quickbase__create_record(
   table_id="bqrxzt5wq",
-  data="{\"6\": {\"value\": \"Blog Redesign\"}, \"7\": {\"value\": \"Update company blog\"}, \"8\": {\"value\": \"Medium\"}}"
+  data={
+    "6": "Blog Redesign", 
+    "7": "Update company blog", 
+    "8": "Medium"
+  }
+)
+```
+
+**Example 2: Quickbase API format**
+```
+mcp__quickbase__create_record(
+  table_id="bqrxzt5wq",
+  data={
+    "6": {"value": "Blog Redesign"}, 
+    "7": {"value": "Update company blog"}, 
+    "8": {"value": "Medium"}
+  }
 )
 ```
 
@@ -560,9 +578,30 @@ Creates multiple records in a Quickbase table.
 
 **Parameters:**
 - `table_id` (string, required): The ID of the table
-- `records` (array, required): Array of record data to insert
+- `records` (array, required): Array of record data to insert. Each record can be in either format:
+  - Simple format: `{"field_id": "value", ...}`
+  - Quickbase API format: `{"field_id": {"value": "value"}, ...}`
 
-**Example:**
+**Example 1: Simple format (recommended)**
+```
+mcp__quickbase__bulk_create_records(
+  table_id="bqrxzt5wq",
+  records=[
+    {
+      "6": "Email Campaign",
+      "7": "Email marketing campaign",
+      "8": "Medium"
+    },
+    {
+      "6": "CRM Integration",
+      "7": "Integrate with CRM system",
+      "8": "High"
+    }
+  ]
+)
+```
+
+**Example 2: Quickbase API format**
 ```
 mcp__quickbase__bulk_create_records(
   table_id="bqrxzt5wq",
@@ -599,9 +638,28 @@ Updates multiple records in a Quickbase table.
 
 **Parameters:**
 - `table_id` (string, required): The ID of the table
-- `records` (array, required): Array of record data to update (must include record IDs)
+- `records` (array, required): Array of record data to update. Each record must include the record ID (field "3") and can be in either format:
+  - Simple format: `{"3": "record_id", "field_id": "value", ...}`
+  - Quickbase API format: `{"3": {"value": "record_id"}, "field_id": {"value": "value"}, ...}`
 
-**Example:**
+**Example 1: Simple format (recommended)**
+```
+mcp__quickbase__bulk_update_records(
+  table_id="bqrxzt5wq",
+  records=[
+    {
+      "3": "5",
+      "8": "Low"
+    },
+    {
+      "3": "6",
+      "8": "Critical"
+    }
+  ]
+)
+```
+
+**Example 2: Quickbase API format**
 ```
 mcp__quickbase__bulk_update_records(
   table_id="bqrxzt5wq",
