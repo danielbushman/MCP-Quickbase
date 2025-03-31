@@ -7,18 +7,25 @@ const fs = require('fs');
 // Get the path to the Python virtual environment
 const venvPath = path.join(__dirname, '..', '..', 'venv');
 const pythonPath = path.join(venvPath, 'bin', 'python');
+const systemPythonPath = '/usr/bin/python'; // Fallback to system Python
 const serverPath = path.join(__dirname, 'server.py');
 
 // Check if virtual environment exists
 if (!fs.existsSync(venvPath)) {
-  console.error('Virtual environment not found. Please run setup.sh first.');
-  process.exit(1);
+  console.log('Virtual environment not found. Using system Python instead.');
 }
 
-// Check if Python interpreter exists
+// Select Python interpreter - try virtual environment first, then fall back to system Python
+let selectedPythonPath = pythonPath;
 if (!fs.existsSync(pythonPath)) {
-  console.error('Python interpreter not found in virtual environment.');
-  process.exit(1);
+  console.log('Python interpreter not found in virtual environment. Using system Python instead.');
+  selectedPythonPath = systemPythonPath;
+  
+  // Check if system Python exists
+  if (!fs.existsSync(systemPythonPath)) {
+    console.error('System Python interpreter not found. Please ensure Python is installed.');
+    process.exit(1);
+  }
 }
 
 // Check if server.py exists
@@ -28,7 +35,7 @@ if (!fs.existsSync(serverPath)) {
 }
 
 // Spawn the Python process with environment variables
-const pythonProcess = spawn(pythonPath, [serverPath], {
+const pythonProcess = spawn(selectedPythonPath, [serverPath], {
   stdio: ['pipe', 'pipe', 'pipe'],
   env: process.env // Pass through all environment variables
 });
@@ -48,4 +55,4 @@ pythonProcess.on('close', (code) => {
 });
 
 // Forward stdin
-process.stdin.pipe(pythonProcess.stdin); 
+process.stdin.pipe(pythonProcess.stdin);
