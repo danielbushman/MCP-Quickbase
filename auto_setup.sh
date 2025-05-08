@@ -2,7 +2,7 @@
 
 echo "========================================="
 echo "    Quickbase MCP Connector Installer"
-echo "             For Claude Desktop"
+echo "             Part 1: Environment Setup"
 echo "========================================="
 
 # Create temp directory
@@ -54,6 +54,21 @@ echo "Default: $HOME/Quickbase-MCP-connector"
 read -p "Installation path [$HOME/Quickbase-MCP-connector]: " install_dir
 install_dir=${install_dir:-"$HOME/Quickbase-MCP-connector"}
 
+# Check if directory already exists
+if [ -d "$install_dir" ]; then
+    echo "Warning: Directory $install_dir already exists."
+    read -p "Do you want to continue and possibly overwrite existing files? (y/n): " overwrite
+    if [[ "$overwrite" != "y" && "$overwrite" != "Y" ]]; then
+        echo "Installation cancelled."
+        exit 1
+    fi
+    # Remove the directory to avoid git clone errors
+    rm -rf "$install_dir"
+fi
+
+# Create the directory
+mkdir -p "$install_dir"
+
 # Clone the repository
 echo "Cloning the Quickbase MCP connector repository..."
 git clone https://github.com/danielbushman/Quickbase-MCP-connector.git "$install_dir"
@@ -88,110 +103,19 @@ npm install
 echo "Setting up executables..."
 chmod +x src/quickbase/server.js
 chmod +x run_tests.sh
-
-# Prompt for Quickbase credentials
-echo
-echo "Setting up Quickbase credentials..."
-echo
-echo "Please enter your Quickbase credentials:"
-read -p "Quickbase Realm Host (e.g., your-realm.quickbase.com): " realm_host
-read -p "Quickbase User Token: " user_token
-read -p "Quickbase App ID: " app_id
-
-# Create .env file
-echo "QUICKBASE_REALM_HOST=$realm_host
-QUICKBASE_USER_TOKEN=$user_token
-QUICKBASE_APP_ID=$app_id
-MCP_SERVER_PORT=3535" > "$install_dir/.env"
-
-echo "Credentials saved to .env file."
-
-# Set up Claude Desktop configuration
-echo
-echo "Setting up Claude Desktop configuration..."
-
-# Determine the platform and Claude Desktop config path
-if [[ "$OSTYPE" == "darwin"* ]]; then
-    config_dir="$HOME/Library/Application Support/Claude"
-    config_file="$config_dir/claude_desktop_config.json"
-elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
-    config_dir="$HOME/.config/Claude"
-    config_file="$config_dir/claude_desktop_config.json"
-elif [[ "$OSTYPE" == "msys"* || "$OSTYPE" == "cygwin"* || "$OSTYPE" == "win32"* ]]; then
-    config_dir="$APPDATA/Claude"
-    config_file="$config_dir/claude_desktop_config.json"
-else
-    echo "Unsupported operating system. Please configure Claude Desktop manually."
-    config_file=""
-fi
-
-# Check if config file already exists
-config_backup=""
-if [ -f "$config_file" ]; then
-    config_backup="${config_file}.backup"
-    echo "Backing up existing Claude Desktop configuration to $config_backup"
-    cp "$config_file" "$config_backup"
-    
-    # Read existing config
-    existing_config=$(cat "$config_file")
-    if [[ "$existing_config" == *"\"mcpServers\""* ]]; then
-        echo "Warning: Existing MCP servers configuration found."
-        read -p "Would you like to overwrite it? (y/n): " overwrite
-        if [[ "$overwrite" != "y" && "$overwrite" != "Y" ]]; then
-            echo "Please manually update your Claude Desktop configuration. See the README.md for instructions."
-            exit 0
-        fi
-    fi
-fi
-
-if [ ! -z "$config_file" ]; then
-    # Create config directory if it doesn't exist
-    mkdir -p "$config_dir"
-    
-    # Get absolute paths
-    node_path=$(which node)
-    server_path="$install_dir/src/quickbase/server.js"
-    
-    # Create or update Claude Desktop config
-    echo "{
-  \"mcpServers\": {
-    \"quickbase\": {
-      \"command\": \"$node_path\",
-      \"args\": [
-        \"$server_path\"
-      ],
-      \"env\": {
-        \"QUICKBASE_REALM_HOST\": \"$realm_host\",
-        \"QUICKBASE_USER_TOKEN\": \"$user_token\",
-        \"QUICKBASE_APP_ID\": \"$app_id\",
-        \"MCP_SERVER_PORT\": \"3535\"
-      }
-    }
-  }
-}" > "$config_file"
-
-    echo "Claude Desktop configuration created at: $config_file"
-    if [ ! -z "$config_backup" ]; then
-        echo "Your previous configuration was backed up to: $config_backup"
-    fi
-fi
+chmod +x configure.sh
 
 echo
 echo "======================================================"
-echo "    Installation Complete! 🎉"
+echo "    Environment Setup Complete! 🎉"
 echo "======================================================"
 echo
 echo "The Quickbase MCP connector has been installed to:"
 echo "$install_dir"
 echo
-echo "Configuration:"
-echo "- Claude Desktop is configured to use the connector"
-echo "- Your Quickbase credentials are saved in .env"
-echo
 echo "Next steps:"
-echo "1. Restart Claude Desktop if it's already running"
-echo "2. In Claude Desktop, try a prompt like:"
-echo "   \"List all tables in my Quickbase app\""
+echo "1. Run the configuration script to set up your credentials:"
+echo "   cd $install_dir && ./configure.sh"
 echo
 echo "For more information, see the README.md in the installation directory"
 echo "======================================================"

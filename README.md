@@ -33,7 +33,9 @@ This connector uses the [Model Context Protocol (MCP)](https://modelcontextproto
 
 ## Quick Installation for Claude Desktop (macOS, Windows, Linux)
 
-For the fastest setup with Claude Desktop, run this single command in your terminal:
+For the fastest setup with Claude Desktop, follow these two simple steps:
+
+### Step 1: Install the connector and its dependencies
 
 ```bash
 curl -sSL https://raw.githubusercontent.com/danielbushman/Quickbase-MCP-connector/main/auto_setup.sh | bash
@@ -42,9 +44,19 @@ curl -sSL https://raw.githubusercontent.com/danielbushman/Quickbase-MCP-connecto
 This will:
 1. Clone the repository
 2. Install all dependencies
-3. Prompt for your Quickbase credentials
-4. Configure Claude Desktop to use the connector
-5. Guide you through the setup process
+3. Set up the environment
+
+### Step 2: Configure your credentials
+
+```bash
+cd ~/Quickbase-MCP-connector  # Or your custom installation path
+./configure.sh
+```
+
+This will:
+1. Prompt for your Quickbase credentials
+2. Configure Claude Desktop to use the connector
+3. Guide you through the setup process
 
 ## Manual Installation
 
