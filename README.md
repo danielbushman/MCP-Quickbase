@@ -31,7 +31,22 @@ This connector uses the [Model Context Protocol (MCP)](https://modelcontextproto
 - Node.js 14 or higher
 - Quickbase API credentials (realm hostname, user token, and app ID)
 
-## Installation
+## Quick Installation for Claude Desktop (macOS, Windows, Linux)
+
+For the fastest setup with Claude Desktop, run this single command in your terminal:
+
+```bash
+curl -sSL https://raw.githubusercontent.com/danielbushman/Quickbase-MCP-connector/main/quickbase_install.sh | bash
+```
+
+This will:
+1. Clone the repository
+2. Install all dependencies
+3. Prompt for your Quickbase credentials
+4. Configure Claude Desktop to use the connector
+5. Guide you through the setup process
+
+## Manual Installation
 
 1. Clone the repository:
 ```bash
@@ -52,7 +67,7 @@ cp .env.example .env
 
 ## Quick Start
 
-For those who just want to try this connector with Claude or Claude Code:
+For those who want to try this connector with Claude or Claude Code:
 
 1. Install dependencies and set up the server:
 ```bash
@@ -84,7 +99,7 @@ Add the following configuration:
         "/path/to/Quickbase-MCP-connector/src/quickbase/server.js"
       ],
       "env": {
-        "QUICKBASE_REALM": "your-realm",
+        "QUICKBASE_REALM_HOST": "your-realm",
         "QUICKBASE_USER_TOKEN": "your-user-token",
         "QUICKBASE_APP_ID": "your-app-id"
       }

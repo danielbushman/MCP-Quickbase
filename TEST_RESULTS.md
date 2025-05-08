@@ -7,7 +7,7 @@
 
 - Python 3.8+
 - Node.js 14+
-- QuickBase API (v1)
+- Quickbase API (v1)
 
 ## Testing Summary
 

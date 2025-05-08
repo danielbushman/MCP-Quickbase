@@ -79,7 +79,7 @@ def parse_version(version_str: str) -> Tuple[int, ...]:
     return tuple(int(x) for x in match)
 
 class QuickbaseError(Exception):
-    """Base exception for QuickBase API errors."""
+    """Base exception for Quickbase API errors."""
     def __init__(self, message: str, status_code: int = None, response: dict = None):
         self.message = message
         self.status_code = status_code
@@ -103,7 +103,7 @@ class QuickbaseRateLimitError(QuickbaseError):
     pass
 
 class QuickbaseServerError(QuickbaseError):
-    """Raised when QuickBase server encounters an error."""
+    """Raised when Quickbase server encounters an error."""
     pass
 
 def retry(max_tries: int = 3, delay: float = 1.0, backoff: float = 2.0, 
@@ -202,13 +202,24 @@ class QuickbaseClient:
         """
         url = f"{self.base_url}/{endpoint.lstrip('/')}"
         
+        print(f"DEBUG: Making request: {method} {url}")
+        print(f"DEBUG: Request headers: {self.session.headers}")
+        print(f"DEBUG: Request kwargs: {kwargs}")
+        
         # Log the request
         log_request(method, url, 
                    headers=kwargs.get('headers'), 
                    data=kwargs.get('json') or kwargs.get('data'))
         
-        # Make the request
-        return self.session.request(method, url, **kwargs)
+        try:
+            # Make the request
+            response = self.session.request(method, url, **kwargs)
+            print(f"DEBUG: Response status: {response.status_code}")
+            print(f"DEBUG: Response content: {response.content[:500] if response.content else 'No content'}")
+            return response
+        except Exception as e:
+            print(f"DEBUG: Request failed: {str(e)}")
+            raise
 
     def _handle_response(self, response: requests.Response) -> Any:
         """Handles API response and raises appropriate exceptions.
@@ -271,7 +282,7 @@ class QuickbaseClient:
                 )
             elif status_code >= 500:
                 raise QuickbaseServerError(
-                    "QuickBase server error. Please try again later.",
+                    "Quickbase server error. Please try again later.",
                     status_code,
                     error_data
                 )
@@ -587,12 +598,16 @@ class QuickbaseClient:
             dict: Created record metadata
         """
         try:
-            # Format the data according to QuickBase's API requirements
-            formatted_data = {}
-            for field_id, value in data.items():
-                # Ensure field_id is a string as required by QuickBase API
-                field_id_str = str(field_id)
-                formatted_data[field_id_str] = {"value": value}
+            # If data is already formatted with {"value": ...} structure, use it directly
+            if all(isinstance(v, dict) and "value" in v for v in data.values()):
+                formatted_data = {str(k): v for k, v in data.items()}
+            else:
+                # Format the data according to Quickbase's API requirements
+                formatted_data = {}
+                for field_id, value in data.items():
+                    # Ensure field_id is a string as required by Quickbase API
+                    field_id_str = str(field_id)
+                    formatted_data[field_id_str] = {"value": value}
 
             payload = {
                 "to": table_id,
@@ -629,7 +644,7 @@ class QuickbaseClient:
             if not data:
                 raise ValueError("No data provided for update")
                 
-            # Format the data for QuickBase API
+            # Format the data for Quickbase API
             formatted_data = {"3": {"value": record_id}}  # Record ID field is required
             
             # Add the other fields to update
@@ -711,7 +726,7 @@ class QuickbaseClient:
             return result
                 
         except QuickbaseError as e:
-            # If specific QuickBase error happens, re-raise it
+            # If specific Quickbase error happens, re-raise it
             raise
         except Exception as e:
             # For general errors, raise a QuickbaseError
@@ -992,7 +1007,7 @@ class QuickbaseClient:
             raise QuickbaseError(f"Failed to upload file: {str(e)}")
 
     def download_file(self, table_id: str, record_id: int, field_id: int, version: int = 0) -> bytes:
-        """Downloads a file from QuickBase.
+        """Downloads a file from Quickbase.
 
         Args:
             table_id (str): The ID of the Quickbase table
@@ -1036,7 +1051,7 @@ class QuickbaseClient:
             raise QuickbaseError(f"Failed to download file: {str(e)}")
 
     def delete_file(self, table_id: str, record_id: int, field_id: int, version: int = 0) -> bool:
-        """Deletes a file from QuickBase.
+        """Deletes a file from Quickbase.
 
         Args:
             table_id (str): The ID of the Quickbase table
@@ -1188,7 +1203,7 @@ class QuickbaseClient:
             raise QuickbaseError(f"Failed to get app: {str(e)}")
 
     def create_app(self, name: str, description: Optional[str] = None, options: Optional[dict] = None) -> dict:
-        """Creates a new QuickBase application.
+        """Creates a new Quickbase application.
 
         Args:
             name (str): Name of the application
@@ -1228,7 +1243,7 @@ class QuickbaseClient:
             raise QuickbaseError(message=f"Failed to create app: {str(e)}")
 
     def update_app(self, app_id: str, name: Optional[str] = None, description: Optional[str] = None, options: Optional[dict] = None) -> dict:
-        """Updates an existing QuickBase application.
+        """Updates an existing Quickbase application.
 
         Args:
             app_id (str): The ID of the application
@@ -1276,7 +1291,7 @@ class QuickbaseClient:
             raise QuickbaseError(message=f"Failed to update app: {str(e)}")
 
     def delete_app(self, app_id: str) -> bool:
-        """Deletes a QuickBase application.
+        """Deletes a Quickbase application.
 
         Args:
             app_id (str): The ID of the application
@@ -1309,7 +1324,7 @@ class QuickbaseClient:
             raise QuickbaseError(message=f"Failed to delete app: {str(e)}")
             
     def copy_app(self, app_id: str, name: str, description: str = None, properties: dict = None) -> dict:
-        """Copies a QuickBase application.
+        """Copies a Quickbase application.
 
         Args:
             app_id (str): The ID of the source application
@@ -1562,7 +1577,7 @@ class QuickbaseClient:
 
     # Table Operations
     def create_table(self, app_id: str, name: str, description: Optional[str] = None, fields: Optional[List[dict]] = None, options: Optional[dict] = None) -> dict:
-        """Creates a new table in a QuickBase application.
+        """Creates a new table in a Quickbase application.
 
         Args:
             app_id (str): The ID of the application
@@ -1575,7 +1590,7 @@ class QuickbaseClient:
             dict: Created table information
         """
         try:
-            # Format fields to match QuickBase API requirements
+            # Format fields to match Quickbase API requirements
             formatted_fields = []
             if fields:
                 for field in fields:
@@ -1603,7 +1618,7 @@ class QuickbaseClient:
             raise QuickbaseError(f"Failed to create table: {str(e)}")
 
     def update_table(self, table_id: str, name: Optional[str] = None, description: Optional[str] = None, options: Optional[dict] = None) -> dict:
-        """Updates an existing QuickBase table.
+        """Updates an existing Quickbase table.
 
         Args:
             table_id (str): The ID of the table
@@ -1618,36 +1633,66 @@ class QuickbaseClient:
             QuickbaseError: If update fails
         """
         try:
+            print(f"DEBUG: Updating table {table_id} with name={name}, description={description}")
+            
+            # First get the current table information
+            get_response = self._request("GET", f"tables/{table_id}")
+            current_table = self._handle_response(get_response)
+            print(f"DEBUG: Current table info: {current_table}")
+            
+            # Prepare the update payload
             payload = {}
-            if name:
-                payload["name"] = name
-            if description is not None:
-                payload["description"] = description
+            payload["name"] = name if name is not None else current_table.get("name", "")
+            payload["description"] = description if description is not None else current_table.get("description", "")
+            
+            # Add any additional options
             if options:
                 payload.update(options)
-
-            response = self.session.patch(f"{self.base_url}/tables/{table_id}", json=payload)
-            response.raise_for_status()
-            return response.json()
-        except requests.exceptions.HTTPError as e:
-            status_code = e.response.status_code
-            error_message = str(e)
-            try:
-                error_data = e.response.json()
-                error_message = error_data.get('message', str(e))
-            except:
-                pass
+                
+            print(f"DEBUG: Update payload: {payload}")
             
-            raise QuickbaseError(
-                message=f"Failed to update table: {error_message}",
-                status_code=status_code,
-                response=e.response
-            )
+            # Try using both endpoint formats to see which works
+            try:
+                # First try with POST as recommended
+                print(f"DEBUG: Trying POST to tables/{table_id}")
+                response = self._request("POST", f"tables/{table_id}", json=payload)
+                result = self._handle_response(response)
+                print(f"DEBUG: POST response: {result}")
+                return result
+            except Exception as e1:
+                print(f"DEBUG: POST failed with error: {str(e1)}")
+                
+                # If POST fails, try PATCH as originally implemented
+                try:
+                    print(f"DEBUG: Trying PATCH to tables/{table_id}")
+                    response = self._request("PATCH", f"tables/{table_id}", json=payload)
+                    result = self._handle_response(response)
+                    print(f"DEBUG: PATCH response: {result}")
+                    return result
+                except Exception as e2:
+                    print(f"DEBUG: PATCH failed with error: {str(e2)}")
+                    
+                    # If both fail, try using the Quickbase direct URL approach
+                    try:
+                        print(f"DEBUG: Trying direct session POST to {self.base_url}/tables/{table_id}")
+                        response = self.session.post(f"{self.base_url}/tables/{table_id}", json=payload)
+                        response.raise_for_status()
+                        result = response.json()
+                        print(f"DEBUG: Direct POST response: {result}")
+                        return result
+                    except Exception as e3:
+                        print(f"DEBUG: All methods failed. Raising error.")
+                        raise Exception(f"Failed with multiple methods. POST: {str(e1)}, PATCH: {str(e2)}, Direct: {str(e3)}")
+                    
+        except QuickbaseError as qbe:
+            print(f"DEBUG: QuickbaseError: {str(qbe)}")
+            raise
         except Exception as e:
-            raise QuickbaseError(message=f"Failed to update table: {str(e)}")
+            print(f"DEBUG: General exception: {str(e)}")
+            raise QuickbaseError(f"Failed to update table: {str(e)}")
 
     def delete_table(self, table_id: str) -> bool:
-        """Deletes a QuickBase table.
+        """Deletes a Quickbase table.
 
         Args:
             table_id (str): The ID of the table
@@ -1680,7 +1725,7 @@ class QuickbaseClient:
             raise QuickbaseError(message=f"Failed to delete table: {str(e)}")
 
     def create_field(self, table_id: str, field_name: str, field_type: str, options: Optional[dict] = None) -> dict:
-        """Creates a new field in a QuickBase table.
+        """Creates a new field in a Quickbase table.
 
         Args:
             table_id (str): The ID of the table
@@ -1695,7 +1740,7 @@ class QuickbaseClient:
             QuickbaseError: If the API request fails
         """
         try:
-            # Format payload to match QuickBase API requirements
+            # Format payload to match Quickbase API requirements
             payload = {
                 "label": field_name,
                 "fieldType": field_type,
@@ -1711,7 +1756,7 @@ class QuickbaseClient:
             raise QuickbaseError(f"Failed to create field: {str(e)}")
 
     def update_field(self, table_id: str, field_id: int, name: Optional[str] = None, field_type: Optional[str] = None, options: Optional[dict] = None) -> dict:
-        """Updates an existing field in a QuickBase table.
+        """Updates an existing field in a Quickbase table.
 
         Args:
             table_id (str): The ID of the table
@@ -1774,7 +1819,7 @@ class QuickbaseClient:
             raise QuickbaseError(f"Failed to update field: {str(e)}")
 
     def delete_field(self, table_id: str, field_id: int) -> bool:
-        """Deletes a field from a QuickBase table.
+        """Deletes a field from a Quickbase table.
 
         Args:
             table_id (str): The ID of the table
@@ -2036,7 +2081,7 @@ async def handle_list_tools() -> list[types.Tool]:
         # App Operations
         types.Tool(
             name="create_app",
-            description="Creates a new QuickBase application",
+            description="Creates a new Quickbase application. Only use this tool when explicitly asked to create a new application.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -2059,7 +2104,7 @@ async def handle_list_tools() -> list[types.Tool]:
         ),
         types.Tool(
             name="update_app",
-            description="Updates an existing QuickBase application",
+            description="Updates an existing Quickbase application",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -2096,7 +2141,7 @@ async def handle_list_tools() -> list[types.Tool]:
         ),
         types.Tool(
             name="create_table",
-            description="Creates a new table in a QuickBase application",
+            description="Creates a new table in a Quickbase application",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -2137,7 +2182,7 @@ async def handle_list_tools() -> list[types.Tool]:
         ),
         types.Tool(
             name="update_table",
-            description="Updates an existing QuickBase table",
+            description="Updates an existing Quickbase table",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -2180,7 +2225,7 @@ async def handle_list_tools() -> list[types.Tool]:
         ),
         types.Tool(
             name="create_field",
-            description="Creates a new field in a QuickBase table",
+            description="Creates a new field in a Quickbase table",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -2207,7 +2252,7 @@ async def handle_list_tools() -> list[types.Tool]:
         ),
         types.Tool(
             name="update_field",
-            description="Updates an existing field in a QuickBase table",
+            description="Updates an existing field in a Quickbase table",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -2671,6 +2716,8 @@ async def handle_call_tool(name: str, arguments: dict[str, str]) -> list[types.T
                 if not isinstance(data, dict) or not data:
                     raise ValueError("Data must be a non-empty dictionary")
                 
+                # Process the data - data could be in simplified format or already formatted with {"value": ...}
+                # The create_record method will handle both formats
                 results = qb_client.create_record(table_id, data)
                 return [
                     types.TextContent(
@@ -2896,14 +2943,20 @@ async def handle_call_tool(name: str, arguments: dict[str, str]) -> list[types.T
                 raise ValueError("Missing required arguments: table_id and records")
             
             try:
-                # Format the records according to QuickBase API expectations
+                # Format the records according to Quickbase API expectations
                 formatted_records = []
                 for record in records:
                     formatted_record = {}
-                    for field_id, value in record.items():
-                        # Convert field_id to string if it's an integer
-                        field_id_str = str(field_id)
-                        formatted_record[field_id_str] = {"value": value}
+                    # Check if record is already in the expected format with {"value": ...} structure
+                    if all(isinstance(v, dict) and "value" in v for v in record.values()):
+                        # Just ensure field_ids are strings
+                        formatted_record = {str(k): v for k, v in record.items()}
+                    else:
+                        # Need to format with {"value": ...} structure
+                        for field_id, value in record.items():
+                            # Convert field_id to string if it's an integer
+                            field_id_str = str(field_id)
+                            formatted_record[field_id_str] = {"value": value}
                     formatted_records.append(formatted_record)
                 
                 results = qb_client.bulk_create_records(table_id, formatted_records)
@@ -2931,19 +2984,33 @@ async def handle_call_tool(name: str, arguments: dict[str, str]) -> list[types.T
                 raise ValueError("Missing required arguments: table_id and records")
                 
             try:
-                # Format the records according to QuickBase API expectations
+                # Format the records according to Quickbase API expectations
                 formatted_records = []
                 for record in records:
-                    formatted_record = {}
-                    for field_id, value in record.items():
-                        # Make sure the record ID (field 3) is included
-                        if field_id == "3" or field_id == 3:
-                            record_id = value
-                            formatted_record["3"] = {"value": record_id}
-                        else:
-                            # Convert field_id to string if it's an integer
-                            field_id_str = str(field_id)
-                            formatted_record[field_id_str] = {"value": value}
+                    # Check if record is already in the expected format with {"value": ...} structure
+                    if all(isinstance(v, dict) and "value" in v for v in record.values()):
+                        # Just ensure field_ids are strings and record_id (field 3) is included
+                        formatted_record = {str(k): v for k, v in record.items()}
+                        # Make sure field 3 (record ID) is included
+                        if "3" not in formatted_record:
+                            raise ValueError("Record ID (field 3) is required for updates")
+                    else:
+                        # Need to format with {"value": ...} structure
+                        formatted_record = {}
+                        record_id_found = False
+                        for field_id, value in record.items():
+                            # Make sure the record ID (field 3) is included
+                            if field_id == "3" or field_id == 3:
+                                record_id = value
+                                formatted_record["3"] = {"value": record_id}
+                                record_id_found = True
+                            else:
+                                # Convert field_id to string if it's an integer
+                                field_id_str = str(field_id)
+                                formatted_record[field_id_str] = {"value": value}
+                        if not record_id_found:
+                            raise ValueError("Record ID (field 3) is required for updates")
+                            
                     formatted_records.append(formatted_record)
                 
                 results = qb_client.bulk_update_records(table_id, formatted_records)
@@ -2973,7 +3040,7 @@ async def handle_call_tool(name: str, arguments: dict[str, str]) -> list[types.T
                 raise ValueError("Missing 'app_id' or 'name' argument")
 
             try:
-                # Format fields to match QuickBase API requirements
+                # Format fields to match Quickbase API requirements
                 formatted_fields = []
                 if fields:
                     for field in fields:
@@ -3002,20 +3069,75 @@ async def handle_call_tool(name: str, arguments: dict[str, str]) -> list[types.T
                     )
                 ]
         elif name == "update_table":
-            table_id = arguments.get("table_id")
-            name = arguments.get("name")
-            description = arguments.get("description")
-            options = arguments.get("options", {})
-            if not table_id:
-                raise ValueError("Missing 'table_id' argument")
+            try:
+                table_id = arguments.get("table_id")
+                name_arg = arguments.get("name")
+                description = arguments.get("description")
+                options = arguments.get("options", {})
+                
+                if not table_id:
+                    raise ValueError("Missing 'table_id' argument")
 
-            results = qb_client.update_table(table_id, name, description, options)
-            return [
-                types.TextContent(
-                    type="text",
-                    text=f"Update Table Result (JSON):\n{json.dumps(results, indent=2)}",
-                )
-            ]
+                print(f"DEBUG: Handler - update_table called with args: table_id={table_id}, name={name_arg}, description={description}")
+                
+                # Let's implement a direct approach for updating tables
+                try:
+                    # First get the current table info
+                    app_id = os.getenv('QUICKBASE_APP_ID')
+                    response = qb_client.session.get(f"{qb_client.base_url}/tables/{table_id}")
+                    current_table = response.json()
+                    print(f"DEBUG: Current table: {current_table}")
+                    
+                    # Create update payload
+                    payload = {
+                        "name": name_arg if name_arg is not None else current_table.get("name", ""),
+                        "description": description if description is not None else current_table.get("description", ""),
+                    }
+                    if options:
+                        payload.update(options)
+                    print(f"DEBUG: Update payload: {payload}")
+                    
+                    # Try both POST and PATCH to see which one works
+                    try:
+                        response = qb_client.session.post(f"{qb_client.base_url}/tables/{table_id}", json=payload)
+                        response.raise_for_status()
+                        results = response.json()
+                        print(f"DEBUG: POST success: {results}")
+                    except Exception as post_error:
+                        print(f"DEBUG: POST failed: {str(post_error)}")
+                        response = qb_client.session.patch(f"{qb_client.base_url}/tables/{table_id}", json=payload)
+                        response.raise_for_status()
+                        results = response.json()
+                        print(f"DEBUG: PATCH success: {results}")
+                    
+                    return [
+                        types.TextContent(
+                            type="text",
+                            text=f"Update Table Result (JSON):\n{json.dumps(results, indent=2)}",
+                        )
+                    ]
+                except Exception as direct_error:
+                    print(f"DEBUG: Direct approach failed: {str(direct_error)}")
+                    
+                    # Try the original method as fallback
+                    results = qb_client.update_table(table_id, name_arg, description, options)
+                    print(f"DEBUG: Handler - original update_table method results: {results}")
+                    
+                    return [
+                        types.TextContent(
+                            type="text",
+                            text=f"Update Table Result (JSON):\n{json.dumps(results, indent=2)}",
+                        )
+                    ]
+            except Exception as e:
+                print(f"DEBUG: Handler - update_table exception: {str(e)}")
+                # Return the error as a response instead of raising
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Error updating table: {str(e)}",
+                    )
+                ]
         elif name == "create_field":
             table_id = arguments.get("table_id")
             field_name = arguments.get("field_name")
@@ -3055,7 +3177,7 @@ async def handle_call_tool(name: str, arguments: dict[str, str]) -> list[types.T
                 types.TextContent(
                     type="text",
                     text=f"Field Update Status: Limited API Support\n\n"
-                         f"The QuickBase API has limitations with field updates. While we've attempted multiple solutions, "
+                         f"The Quickbase API has limitations with field updates. While we've attempted multiple solutions, "
                          f"the API consistently returns errors related to field updating.\n\n"
                          f"Requested Update:\n"
                          f"- Field ID: {field_id}\n"
@@ -3063,7 +3185,7 @@ async def handle_call_tool(name: str, arguments: dict[str, str]) -> list[types.T
                          f"- New Name: {name if name else 'Not specified'}\n"
                          f"- Field Help: {options.get('fieldHelp', 'Not specified')}\n"
                          f"- Properties: {json.dumps(options.get('properties', {}))}\n\n"
-                         f"To update fields, please use the QuickBase UI or direct API calls with the correct authentication."
+                         f"To update fields, please use the Quickbase UI or direct API calls with the correct authentication."
                 )
             ]
         raise ValueError(f"Unknown tool: {name}")
