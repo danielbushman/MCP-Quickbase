@@ -51,8 +51,16 @@ echo "Environment checks passed. Proceeding with installation..."
 echo
 echo "Where would you like to install the Quickbase MCP connector?"
 echo "Default: $HOME/Quickbase-MCP-connector"
-read -p "Installation path [$HOME/Quickbase-MCP-connector]: " install_dir
-install_dir=${install_dir:-"$HOME/Quickbase-MCP-connector"}
+read -p "Installation path [$HOME/Quickbase-MCP-connector]: " user_install_dir
+# Set install directory with a fallback to default
+if [ -z "$user_install_dir" ]; then
+    install_dir="$HOME/Quickbase-MCP-connector"
+else
+    install_dir="$user_install_dir"
+fi
+
+# Print out value for debugging
+echo "Using installation directory: $install_dir"
 
 # Check if directory already exists
 if [ -d "${install_dir}" ]; then
@@ -115,17 +123,20 @@ chmod +x src/quickbase/server.js
 chmod +x run_tests.sh
 chmod +x configure.sh
 
+# Get the absolute path without requiring realpath
+cd "${install_dir}" && FINAL_DIR="$(pwd)" && cd - > /dev/null
+
 echo
 echo "======================================================"
 echo "    Environment Setup Complete! 🎉"
 echo "======================================================"
 echo
 echo "The Quickbase MCP connector has been installed to:"
-echo "${install_dir}"
+echo "$FINAL_DIR"
 echo
 echo "Next steps:"
 echo "1. Run the configuration script to set up your credentials:"
-echo "   cd \"${install_dir}\" && ./configure.sh"
+echo "   cd \"$FINAL_DIR\" && ./configure.sh"
 echo
 echo "For more information, see the README.md in the installation directory"
 echo "======================================================"
