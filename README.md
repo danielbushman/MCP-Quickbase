@@ -36,7 +36,7 @@ This connector uses the [Model Context Protocol (MCP)](https://modelcontextproto
 For the fastest setup with Claude Desktop, run this single command in your terminal:
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/danielbushman/Quickbase-MCP-connector/main/quickbase_install.sh | bash
+curl -sSL https://raw.githubusercontent.com/danielbushman/Quickbase-MCP-connector/main/auto_setup.sh | bash
 ```
 
 This will:
