@@ -79,7 +79,7 @@ def parse_version(version_str: str) -> Tuple[int, ...]:
     return tuple(int(x) for x in match)
 
 class QuickbaseError(Exception):
-    """Base exception for QuickBase API errors."""
+    """Base exception for Quickbase API errors."""
     def __init__(self, message: str, status_code: int = None, response: dict = None):
         self.message = message
         self.status_code = status_code
@@ -103,7 +103,7 @@ class QuickbaseRateLimitError(QuickbaseError):
     pass
 
 class QuickbaseServerError(QuickbaseError):
-    """Raised when QuickBase server encounters an error."""
+    """Raised when Quickbase server encounters an error."""
     pass
 
 def retry(max_tries: int = 3, delay: float = 1.0, backoff: float = 2.0, 
@@ -282,7 +282,7 @@ class QuickbaseClient:
                 )
             elif status_code >= 500:
                 raise QuickbaseServerError(
-                    "QuickBase server error. Please try again later.",
+                    "Quickbase server error. Please try again later.",
                     status_code,
                     error_data
                 )
@@ -602,10 +602,10 @@ class QuickbaseClient:
             if all(isinstance(v, dict) and "value" in v for v in data.values()):
                 formatted_data = {str(k): v for k, v in data.items()}
             else:
-                # Format the data according to QuickBase's API requirements
+                # Format the data according to Quickbase's API requirements
                 formatted_data = {}
                 for field_id, value in data.items():
-                    # Ensure field_id is a string as required by QuickBase API
+                    # Ensure field_id is a string as required by Quickbase API
                     field_id_str = str(field_id)
                     formatted_data[field_id_str] = {"value": value}
 
@@ -644,7 +644,7 @@ class QuickbaseClient:
             if not data:
                 raise ValueError("No data provided for update")
                 
-            # Format the data for QuickBase API
+            # Format the data for Quickbase API
             formatted_data = {"3": {"value": record_id}}  # Record ID field is required
             
             # Add the other fields to update
@@ -726,7 +726,7 @@ class QuickbaseClient:
             return result
                 
         except QuickbaseError as e:
-            # If specific QuickBase error happens, re-raise it
+            # If specific Quickbase error happens, re-raise it
             raise
         except Exception as e:
             # For general errors, raise a QuickbaseError
@@ -1007,7 +1007,7 @@ class QuickbaseClient:
             raise QuickbaseError(f"Failed to upload file: {str(e)}")
 
     def download_file(self, table_id: str, record_id: int, field_id: int, version: int = 0) -> bytes:
-        """Downloads a file from QuickBase.
+        """Downloads a file from Quickbase.
 
         Args:
             table_id (str): The ID of the Quickbase table
@@ -1051,7 +1051,7 @@ class QuickbaseClient:
             raise QuickbaseError(f"Failed to download file: {str(e)}")
 
     def delete_file(self, table_id: str, record_id: int, field_id: int, version: int = 0) -> bool:
-        """Deletes a file from QuickBase.
+        """Deletes a file from Quickbase.
 
         Args:
             table_id (str): The ID of the Quickbase table
@@ -1203,7 +1203,7 @@ class QuickbaseClient:
             raise QuickbaseError(f"Failed to get app: {str(e)}")
 
     def create_app(self, name: str, description: Optional[str] = None, options: Optional[dict] = None) -> dict:
-        """Creates a new QuickBase application.
+        """Creates a new Quickbase application.
 
         Args:
             name (str): Name of the application
@@ -1243,7 +1243,7 @@ class QuickbaseClient:
             raise QuickbaseError(message=f"Failed to create app: {str(e)}")
 
     def update_app(self, app_id: str, name: Optional[str] = None, description: Optional[str] = None, options: Optional[dict] = None) -> dict:
-        """Updates an existing QuickBase application.
+        """Updates an existing Quickbase application.
 
         Args:
             app_id (str): The ID of the application
@@ -1291,7 +1291,7 @@ class QuickbaseClient:
             raise QuickbaseError(message=f"Failed to update app: {str(e)}")
 
     def delete_app(self, app_id: str) -> bool:
-        """Deletes a QuickBase application.
+        """Deletes a Quickbase application.
 
         Args:
             app_id (str): The ID of the application
@@ -1324,7 +1324,7 @@ class QuickbaseClient:
             raise QuickbaseError(message=f"Failed to delete app: {str(e)}")
             
     def copy_app(self, app_id: str, name: str, description: str = None, properties: dict = None) -> dict:
-        """Copies a QuickBase application.
+        """Copies a Quickbase application.
 
         Args:
             app_id (str): The ID of the source application
@@ -1577,7 +1577,7 @@ class QuickbaseClient:
 
     # Table Operations
     def create_table(self, app_id: str, name: str, description: Optional[str] = None, fields: Optional[List[dict]] = None, options: Optional[dict] = None) -> dict:
-        """Creates a new table in a QuickBase application.
+        """Creates a new table in a Quickbase application.
 
         Args:
             app_id (str): The ID of the application
@@ -1590,7 +1590,7 @@ class QuickbaseClient:
             dict: Created table information
         """
         try:
-            # Format fields to match QuickBase API requirements
+            # Format fields to match Quickbase API requirements
             formatted_fields = []
             if fields:
                 for field in fields:
@@ -1618,7 +1618,7 @@ class QuickbaseClient:
             raise QuickbaseError(f"Failed to create table: {str(e)}")
 
     def update_table(self, table_id: str, name: Optional[str] = None, description: Optional[str] = None, options: Optional[dict] = None) -> dict:
-        """Updates an existing QuickBase table.
+        """Updates an existing Quickbase table.
 
         Args:
             table_id (str): The ID of the table
@@ -1692,7 +1692,7 @@ class QuickbaseClient:
             raise QuickbaseError(f"Failed to update table: {str(e)}")
 
     def delete_table(self, table_id: str) -> bool:
-        """Deletes a QuickBase table.
+        """Deletes a Quickbase table.
 
         Args:
             table_id (str): The ID of the table
@@ -1725,7 +1725,7 @@ class QuickbaseClient:
             raise QuickbaseError(message=f"Failed to delete table: {str(e)}")
 
     def create_field(self, table_id: str, field_name: str, field_type: str, options: Optional[dict] = None) -> dict:
-        """Creates a new field in a QuickBase table.
+        """Creates a new field in a Quickbase table.
 
         Args:
             table_id (str): The ID of the table
@@ -1740,7 +1740,7 @@ class QuickbaseClient:
             QuickbaseError: If the API request fails
         """
         try:
-            # Format payload to match QuickBase API requirements
+            # Format payload to match Quickbase API requirements
             payload = {
                 "label": field_name,
                 "fieldType": field_type,
@@ -1756,7 +1756,7 @@ class QuickbaseClient:
             raise QuickbaseError(f"Failed to create field: {str(e)}")
 
     def update_field(self, table_id: str, field_id: int, name: Optional[str] = None, field_type: Optional[str] = None, options: Optional[dict] = None) -> dict:
-        """Updates an existing field in a QuickBase table.
+        """Updates an existing field in a Quickbase table.
 
         Args:
             table_id (str): The ID of the table
@@ -1819,7 +1819,7 @@ class QuickbaseClient:
             raise QuickbaseError(f"Failed to update field: {str(e)}")
 
     def delete_field(self, table_id: str, field_id: int) -> bool:
-        """Deletes a field from a QuickBase table.
+        """Deletes a field from a Quickbase table.
 
         Args:
             table_id (str): The ID of the table
@@ -2081,7 +2081,7 @@ async def handle_list_tools() -> list[types.Tool]:
         # App Operations
         types.Tool(
             name="create_app",
-            description="Creates a new QuickBase application. Only use this tool when explicitly asked to create a new application.",
+            description="Creates a new Quickbase application. Only use this tool when explicitly asked to create a new application.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -2104,7 +2104,7 @@ async def handle_list_tools() -> list[types.Tool]:
         ),
         types.Tool(
             name="update_app",
-            description="Updates an existing QuickBase application",
+            description="Updates an existing Quickbase application",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -2141,7 +2141,7 @@ async def handle_list_tools() -> list[types.Tool]:
         ),
         types.Tool(
             name="create_table",
-            description="Creates a new table in a QuickBase application",
+            description="Creates a new table in a Quickbase application",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -2182,7 +2182,7 @@ async def handle_list_tools() -> list[types.Tool]:
         ),
         types.Tool(
             name="update_table",
-            description="Updates an existing QuickBase table",
+            description="Updates an existing Quickbase table",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -2225,7 +2225,7 @@ async def handle_list_tools() -> list[types.Tool]:
         ),
         types.Tool(
             name="create_field",
-            description="Creates a new field in a QuickBase table",
+            description="Creates a new field in a Quickbase table",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -2252,7 +2252,7 @@ async def handle_list_tools() -> list[types.Tool]:
         ),
         types.Tool(
             name="update_field",
-            description="Updates an existing field in a QuickBase table",
+            description="Updates an existing field in a Quickbase table",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -2943,7 +2943,7 @@ async def handle_call_tool(name: str, arguments: dict[str, str]) -> list[types.T
                 raise ValueError("Missing required arguments: table_id and records")
             
             try:
-                # Format the records according to QuickBase API expectations
+                # Format the records according to Quickbase API expectations
                 formatted_records = []
                 for record in records:
                     formatted_record = {}
@@ -2984,7 +2984,7 @@ async def handle_call_tool(name: str, arguments: dict[str, str]) -> list[types.T
                 raise ValueError("Missing required arguments: table_id and records")
                 
             try:
-                # Format the records according to QuickBase API expectations
+                # Format the records according to Quickbase API expectations
                 formatted_records = []
                 for record in records:
                     # Check if record is already in the expected format with {"value": ...} structure
@@ -3040,7 +3040,7 @@ async def handle_call_tool(name: str, arguments: dict[str, str]) -> list[types.T
                 raise ValueError("Missing 'app_id' or 'name' argument")
 
             try:
-                # Format fields to match QuickBase API requirements
+                # Format fields to match Quickbase API requirements
                 formatted_fields = []
                 if fields:
                     for field in fields:
@@ -3177,7 +3177,7 @@ async def handle_call_tool(name: str, arguments: dict[str, str]) -> list[types.T
                 types.TextContent(
                     type="text",
                     text=f"Field Update Status: Limited API Support\n\n"
-                         f"The QuickBase API has limitations with field updates. While we've attempted multiple solutions, "
+                         f"The Quickbase API has limitations with field updates. While we've attempted multiple solutions, "
                          f"the API consistently returns errors related to field updating.\n\n"
                          f"Requested Update:\n"
                          f"- Field ID: {field_id}\n"
@@ -3185,7 +3185,7 @@ async def handle_call_tool(name: str, arguments: dict[str, str]) -> list[types.T
                          f"- New Name: {name if name else 'Not specified'}\n"
                          f"- Field Help: {options.get('fieldHelp', 'Not specified')}\n"
                          f"- Properties: {json.dumps(options.get('properties', {}))}\n\n"
-                         f"To update fields, please use the QuickBase UI or direct API calls with the correct authentication."
+                         f"To update fields, please use the Quickbase UI or direct API calls with the correct authentication."
                 )
             ]
         raise ValueError(f"Unknown tool: {name}")

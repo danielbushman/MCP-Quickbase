@@ -1,6 +1,6 @@
-# QuickBase MCP Tools Documentation
+# Quickbase MCP Tools Documentation
 
-This documentation provides details on how to use the Model Context Protocol (MCP) tools for interacting with QuickBase. These tools allow you to build integrations with QuickBase applications using AI assistants.
+This documentation provides details on how to use the Model Context Protocol (MCP) tools for interacting with Quickbase. These tools allow you to build integrations with Quickbase applications using AI assistants.
 
 ## Table of Contents
 
@@ -39,7 +39,7 @@ This documentation provides details on how to use the Model Context Protocol (MC
 
 ### Authentication
 
-All QuickBase API tools require authentication. Before using any tool, you must set up your authentication credentials:
+All Quickbase API tools require authentication. Before using any tool, you must set up your authentication credentials:
 
 ```bash
 QUICKBASE_REALM_HOST=your-realm.quickbase.com
@@ -51,9 +51,9 @@ These variables can be set in a `.env` file or directly in your environment via 
 
 ### Error Handling
 
-The QuickBase MCP tools use a structured error handling system with the following error types:
+The Quickbase MCP tools use a structured error handling system with the following error types:
 
-- `QuickbaseError`: Base exception for all QuickBase API errors
+- `QuickbaseError`: Base exception for all Quickbase API errors
 - `QuickbaseAuthError`: Authentication-related errors
 - `QuickbaseRateLimitError`: API rate limit exceeded
 - `QuickbaseClientError`: Client-side errors (4xx)
@@ -67,7 +67,7 @@ Errors include:
 
 ### Caching
 
-The QuickBase MCP integration includes caching for improved performance. Caching is enabled by default for the following operations:
+The Quickbase MCP integration includes caching for improved performance. Caching is enabled by default for the following operations:
 
 - App tables
 - Table schemas
@@ -92,7 +92,7 @@ The retry mechanism uses exponential backoff with jitter to avoid overwhelming t
 
 ### test_connection
 
-Tests the connection to QuickBase.
+Tests the connection to Quickbase.
 
 **Parameters:** None
 
@@ -105,7 +105,7 @@ mcp__quickbase__test_connection
 
 **Response:**
 ```
-Connected to QuickBase successfully.
+Connected to Quickbase successfully.
 ```
 
 ### configure_cache
@@ -130,7 +130,7 @@ Cache configuration updated successfully. Caching is now enabled and existing ca
 
 ### create_app
 
-Creates a new QuickBase application.
+Creates a new Quickbase application.
 
 **Parameters:**
 - `name` (string, required): Name for the new application
@@ -157,7 +157,7 @@ mcp__quickbase__create_app(name="Customer Feedback", description="Track and anal
 
 ### update_app
 
-Updates an existing QuickBase application.
+Updates an existing Quickbase application.
 
 **Parameters:**
 - `app_id` (string, required): The ID of the application to update
@@ -187,7 +187,7 @@ mcp__quickbase__update_app(app_id="bqrxzt5wq", name="Customer Feedback & Support
 
 ### list_tables
 
-Lists all tables in the QuickBase application.
+Lists all tables in the Quickbase application.
 
 **Parameters:** None
 
@@ -216,7 +216,7 @@ mcp__quickbase__list_tables()
 
 ### create_table
 
-Creates a new table in a QuickBase application.
+Creates a new table in a Quickbase application.
 
 **Parameters:**
 - `app_id` (string, required): The ID of the application
@@ -262,7 +262,7 @@ mcp__quickbase__create_table(
 
 ### update_table
 
-Updates an existing QuickBase table.
+Updates an existing Quickbase table.
 
 **Parameters:**
 - `table_id` (string, required): The ID of the table to update
@@ -295,7 +295,7 @@ mcp__quickbase__update_table(
 
 ### get_table_fields
 
-Retrieves all fields in a QuickBase table.
+Retrieves all fields in a Quickbase table.
 
 **Parameters:**
 - `table_id` (string, required): The ID of the table
@@ -341,7 +341,7 @@ mcp__quickbase__get_table_fields(table_id="bqrxzt5wq")
 
 ### create_field
 
-Creates a new field in a QuickBase table.
+Creates a new field in a Quickbase table.
 
 **Parameters:**
 - `table_id` (string, required): The ID of the table
@@ -380,7 +380,7 @@ mcp__quickbase__create_field(
 
 ### update_field
 
-Updates an existing field in a QuickBase table.
+Updates an existing field in a Quickbase table.
 
 **Parameters:**
 - `table_id` (string, required): The ID of the table
@@ -426,7 +426,7 @@ Executes a query against a Quickbase table with optional pagination.
 
 **Parameters:**
 - `table_id` (string, required): The ID of the Quickbase table
-- `where` (string, optional): Query criteria using QuickBase query syntax
+- `where` (string, optional): Query criteria using Quickbase query syntax
 - `select` (array, optional): Fields to select (field IDs)
 - `options` (object, optional): Query options for filtering, ordering, and pagination
   - `orderBy` (array, optional): Fields to order results by
