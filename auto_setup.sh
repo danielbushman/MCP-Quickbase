@@ -1,4 +1,6 @@
 #!/bin/bash
+# This script will install and configure the Quickbase MCP connector
+# It's designed to work when run both locally and via curl | bash
 
 echo "========================================="
 echo "    Quickbase MCP Connector Installer"
@@ -7,7 +9,7 @@ echo "========================================="
 
 # Create temp directory
 temp_dir=$(mktemp -d)
-cd "$temp_dir"
+cd "$temp_dir" || { echo "Failed to create temp directory"; exit 1; }
 
 echo "Checking for required dependencies..."
 
@@ -47,50 +49,64 @@ fi
 
 echo "Environment checks passed. Proceeding with installation..."
 
-# Get install location
-echo
-echo "Where would you like to install the Quickbase MCP connector?"
-echo "Default: $HOME/Quickbase-MCP-connector"
-read -p "Installation path [$HOME/Quickbase-MCP-connector]: " user_install_dir
-# Set install directory with a fallback to default
-if [ -z "$user_install_dir" ]; then
-    # Default location
-    export install_dir="$HOME/Quickbase-MCP-connector"
+# Set a default installation directory
+DEFAULT_INSTALL_DIR="$HOME/Quickbase-MCP-connector"
+
+# When running curl | bash, let's just use the default location
+# for a more reliable experience
+if [ -t 0 ]; then
+    # Interactive terminal, ask for location
+    echo
+    echo "Where would you like to install the Quickbase MCP connector?"
+    echo "Default: $DEFAULT_INSTALL_DIR"
+    read -p "Installation path [$DEFAULT_INSTALL_DIR]: " user_install_dir
+    if [ -z "$user_install_dir" ]; then
+        # User pressed Enter, use default
+        INSTALL_DIR="$DEFAULT_INSTALL_DIR"
+    else
+        # User provided a path
+        INSTALL_DIR="$user_install_dir"
+    fi
 else
-    # User provided location
-    export install_dir="$user_install_dir"
+    # Non-interactive (curl piped to bash), use default
+    echo "Using default installation directory for non-interactive install."
+    INSTALL_DIR="$DEFAULT_INSTALL_DIR"
 fi
 
-# Print out value for debugging
-echo "Using installation directory: $install_dir"
+# Make sure it's an absolute path
+if [[ "$INSTALL_DIR" != /* ]]; then
+    INSTALL_DIR="$PWD/$INSTALL_DIR"
+fi
+
+echo "Installing to: $INSTALL_DIR"
 
 # Check if directory already exists
-if [ -d "${install_dir}" ]; then
-    echo "Warning: Directory ${install_dir} already exists."
+if [ -d "${INSTALL_DIR}" ]; then
+    echo "Warning: Directory ${INSTALL_DIR} already exists."
     read -p "Do you want to continue and possibly overwrite existing files? (y/n): " overwrite
     if [[ "$overwrite" != "y" && "$overwrite" != "Y" ]]; then
         echo "Installation cancelled."
         exit 1
     fi
     # Remove the directory to avoid git clone errors
-    rm -rf "${install_dir}"
+    rm -rf "${INSTALL_DIR}"
 fi
 
 # Create the directory
-mkdir -p "${install_dir}"
+mkdir -p "${INSTALL_DIR}"
 
 # Clone or update the repository
 echo "Setting up the Quickbase MCP connector repository..."
 
 # Check if .git directory exists (it's already a git repo)
-if [ -d "${install_dir}/.git" ]; then
+if [ -d "${INSTALL_DIR}/.git" ]; then
     # It's already a git repo, just pull the latest changes
     echo "Repository already exists, updating it..."
-    (cd "${install_dir}" && git pull)
+    (cd "${INSTALL_DIR}" && git pull)
 else
     # Fresh clone
     echo "Cloning the repository..."
-    git clone https://github.com/danielbushman/Quickbase-MCP-connector.git "${install_dir}"
+    git clone https://github.com/danielbushman/Quickbase-MCP-connector.git "${INSTALL_DIR}"
 fi
 
 if [ $? -ne 0 ]; then
@@ -101,7 +117,7 @@ fi
 echo "Repository setup completed successfully."
 
 # Change to the installation directory
-cd "${install_dir}"
+cd "${INSTALL_DIR}" || { echo "Failed to change to installation directory"; exit 1; }
 
 # Create virtual environment
 echo "Creating Python virtual environment..."
@@ -125,8 +141,9 @@ chmod +x src/quickbase/server.js
 chmod +x run_tests.sh
 chmod +x configure.sh
 
-# Direct output with hardcoded paths where necessary
-INSTALLATION_PATH="$install_dir"
+# Full and complete path now stored in INSTALL_DIR
+# Use current directory for certainty
+CURRENT_DIR=$(pwd)
 
 echo
 echo "======================================================"
@@ -134,11 +151,11 @@ echo "    Environment Setup Complete! 🎉"
 echo "======================================================"
 echo
 echo "The Quickbase MCP connector has been installed to:"
-echo "$INSTALLATION_PATH"
+echo "$CURRENT_DIR"
 echo
 echo "Next steps:"
 echo "1. Run the configuration script to set up your credentials:"
-printf "   cd \"%s\" && ./configure.sh\n" "$INSTALLATION_PATH"
+echo "   cd \"$CURRENT_DIR\" && ./configure.sh"
 echo
 echo "For more information, see the README.md in the installation directory"
 echo "======================================================"
