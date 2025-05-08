@@ -55,33 +55,43 @@ read -p "Installation path [$HOME/Quickbase-MCP-connector]: " install_dir
 install_dir=${install_dir:-"$HOME/Quickbase-MCP-connector"}
 
 # Check if directory already exists
-if [ -d "$install_dir" ]; then
-    echo "Warning: Directory $install_dir already exists."
+if [ -d "${install_dir}" ]; then
+    echo "Warning: Directory ${install_dir} already exists."
     read -p "Do you want to continue and possibly overwrite existing files? (y/n): " overwrite
     if [[ "$overwrite" != "y" && "$overwrite" != "Y" ]]; then
         echo "Installation cancelled."
         exit 1
     fi
     # Remove the directory to avoid git clone errors
-    rm -rf "$install_dir"
+    rm -rf "${install_dir}"
 fi
 
 # Create the directory
-mkdir -p "$install_dir"
+mkdir -p "${install_dir}"
 
-# Clone the repository
-echo "Cloning the Quickbase MCP connector repository..."
-git clone https://github.com/danielbushman/Quickbase-MCP-connector.git "$install_dir"
+# Clone or update the repository
+echo "Setting up the Quickbase MCP connector repository..."
+
+# Check if .git directory exists (it's already a git repo)
+if [ -d "${install_dir}/.git" ]; then
+    # It's already a git repo, just pull the latest changes
+    echo "Repository already exists, updating it..."
+    (cd "${install_dir}" && git pull)
+else
+    # Fresh clone
+    echo "Cloning the repository..."
+    git clone https://github.com/danielbushman/Quickbase-MCP-connector.git "${install_dir}"
+fi
 
 if [ $? -ne 0 ]; then
-    echo "Failed to clone repository. Please check your internet connection and try again."
+    echo "Failed to set up repository. Please check your internet connection and try again."
     exit 1
 fi
 
-echo "Repository cloned successfully."
+echo "Repository setup completed successfully."
 
 # Change to the installation directory
-cd "$install_dir"
+cd "${install_dir}"
 
 # Create virtual environment
 echo "Creating Python virtual environment..."
@@ -111,11 +121,11 @@ echo "    Environment Setup Complete! 🎉"
 echo "======================================================"
 echo
 echo "The Quickbase MCP connector has been installed to:"
-echo "$install_dir"
+echo "${install_dir}"
 echo
 echo "Next steps:"
 echo "1. Run the configuration script to set up your credentials:"
-echo "   cd $install_dir && ./configure.sh"
+echo "   cd \"${install_dir}\" && ./configure.sh"
 echo
 echo "For more information, see the README.md in the installation directory"
 echo "======================================================"
