@@ -59,6 +59,14 @@ export class QuickbaseClient {
   }
   
   /**
+   * Get the client configuration
+   * @returns Current configuration
+   */
+  public getConfig(): QuickbaseConfig {
+    return { ...this.config };
+  }
+  
+  /**
    * Sends a request to the Quickbase API
    * @param options Request options
    * @returns API response
