@@ -2,6 +2,7 @@ import { QuickbaseConfig } from '../types/config';
 import { ApiError, ApiResponse, RequestOptions } from '../types/api';
 import { CacheService } from '../utils/cache';
 import { createLogger } from '../utils/logger';
+import { withRetry, RetryOptions } from '../utils/retry';
 
 const logger = createLogger('QuickbaseClient');
 
@@ -67,45 +68,45 @@ export class QuickbaseClient {
   }
   
   /**
-   * Sends a request to the Quickbase API
+   * Sends a request to the Quickbase API with retry logic
    * @param options Request options
    * @returns API response
    */
   async request<T>(options: RequestOptions): Promise<ApiResponse<T>> {
-    const { method, path, body, params, headers = {}, skipCache = false } = options;
-    
-    // Build full URL with query parameters
-    let url = `${this.baseUrl}${path}`;
-    if (params && Object.keys(params).length > 0) {
-      const searchParams = new URLSearchParams();
-      Object.entries(params).forEach(([key, value]) => {
-        searchParams.append(key, value);
-      });
-      url += `?${searchParams.toString()}`;
-    }
-    
-    // Check cache for GET requests
-    const cacheKey = `${method}:${url}`;
-    if (method === 'GET' && !skipCache) {
-      const cachedResponse = this.cache.get<ApiResponse<T>>(cacheKey);
-      if (cachedResponse) {
-        logger.debug('Returning cached response', { url, method });
-        return cachedResponse;
+    const makeRequest = async (): Promise<ApiResponse<T>> => {
+      const { method, path, body, params, headers = {}, skipCache = false } = options;
+      
+      // Build full URL with query parameters
+      let url = `${this.baseUrl}${path}`;
+      if (params && Object.keys(params).length > 0) {
+        const searchParams = new URLSearchParams();
+        Object.entries(params).forEach(([key, value]) => {
+          searchParams.append(key, value);
+        });
+        url += `?${searchParams.toString()}`;
       }
-    }
-    
-    // Combine default headers with request-specific headers
-    const requestHeaders = { ...this.headers, ...headers };
-    
-    // Log request (with redacted sensitive info)
-    logger.debug('Sending API request', {
-      url,
-      method,
-      headers: requestHeaders,
-      body: body ? JSON.stringify(body) : undefined
-    });
-    
-    try {
+      
+      // Check cache for GET requests
+      const cacheKey = `${method}:${url}`;
+      if (method === 'GET' && !skipCache) {
+        const cachedResponse = this.cache.get<ApiResponse<T>>(cacheKey);
+        if (cachedResponse) {
+          logger.debug('Returning cached response', { url, method });
+          return cachedResponse;
+        }
+      }
+      
+      // Combine default headers with request-specific headers
+      const requestHeaders = { ...this.headers, ...headers };
+      
+      // Log request (with redacted sensitive info)
+      logger.debug('Sending API request', {
+        url,
+        method,
+        headers: requestHeaders,
+        body: body ? JSON.stringify(body) : undefined
+      });
+      
       // Send request
       const response = await fetch(url, {
         method,
@@ -129,6 +130,15 @@ export class QuickbaseClient {
           error 
         });
         
+        // For retry logic, we need to throw the error
+        // If status is retryable (5xx, 429, etc.), our retry logic will catch it
+        if (response.status >= 500 || response.status === 429 || response.status === 408) {
+          const httpError = new Error(`HTTP Error ${response.status}: ${response.statusText}`);
+          (httpError as any).status = response.status;
+          (httpError as any).data = responseData;
+          throw httpError;
+        }
+        
         return {
           success: false,
           error
@@ -147,9 +157,40 @@ export class QuickbaseClient {
       }
       
       return result;
+    };
+    
+    // Retry configuration
+    const retryOptions: RetryOptions = {
+      maxRetries: this.config.maxRetries || 3,
+      baseDelay: this.config.retryDelay || 1000,
+      isRetryable: (error: any) => {
+        // Only retry certain HTTP errors and network errors
+        if (!error) return false;
+        
+        // Handle HTTP errors
+        if (error.status) {
+          return error.status === 429 || // Too Many Requests
+                 error.status === 408 || // Request Timeout
+                 (error.status >= 500 && error.status < 600); // Server errors
+        }
+        
+        // Handle network errors
+        if (error.message) {
+          return error.message.includes('network') || 
+                 error.message.includes('timeout') || 
+                 error.message.includes('connection');
+        }
+        
+        return false;
+      }
+    };
+    
+    try {
+      // Use withRetry to add retry logic to the request
+      return await withRetry(makeRequest, retryOptions)();
     } catch (error) {
-      // Network or parsing error
-      logger.error('Request failed', { error });
+      // Handle errors that weren't handled by the retry logic
+      logger.error('Request failed after retries', { error });
       
       return {
         success: false,
@@ -160,6 +201,4 @@ export class QuickbaseClient {
       };
     }
   }
-  
-  // Additional methods for specific API operations will be added here
 }
