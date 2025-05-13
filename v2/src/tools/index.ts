@@ -3,6 +3,7 @@ import { CacheService } from '../utils/cache';
 import { toolRegistry } from './registry';
 import { TestConnectionTool } from './test_connection';
 import { ConfigureCacheTool } from './configure_cache';
+import { registerAppTools } from './apps';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('ToolsInit');
@@ -22,6 +23,9 @@ export function initializeTools(
   toolRegistry.registerTool(new TestConnectionTool(client));
   toolRegistry.registerTool(new ConfigureCacheTool(client, cacheService));
   
+  // Register app management tools
+  registerAppTools(client);
+  
   // Additional tools will be registered here
   
   logger.info(`Registered ${toolRegistry.getToolCount()} tools`);
@@ -32,3 +36,4 @@ export * from './registry';
 export * from './base';
 export * from './test_connection';
 export * from './configure_cache';
+export * from './apps';
