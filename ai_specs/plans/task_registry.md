@@ -33,10 +33,15 @@ This registry contains all planned and in-progress tasks for the Quickbase MCP C
 | C-02 | Implement authentication module | Claude | ✅ | High | C-01 | Auth headers included in client | 2025-05-11 |
 | C-03 | Implement HTTP request handling | Claude | ✅ | High | C-01 | HTTP client functioning with TypeScript | 2025-05-11 |
 | C-04 | Create caching system | Claude | ✅ | Medium | C-01 | Cache service implemented in TypeScript | 2025-05-11 |
-| C-05 | Implement retry logic | Claude | 🚧 | Medium | C-03 | Retry logic working in TypeScript client | - |
+| C-05 | Implement retry logic | Claude | 🚧 | Medium | C-03 | Retry logic working in TypeScript client | 2025-05-11 |
 | C-06 | Create error handling system | Claude | ✅ | High | C-01 | Error handling implemented in TypeScript | 2025-05-11 |
-| C-07 | Implement basic MCP tools | Claude | 🚧 | High | C-01, C-02, C-03 | MCP interface defined in TypeScript | 2025-05-11 |
+| C-07 | Implement MCP tools interface | Claude | ✅ | High | C-01, C-02, C-03 | MCP interface defined in TypeScript | 2025-05-11 |
 | C-08 | Create type definitions | Claude | ✅ | High | C-01 | TypeScript interfaces defined | 2025-05-11 |
+| C-09 | Implement tool registry | Claude | ✅ | High | C-07 | Tool registry created and functioning | 2025-05-11 |
+| C-10 | Create test_connection tool | Claude | ✅ | High | C-07, C-09 | Tool implemented and working | 2025-05-11 |
+| C-11 | Create configure_cache tool | Claude | ✅ | Medium | C-07, C-09, C-04 | Cache configuration tool implemented | 2025-05-11 |
+| C-12 | Enhance server with MCP endpoints | Claude | ✅ | High | C-07, C-09 | Server handles tool requests | 2025-05-11 |
+| C-13 | Implement batch operations | Claude | ✅ | Medium | C-12 | Batch endpoint working | 2025-05-11 |
 
 ## Enhanced Features Phase
 
