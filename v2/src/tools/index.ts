@@ -7,6 +7,7 @@ import { registerAppTools } from './apps';
 import { registerTableTools } from './tables';
 import { registerFieldTools } from './fields';
 import { registerRecordTools } from './records';
+import { registerFileTools } from './files';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('ToolsInit');
@@ -38,6 +39,9 @@ export function initializeTools(
   // Register record operation tools
   registerRecordTools(client);
   
+  // Register file operation tools
+  registerFileTools(client);
+  
   // Additional tools will be registered here
   
   logger.info(`Registered ${toolRegistry.getToolCount()} tools`);
@@ -52,3 +56,4 @@ export * from './apps';
 export * from './tables';
 export * from './fields';
 export * from './records';
+export * from './files';
