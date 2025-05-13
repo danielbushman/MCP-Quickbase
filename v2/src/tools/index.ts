@@ -4,6 +4,7 @@ import { toolRegistry } from './registry';
 import { TestConnectionTool } from './test_connection';
 import { ConfigureCacheTool } from './configure_cache';
 import { registerAppTools } from './apps';
+import { registerTableTools } from './tables';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('ToolsInit');
@@ -26,6 +27,9 @@ export function initializeTools(
   // Register app management tools
   registerAppTools(client);
   
+  // Register table operation tools
+  registerTableTools(client);
+  
   // Additional tools will be registered here
   
   logger.info(`Registered ${toolRegistry.getToolCount()} tools`);
@@ -37,3 +41,4 @@ export * from './base';
 export * from './test_connection';
 export * from './configure_cache';
 export * from './apps';
+export * from './tables';
