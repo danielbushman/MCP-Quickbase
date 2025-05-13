@@ -1,6 +1,8 @@
 # Technical Direction for v2
 
-## Language Choice
+Decision made: We are standardizing on Node.js for v2.
+
+## OriginalLanguage Choice Investigation
 
 After analyzing v1, we've decided to standardize on a single primary language for v2. The options are:
 
