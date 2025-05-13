@@ -6,6 +6,7 @@ import { ConfigureCacheTool } from './configure_cache';
 import { registerAppTools } from './apps';
 import { registerTableTools } from './tables';
 import { registerFieldTools } from './fields';
+import { registerRecordTools } from './records';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('ToolsInit');
@@ -34,6 +35,9 @@ export function initializeTools(
   // Register field management tools
   registerFieldTools(client);
   
+  // Register record operation tools
+  registerRecordTools(client);
+  
   // Additional tools will be registered here
   
   logger.info(`Registered ${toolRegistry.getToolCount()} tools`);
@@ -47,3 +51,4 @@ export * from './configure_cache';
 export * from './apps';
 export * from './tables';
 export * from './fields';
+export * from './records';
