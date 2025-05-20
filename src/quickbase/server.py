@@ -527,10 +527,15 @@ class QuickbaseClient:
                 query["options"]["skip"] = 0
                 
             # Set default page size
-            page_size = query["options"].get("top", 100)
+            page_size = int(query["options"].get("top", 100))
             query["options"]["top"] = page_size
-            
+
             while total_fetched < max_records:
+                # Adjust page size based on remaining records
+                remaining = max_records - total_fetched
+                current_page_size = min(page_size, remaining)
+                query["options"]["top"] = current_page_size
+
                 # Make the API call
                 response = self.session.post(f"{self.base_url}/records/query", json=query)
                 response.raise_for_status()
@@ -549,13 +554,13 @@ class QuickbaseClient:
                     page_data = result["data"]
                     all_data.extend(page_data)
                     total_fetched += len(page_data)
-                    
-                    # If we got fewer records than requested, we've reached the end
-                    if len(page_data) < page_size:
+
+                    # If we got fewer records than requested or reached max_records, stop
+                    if len(page_data) < current_page_size or total_fetched >= max_records:
                         break
-                        
-                    # Update skip for the next page
-                    query["options"]["skip"] += page_size
+
+                    # Update skip for the next page using the actual number fetched
+                    query["options"]["skip"] += len(page_data)
                 else:
                     # No data in response
                     break
