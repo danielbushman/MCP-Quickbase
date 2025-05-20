@@ -2207,7 +2207,21 @@ async def handle_list_tools() -> list[types.Tool]:
                 "required": ["table_id"],
             },
         ),
-        
+        types.Tool(
+            name="get_table_relationships",
+            description="Retrieves table relationships for a specific Quickbase table",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "table_id": {
+                        "type": "string",
+                        "description": "The ID of the Quickbase table",
+                    },
+                },
+                "required": ["table_id"],
+            },
+        ),
+
         # Field Operations
         types.Tool(
             name="get_table_fields",
@@ -2699,6 +2713,18 @@ async def handle_call_tool(name: str, arguments: dict[str, str]) -> list[types.T
                 types.TextContent(
                     type="text",
                     text=f"Table Fields (JSON):\n{json.dumps(results, indent=2)}",
+                )
+            ]
+        elif name == "get_table_relationships":
+            table_id = arguments.get("table_id")
+            if not table_id:
+                raise ValueError("Missing 'table_id' argument")
+
+            results = qb_client.get_table_relationships(table_id)
+            return [
+                types.TextContent(
+                    type="text",
+                    text=f"Table Relationships (JSON):\n{json.dumps(results, indent=2)}",
                 )
             ]
         elif name == "create_record":

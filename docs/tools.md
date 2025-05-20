@@ -19,6 +19,7 @@ This documentation provides details on how to use the Model Context Protocol (MC
   - [list_tables](#list_tables)
   - [create_table](#create_table)
   - [update_table](#update_table)
+  - [get_table_relationships](#get_table_relationships)
 - [Field Tools](#field-tools)
   - [get_table_fields](#get_table_fields)
   - [create_field](#create_field)
@@ -289,6 +290,29 @@ mcp__quickbase__update_table(
   "created": "2023-03-21T17:15:00Z",
   "updated": "2023-03-21T17:30:45Z"
 }
+```
+
+### get_table_relationships
+
+Retrieves all relationships defined for a Quickbase table.
+
+**Parameters:**
+- `table_id` (string, required): The ID of the table
+
+**Example:**
+```
+mcp__quickbase__get_table_relationships(table_id="bqrxzt5wq")
+```
+
+**Response:**
+```
+[
+  {
+    "relationshipId": "6",
+    "parentTableId": "bqrxzt5wq",
+    "childTableId": "bqrxzt6wr"
+  }
+]
 ```
 
 ## Field Tools

@@ -166,10 +166,19 @@ async def test_list_tables():
 async def test_get_table_fields():
     """Test getting table fields"""
     return await run_test(
-        "Get Table Fields", 
-        "get_table_fields", 
+        "Get Table Fields",
+        "get_table_fields",
         {"table_id": TABLE_ID},
         lambda r: any("Table Fields" in c.text for c in r)
+    )
+
+async def test_get_table_relationships():
+    """Test getting table relationships"""
+    return await run_test(
+        "Get Table Relationships",
+        "get_table_relationships",
+        {"table_id": TABLE_ID},
+        lambda r: any("Table Relationships" in c.text for c in r)
     )
 
 async def test_create_record():
@@ -452,6 +461,7 @@ async def run_all_tests():
         await test_connection()
         await test_list_tables()
         await test_get_table_fields()
+        await test_get_table_relationships()
         await test_create_record()
         await test_query_records()
         
