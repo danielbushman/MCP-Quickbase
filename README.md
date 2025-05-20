@@ -153,6 +153,13 @@ Now you can use Quickbase tools in your Claude session! Example prompt:
 - `get_field`, `get_fields`: Retrieve field information
 - `create_field`, `update_field`: Create and update fields
 
+### Relationship Tools
+
+- `get_table_relationships`: Retrieve relationships for a table (works with both parent and child tables)
+- `create_relationship`: Create a new relationship between tables (specify the child table ID and parent table ID in relationship_data)
+- `update_relationship`: Update an existing relationship (specify the child table ID where the relationship exists)
+- `delete_relationship`: Delete a relationship (specify the child table ID where the relationship exists)
+
 ### Record Tools
 
 - `get_record`, `query_records`: Retrieve record data
@@ -202,6 +209,9 @@ python tests/run_tests.py --all
 
 # Run specific tests
 python tests/run_tests.py connection pagination file
+
+# Run the relationship tests
+python tests/run_tests.py relationship
 
 # Run the comprehensive validation script
 python tests/run_tests.py validate
