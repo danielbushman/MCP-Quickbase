@@ -467,7 +467,7 @@ class QuickbaseClient:
             # Remove any trailing slashes and ensure proper format
             endpoint = f"tables/{table_id.strip('/')}/relationships"
             
-            print(f"DEBUG: Getting relationships with endpoint: {endpoint}")
+            self.logger.debug(f"Getting relationships with endpoint: {endpoint}")
             
             response = self._request("GET", endpoint)
             relationships = self._handle_response(response)
