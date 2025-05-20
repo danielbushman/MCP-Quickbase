@@ -13,56 +13,33 @@ from dotenv import load_dotenv
 # Add parent directory to path to import modules properly
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+
 def test_connection():
     """Test connection to Quickbase API using environment variables."""
     load_dotenv()
-    
-    print("Environment variables:")
-    print(f"QUICKBASE_REALM_HOST: {os.getenv('QUICKBASE_REALM_HOST')}")
-    print(f"QUICKBASE_APP_ID: {os.getenv('QUICKBASE_APP_ID')}")
-    print(f"QUICKBASE_USER_TOKEN: {'*' * 8 if os.getenv('QUICKBASE_USER_TOKEN') else 'Not set'}")
-    
-    try:
-        # Get environment variables
-        realm_hostname = os.getenv('QUICKBASE_REALM_HOST')
-        app_id = os.getenv('QUICKBASE_APP_ID')
-        user_token = os.getenv('QUICKBASE_USER_TOKEN')
-        
-        # Validate environment variables
-        if not realm_hostname or not app_id or not user_token:
-            missing_vars = []
-            if not realm_hostname:
-                missing_vars.append("QUICKBASE_REALM_HOST")
-            if not app_id:
-                missing_vars.append("QUICKBASE_APP_ID")
-            if not user_token:
-                missing_vars.append("QUICKBASE_USER_TOKEN")
-            
-            print(f"\nError: Missing required environment variables: {', '.join(missing_vars)}")
-            sys.exit(1)
-        
-        # Set up headers for API request
-        headers = {
-            'QB-Realm-Hostname': realm_hostname,
-            'Authorization': f'QB-USER-TOKEN {user_token}',
-            'Content-Type': 'application/json'
-        }
-        
-        # Test connection by getting app info
-        url = f"https://api.quickbase.com/v1/apps/{app_id}"
-        response = requests.get(url, headers=headers)
-        response.raise_for_status()
-        
-        print("\nConnection successful!")
-        print(f"App info: {response}")
-        
-    except requests.exceptions.HTTPError as e:
-        print(f"\nConnection failed: HTTP Error {e.response.status_code}")
-        print(f"Response: {e.response.text}")
-        sys.exit(1)
-    except Exception as e:
-        print(f"\nConnection failed: {e}")
-        sys.exit(1)
+
+    realm_hostname = os.getenv("QUICKBASE_REALM_HOST")
+    app_id = os.getenv("QUICKBASE_APP_ID")
+    user_token = os.getenv("QUICKBASE_USER_TOKEN")
+
+    # Assert required environment variables are present
+    assert realm_hostname, "Missing QUICKBASE_REALM_HOST"
+    assert app_id, "Missing QUICKBASE_APP_ID"
+    assert user_token, "Missing QUICKBASE_USER_TOKEN"
+
+    headers = {
+        "QB-Realm-Hostname": realm_hostname,
+        "Authorization": f"QB-USER-TOKEN {user_token}",
+        "Content-Type": "application/json",
+    }
+
+    url = f"https://api.quickbase.com/v1/apps/{app_id}"
+    response = requests.get(url, headers=headers)
+
+    # Assert that the response was successful
+    assert (
+        response.status_code == 200
+    ), f"Unexpected status code: {response.status_code}\n{response.text}"
 
 if __name__ == "__main__":
     test_connection()
