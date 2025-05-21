@@ -60,3 +60,5 @@ Thumbs.db
 *.log
 test_results/
 quickbase_cache/ 
+
+settings.local.json
