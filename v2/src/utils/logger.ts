@@ -16,10 +16,10 @@ export enum LogLevel {
  * Logger interface
  */
 export interface Logger {
-  error(message: string, data?: any): void;
-  warn(message: string, data?: any): void;
-  info(message: string, data?: any): void;
-  debug(message: string, data?: any): void;
+  error(message: string, data?: unknown): void;
+  warn(message: string, data?: unknown): void;
+  info(message: string, data?: unknown): void;
+  debug(message: string, data?: unknown): void;
 }
 
 // Global log level (can be set via environment variable)
@@ -41,37 +41,43 @@ export function setLogLevel(level: LogLevel): void {
  * @returns Logger instance
  */
 export function createLogger(name: string): Logger {
-  const formatData = (data: any): string => {
+  const formatData = (data: unknown): string => {
     if (data === undefined) return '';
     try {
       return JSON.stringify(redactSensitiveData(data));
     } catch (error) {
-      return `[Unserializable data: ${error}]`;
+      // Safe error message formatting to prevent nested serialization issues
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      return `[Unserializable data: ${errorMessage}]`;
     }
   };
 
   return {
-    error(message: string, data?: any) {
+    error(message: string, data?: unknown): void {
       if (globalLogLevel >= LogLevel.ERROR) {
-        console.error(`[ERROR] ${name}: ${message}`, data ? formatData(data) : '');
+        // Use stderr to avoid interfering with JSON responses on stdout
+        process.stderr.write(`[ERROR] ${name}: ${message} ${data ? formatData(data) : ''}\n`);
       }
     },
     
-    warn(message: string, data?: any) {
+    warn(message: string, data?: unknown): void {
       if (globalLogLevel >= LogLevel.WARN) {
-        console.warn(`[WARN] ${name}: ${message}`, data ? formatData(data) : '');
+        // Use stderr to avoid interfering with JSON responses on stdout
+        process.stderr.write(`[WARN] ${name}: ${message} ${data ? formatData(data) : ''}\n`);
       }
     },
     
-    info(message: string, data?: any) {
+    info(message: string, data?: unknown): void {
       if (globalLogLevel >= LogLevel.INFO) {
-        console.info(`[INFO] ${name}: ${message}`, data ? formatData(data) : '');
+        // Use stderr to avoid interfering with JSON responses on stdout
+        process.stderr.write(`[INFO] ${name}: ${message} ${data ? formatData(data) : ''}\n`);
       }
     },
     
-    debug(message: string, data?: any) {
+    debug(message: string, data?: unknown): void {
       if (globalLogLevel >= LogLevel.DEBUG) {
-        console.debug(`[DEBUG] ${name}: ${message}`, data ? formatData(data) : '');
+        // Use stderr to avoid interfering with JSON responses on stdout
+        process.stderr.write(`[DEBUG] ${name}: ${message} ${data ? formatData(data) : ''}\n`);
       }
     }
   };
@@ -87,37 +93,56 @@ const SENSITIVE_KEYS = [
   'auth', 
   'key', 
   'credential',
-  'Authorization'
+  'Authorization',
+  'QB-USER-TOKEN',
+  'userToken',
+  'QUICKBASE_USER_TOKEN'
 ];
 
 /**
- * Redacts sensitive data in objects
+ * Redacts sensitive data in objects with circular reference protection
  * @param data Object to redact
  * @returns Redacted object
  */
-function redactSensitiveData(data: any): any {
-  if (!data || typeof data !== 'object') {
-    return data;
-  }
-
-  if (Array.isArray(data)) {
-    return data.map(item => redactSensitiveData(item));
-  }
-
-  const result: Record<string, any> = {};
+function redactSensitiveData(data: unknown): unknown {
+  const visited = new WeakSet();
   
-  for (const [key, value] of Object.entries(data)) {
-    if (typeof value === 'object' && value !== null) {
-      result[key] = redactSensitiveData(value);
-    } else if (
-      typeof value === 'string' &&
-      SENSITIVE_KEYS.some(k => key.toLowerCase().includes(k.toLowerCase()))
-    ) {
-      result[key] = '***REDACTED***';
-    } else {
-      result[key] = value;
+  function redactRecursive(obj: unknown): unknown {
+    if (!obj || typeof obj !== 'object') {
+      return obj;
     }
+
+    // Circular reference protection
+    if (visited.has(obj)) {
+      return '[Circular Reference]';
+    }
+    visited.add(obj);
+
+    if (Array.isArray(obj)) {
+      return obj.map(item => redactRecursive(item));
+    }
+
+    const result: Record<string, unknown> = {};
+    
+    try {
+      for (const [key, value] of Object.entries(obj)) {
+        if (typeof value === 'object' && value !== null) {
+          result[key] = redactRecursive(value);
+        } else if (
+          typeof value === 'string' &&
+          SENSITIVE_KEYS.some(k => key.toLowerCase().includes(k.toLowerCase()))
+        ) {
+          result[key] = '***REDACTED***';
+        } else {
+          result[key] = value;
+        }
+      }
+    } catch (error) {
+      return '[Unserializable Object]';
+    }
+    
+    return result;
   }
   
-  return result;
+  return redactRecursive(data);
 }

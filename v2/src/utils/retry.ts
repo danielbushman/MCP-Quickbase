@@ -29,7 +29,7 @@ export interface RetryOptions {
   /**
    * Function that determines if an error is retryable
    */
-  isRetryable?: (error: any) => boolean;
+  isRetryable?: (error: unknown) => boolean;
 }
 
 /**
@@ -40,20 +40,21 @@ const DEFAULT_RETRY_OPTIONS: RetryOptions = {
   baseDelay: 1000,
   maxDelay: 10000,
   backoffFactor: 2,
-  isRetryable: (error: any) => {
+  isRetryable: (error: unknown) => {
     // Default logic for determining if an error is retryable
     if (!error) return false;
     
     // Handle fetch response errors
-    if (error.status) {
+    if (typeof error === 'object' && error !== null && 'status' in error) {
+      const httpError = error as { status: number };
       // Retry 429 (Too Many Requests), 408 (Request Timeout), and 5xx errors
-      return error.status === 429 || 
-             error.status === 408 || 
-             (error.status >= 500 && error.status < 600);
+      return httpError.status === 429 || 
+             httpError.status === 408 || 
+             (httpError.status >= 500 && httpError.status < 600);
     }
     
     // Handle network errors
-    if (error.message) {
+    if (error instanceof Error) {
       return error.message.includes('network') || 
              error.message.includes('timeout') || 
              error.message.includes('connection');
@@ -87,14 +88,14 @@ export function calculateBackoff(attempt: number, options: RetryOptions): number
  * @param options Retry options
  * @returns Function with retry logic
  */
-export function withRetry<T, Args extends any[]>(
+export function withRetry<T, Args extends unknown[]>(
   fn: (...args: Args) => Promise<T>,
   options: Partial<RetryOptions> = {}
 ): (...args: Args) => Promise<T> {
   const fullOptions: RetryOptions = { ...DEFAULT_RETRY_OPTIONS, ...options };
   
   return async function retryWrapper(...args: Args): Promise<T> {
-    let lastError: any;
+    let lastError: unknown;
     
     for (let attempt = 0; attempt <= fullOptions.maxRetries; attempt++) {
       try {
