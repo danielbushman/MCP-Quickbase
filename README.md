@@ -1,12 +1,12 @@
-# Quickbase Connector for Claude
+# Quickbase MCP Connector
 
-Connect Claude directly to your Quickbase data. Ask questions, create records, run reports, and more - all through natural language.
+Connect Claude directly to your Quickbase data through the Model Context Protocol (MCP). Ask questions, create records, run reports, and more - all through natural language.
 
 **DISCLAIMER: This is an unofficial, independent project not affiliated with, sponsored, or endorsed by Quickbase, Inc.**
 
 ![Quickbase + Claude](docs/images/quickbase-claude.png)
 
-## ⚡ Quick Setup for Claude
+## 🚀 Quick Start
 
 ```bash
 # One-line setup
@@ -17,7 +17,7 @@ cd ~/Quickbase-MCP-connector
 ./configure.sh
 ```
 
-## 🚀 What Can I Do With This?
+## 🛠️ What Can You Do?
 
 - **Ask about your data**: "How many open projects do we have?"
 - **Create records**: "Create a new customer named Acme Inc."
@@ -25,20 +25,20 @@ cd ~/Quickbase-MCP-connector
 - **Upload files**: "Upload this document to the project record"
 - **Analyze data**: "Which sales rep has the highest conversion rate?"
 
-## 🔧 Manual Setup
+## 🔧 Configuration
 
-### For Claude Desktop
+### Claude Desktop Setup
 
-1. Configure Claude Desktop to use the connector:
+1. Add to your Claude Desktop configuration:
 
 ```json
 {
   "mcpServers": {
     "quickbase": {
       "command": "node",
-      "args": ["path/to/Quickbase-MCP-connector/src/server.js"],
+      "args": ["path/to/Quickbase-MCP-connector/v2/dist/mcp-stdio-server.js"],
       "env": {
-        "QUICKBASE_REALM_HOST": "your-realm",
+        "QUICKBASE_REALM_HOST": "your-realm.quickbase.com",
         "QUICKBASE_USER_TOKEN": "your-token",
         "QUICKBASE_APP_ID": "your-app-id"
       }
@@ -47,33 +47,45 @@ cd ~/Quickbase-MCP-connector
 }
 ```
 
-### For Claude Code
+### Claude Code Setup
 
 ```bash
-claude mcp add quickbase node src/server.js
+claude mcp add quickbase node v2/dist/mcp-stdio-server.js
 ```
 
 ## 📚 Documentation
 
-- [Quickstart Guide](docs/quickstart.md)
+- [Quick Start Guide](docs/quickstart.md)
 - [Available Tools](docs/tools.md)
-- [Architecture](docs/architecture.md)
-- [Development](docs/development.md)
+- [Architecture Overview](docs/architecture.md)
+- [Development Guide](docs/development.md)
+- [v2 Documentation](v2/README.md) - Current implementation
+- [v1 Documentation](v1/README.md) - Legacy reference
 
 ## 📦 Project Structure
 
-- `src/` - Connector implementation
-- `docs/` - Documentation
-- `tests/` - Test suite
-- `v1/` - Original implementation (reference)
+```
+├── v2/                 # Current TypeScript implementation
+│   ├── src/           # Source code
+│   ├── docs/          # v2-specific documentation
+│   └── dist/          # Built files
+├── v1/                # Legacy Python implementation (reference)
+├── docs/              # Shared documentation
+└── ai_specs/          # Development specifications
+```
 
-## 🔄 Version 2.0 (In Development)
+## ⚡ Current Version: 2.0
 
-Building a streamlined TypeScript-based implementation with:
-- Single language architecture (TypeScript)
-- Enhanced Claude integration
-- Improved error handling
-- Simplified setup process
+The TypeScript-based v2 implementation provides:
+- **TypeScript-first** architecture with full type safety
+- **18 comprehensive tools** for Quickbase operations
+- **Enhanced error handling** and logging
+- **Performance optimizations** with caching and retry logic
+- **Comprehensive testing** with 37%+ code coverage
+
+### Migration from v1
+
+v2 is the current recommended version. v1 remains available for reference but is no longer actively developed.
 
 ## ⚖️ License
 
