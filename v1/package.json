@@ -2,14 +2,12 @@
   "name": "mcp-quickbase-connector",
   "version": "1.0.0",
   "description": "MCP connector for Quickbase API",
-  "main": "v2/dist/mcp-stdio-server.js",
+  "main": "src/quickbase/server.js",
   "bin": {
-    "quickbase": "./v2/dist/mcp-stdio-server.js"
+    "quickbase": "./src/quickbase/server.js"
   },
   "scripts": {
-    "build": "cd v2 && npm run build",
-    "start": "cd v2 && npm start",
-    "dev": "cd v2 && npm run dev"
+    "start": "node src/quickbase/server.js"
   },
   "dependencies": {
     "axios": "^1.6.7",

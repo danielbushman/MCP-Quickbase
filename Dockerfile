@@ -1,38 +1,20 @@
-FROM node:18
+FROM debian:bullseye-slim
 
-# Install Python, pip, and other required tools
-RUN apt-get update && apt-get install -y \
-    python3 \
-    python3-pip \
-    python3-full \
-    && ln -sf /usr/bin/python3 /usr/bin/python \
-    && ln -sf /usr/bin/pip3 /usr/bin/pip \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+ENV DEBIAN_FRONTEND=noninteractive \
+    GLAMA_VERSION="0.2.0" \
+    PATH="/home/service-user/.local/bin:${PATH}"
+
+RUN (groupadd -r service-user) && (useradd -u 1987 -r -m -g service-user service-user) && (mkdir -p /home/service-user/.local/bin /app) && (chown -R service-user:service-user /home/service-user /app) && (apt-get update) && (apt-get install -y --no-install-recommends build-essential curl wget software-properties-common libssl-dev zlib1g-dev git) && (rm -rf /var/lib/apt/lists/*) && (curl -fsSL https://deb.nodesource.com/setup_22.x | bash -) && (apt-get install -y nodejs) && (apt-get clean) && (npm install -g mcp-proxy@3.0.3) && (npm install -g pnpm@9.15.5) && (npm install -g bun@1.1.42) && (node --version) && (curl -LsSf https://astral.sh/uv/install.sh | UV_INSTALL_DIR="/usr/local/bin" sh) && (uv python install 3.13 --default --preview) && (ln -s $(uv python find) /usr/local/bin/python) && (python --version) && (apt-get clean) && (rm -rf /var/lib/apt/lists/*) && (rm -rf /tmp/*) && (rm -rf /var/tmp/*) && (su - service-user -c "uv python install 3.13 --default --preview && python --version")
+
+USER service-user
 
 WORKDIR /app
 
-# Copy files needed for setup
-COPY package*.json ./
-COPY requirements.txt ./
+RUN git clone https://github.com/danielbushman/MCP-Quickbase . && git checkout c744b26125b378ae976fd4a415a029276875b12d
 
-# Install dependencies directly (no virtual environment)
-RUN pip install --break-system-packages -r requirements.txt
-RUN npm install
+# RUN (apt-get install -y --no-install-recommends python3-pip python3-full) 
+# RUN (pip install -r requirements.txt) 
+RUN (npm install)
+RUN (chmod +x src/quickbase/server.js)
 
-# Copy the rest of the application
-COPY . .
-
-# Make scripts executable
-RUN chmod +x src/quickbase/server.js
-RUN if [ -f run_tests.sh ]; then chmod +x run_tests.sh; fi
-RUN if [ -f test_file_operations.py ]; then chmod +x test_file_operations.py; fi
-RUN if [ -f test_pagination.py ]; then chmod +x test_pagination.py; fi
-RUN if [ -f test_remaining_operations.py ]; then chmod +x test_remaining_operations.py; fi
-
-# Create debug script with more detailed checks
-RUN echo '#!/bin/bash\necho "Active Python: $(which python)"\necho "Python version: $(python --version)"\necho "Working directory: $(pwd)"\nls -la\necho "Python packages:"\npip list' > debug.sh
-RUN chmod +x debug.sh
-
-# Run the server
-CMD ["node", "src/quickbase/server.js"]
+CMD ["mcp-proxy","node","./src/quickbase/server.js"]
