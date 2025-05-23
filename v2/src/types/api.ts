@@ -44,7 +44,7 @@ export interface ApiError {
   /**
    * Additional error details
    */
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
 }
 
 /**
@@ -64,7 +64,7 @@ export interface RequestOptions {
   /**
    * Request body
    */
-  body?: Record<string, any>;
+  body?: Record<string, unknown>;
   
   /**
    * Query parameters

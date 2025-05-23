@@ -1,6 +1,7 @@
 /**
  * Types for the MCP (Model Context Protocol) integration
  */
+import { ApiResponse } from './api';
 
 /**
  * Base MCP tool interface
@@ -19,7 +20,7 @@ export interface McpTool<TParams, TResult> {
   /**
    * Function to execute the tool
    */
-  execute: (params: TParams) => Promise<TResult>;
+  execute: (params: TParams) => Promise<ApiResponse<TResult>>;
   
   /**
    * Parameter schema for the tool
@@ -34,7 +35,7 @@ export interface ToolRegistry {
   /**
    * Get a tool by name
    */
-  getTool(name: string): McpTool<any, any> | undefined;
+  getTool(name: string): McpTool<unknown, unknown> | undefined;
   
   /**
    * Register a tool
@@ -44,7 +45,7 @@ export interface ToolRegistry {
   /**
    * Get all registered tools
    */
-  getAllTools(): McpTool<any, any>[];
+  getAllTools(): McpTool<unknown, unknown>[];
 }
 
 /**

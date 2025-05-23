@@ -46,4 +46,14 @@ export interface QuickbaseConfig {
    * Enable debug logging
    */
   debug?: boolean;
+  
+  /**
+   * Request timeout in milliseconds
+   */
+  requestTimeout?: number;
+  
+  /**
+   * Rate limit - maximum requests per second
+   */
+  rateLimit?: number;
 }
