@@ -7,6 +7,51 @@ import { withRetry, RetryOptions } from '../utils/retry';
 const logger = createLogger('QuickbaseClient');
 
 /**
+ * Thread-safe rate limiter to prevent API overload
+ */
+class RateLimiter {
+  private requests: number[] = [];
+  private readonly maxRequests: number;
+  private readonly windowMs: number;
+  private pending: Promise<void> = Promise.resolve();
+
+  constructor(maxRequests: number = 10, windowMs: number = 1000) {
+    this.maxRequests = maxRequests;
+    this.windowMs = windowMs;
+  }
+
+  async wait(): Promise<void> {
+    // Serialize all rate limit checks to prevent race conditions
+    this.pending = this.pending.then(() => this.checkRateLimit());
+    return this.pending;
+  }
+
+  private async checkRateLimit(): Promise<void> {
+    const now = Date.now();
+    
+    // Remove requests outside the current window
+    this.requests = this.requests.filter(time => now - time < this.windowMs);
+    
+    if (this.requests.length >= this.maxRequests) {
+      // Calculate wait time until oldest request expires
+      const oldestRequest = Math.min(...this.requests);
+      const waitTime = this.windowMs - (now - oldestRequest) + 10; // +10ms buffer
+      
+      if (waitTime > 0) {
+        logger.debug(`Rate limiting: waiting ${waitTime}ms`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+        
+        // Re-check after waiting (recursive but bounded by maxRequests)
+        return this.checkRateLimit();
+      }
+    }
+    
+    // Add this request to the window
+    this.requests.push(Date.now());
+  }
+}
+
+/**
  * Client for interacting with the Quickbase API
  */
 export class QuickbaseClient {
@@ -14,6 +59,7 @@ export class QuickbaseClient {
   private cache: CacheService;
   private baseUrl: string;
   private headers: Record<string, string>;
+  private rateLimiter: RateLimiter;
   
   /**
    * Creates a new Quickbase client
@@ -38,7 +84,7 @@ export class QuickbaseClient {
       throw new Error('User token is required');
     }
     
-    this.baseUrl = `https://${this.config.realmHost}/api/v1`;
+    this.baseUrl = `https://api.quickbase.com/v1`;
     
     this.headers = {
       'QB-Realm-Hostname': this.config.realmHost,
@@ -52,10 +98,17 @@ export class QuickbaseClient {
       this.config.cacheEnabled
     );
     
+    // Initialize rate limiter (10 requests per second by default)
+    this.rateLimiter = new RateLimiter(
+      this.config.rateLimit || 10,
+      1000
+    );
+    
     logger.info('Quickbase client initialized', { 
       realmHost: this.config.realmHost,
       appId: this.config.appId,
-      cacheEnabled: this.config.cacheEnabled
+      cacheEnabled: this.config.cacheEnabled,
+      rateLimit: this.config.rateLimit || 10
     });
   }
   
@@ -96,33 +149,67 @@ export class QuickbaseClient {
         }
       }
       
+      // Apply rate limiting before making the request
+      await this.rateLimiter.wait();
+      
       // Combine default headers with request-specific headers
       const requestHeaders = { ...this.headers, ...headers };
       
       // Log request (with redacted sensitive info)
+      const redactedHeaders = { ...requestHeaders };
+      if (redactedHeaders.Authorization) {
+        redactedHeaders.Authorization = '***REDACTED***';
+      }
+      if (redactedHeaders['QB-Realm-Hostname']) {
+        // Keep realm hostname for debugging but redact sensitive parts
+        redactedHeaders['QB-Realm-Hostname'] = redactedHeaders['QB-Realm-Hostname'].replace(/[a-zA-Z0-9-]+/, '***');
+      }
+      
       logger.debug('Sending API request', {
-        url,
+        url: url.replace(/[?&]userToken=[^&]*/g, '&userToken=***REDACTED***'), // Redact tokens in URL too
         method,
-        headers: requestHeaders,
+        headers: redactedHeaders,
         body: body ? JSON.stringify(body) : undefined
       });
       
-      // Send request
-      const response = await fetch(url, {
-        method,
-        headers: requestHeaders,
-        body: body ? JSON.stringify(body) : undefined
-      });
+      // Send request with timeout protection
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), this.config.requestTimeout || 30000);
       
-      // Parse response
-      const responseData = await response.json();
+      let response: Response;
+      try {
+        response = await fetch(url, {
+          method,
+          headers: requestHeaders,
+          body: body ? JSON.stringify(body) : undefined,
+          signal: controller.signal
+        });
+      } finally {
+        clearTimeout(timeoutId);
+      }
+      
+      // Parse response safely
+      let responseData: unknown;
+      try {
+        responseData = await response.json();
+      } catch (error) {
+        throw new Error(`Invalid JSON response: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+
+      // Ensure responseData is an object
+      if (typeof responseData !== 'object' || responseData === null) {
+        throw new Error('API response is not a valid object');
+      }
+
+      const data = responseData as Record<string, unknown>;
       
       // Check for error response
       if (!response.ok) {
+        const errorMessage = typeof data.message === 'string' ? data.message : response.statusText;
         const error: ApiError = {
-          message: responseData.message || response.statusText,
+          message: errorMessage,
           code: response.status,
-          details: responseData
+          details: data
         };
         
         logger.error('API request failed', { 
@@ -130,19 +217,13 @@ export class QuickbaseClient {
           error 
         });
         
-        // For retry logic, we need to throw the error
-        // If status is retryable (5xx, 429, etc.), our retry logic will catch it
-        if (response.status >= 500 || response.status === 429 || response.status === 408) {
-          const httpError = new Error(`HTTP Error ${response.status}: ${response.statusText}`);
-          (httpError as any).status = response.status;
-          (httpError as any).data = responseData;
-          throw httpError;
-        }
+        // Create error with proper metadata for retry logic
+        const httpError = new Error(`HTTP Error ${response.status}: ${errorMessage}`);
+        Object.assign(httpError, { status: response.status, data: responseData });
         
-        return {
-          success: false,
-          error
-        };
+        // Always throw HTTP errors - let retry logic determine if they're retryable
+        // The retry logic will check the status code and decide whether to retry
+        throw httpError;
       }
       
       // Successful response
@@ -163,19 +244,20 @@ export class QuickbaseClient {
     const retryOptions: RetryOptions = {
       maxRetries: this.config.maxRetries || 3,
       baseDelay: this.config.retryDelay || 1000,
-      isRetryable: (error: any) => {
+      isRetryable: (error: unknown) => {
         // Only retry certain HTTP errors and network errors
         if (!error) return false;
         
         // Handle HTTP errors
-        if (error.status) {
-          return error.status === 429 || // Too Many Requests
-                 error.status === 408 || // Request Timeout
-                 (error.status >= 500 && error.status < 600); // Server errors
+        if (typeof error === 'object' && error !== null && 'status' in error) {
+          const httpError = error as { status: number };
+          return httpError.status === 429 || // Too Many Requests
+                 httpError.status === 408 || // Request Timeout
+                 (httpError.status >= 500 && httpError.status < 600); // Server errors
         }
         
         // Handle network errors
-        if (error.message) {
+        if (error instanceof Error) {
           return error.message.includes('network') || 
                  error.message.includes('timeout') || 
                  error.message.includes('connection');
