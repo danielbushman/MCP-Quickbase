@@ -2,6 +2,7 @@ import { McpTool } from '../types/mcp';
 import { ApiResponse } from '../types/api';
 import { QuickbaseClient } from '../client/quickbase';
 import { createLogger } from '../utils/logger';
+import { validateParams } from '../utils/validation';
 
 const logger = createLogger('BaseTool');
 
@@ -38,22 +39,12 @@ export abstract class BaseTool<TParams, TResult> implements McpTool<TParams, TRe
   }
   
   /**
-   * Validate parameters against schema
-   * This is a simple implementation - in production this would use JSON Schema
+   * Validate parameters against schema using Zod
    * @param params Parameters to validate
+   * @returns Validated parameters
    */
-  protected validateParams(params: TParams): void {
-    // For now, just check if required properties exist
-    const schemaProps = this.paramSchema.properties as Record<string, any>;
-    const requiredProps = this.paramSchema.required as string[];
-    
-    if (requiredProps && Array.isArray(requiredProps)) {
-      for (const prop of requiredProps) {
-        if (!(params as any)[prop]) {
-          throw new Error(`Missing required parameter: ${prop}`);
-        }
-      }
-    }
+  protected validateParams(params: unknown): TParams {
+    return validateParams<TParams>(params, this.paramSchema, this.name);
   }
   
   /**
@@ -66,10 +57,10 @@ export abstract class BaseTool<TParams, TResult> implements McpTool<TParams, TRe
       logger.debug(`Executing tool: ${this.name}`, { params });
       
       // Validate parameters
-      this.validateParams(params);
+      const validatedParams = this.validateParams(params);
       
       // Execute the tool implementation
-      const result = await this.run(params);
+      const result = await this.run(validatedParams);
       
       logger.debug(`Tool ${this.name} executed successfully`, { result });
       
@@ -78,13 +69,20 @@ export abstract class BaseTool<TParams, TResult> implements McpTool<TParams, TRe
         data: result
       };
     } catch (error) {
-      logger.error(`Error executing tool ${this.name}`, { error });
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorType = error instanceof Error ? error.name : 'UnknownError';
+      
+      logger.error(`Error executing tool ${this.name}`, { 
+        error: errorMessage,
+        type: errorType,
+        stack: error instanceof Error ? error.stack : undefined
+      });
       
       return {
         success: false,
         error: {
-          message: error instanceof Error ? error.message : 'Unknown error',
-          type: error instanceof Error ? error.name : 'UnknownError'
+          message: errorMessage,
+          type: errorType
         }
       };
     }
