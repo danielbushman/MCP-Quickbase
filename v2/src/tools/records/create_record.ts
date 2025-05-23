@@ -17,7 +17,7 @@ export interface CreateRecordParams {
    * The data for the new record, formatted as a JSON object
    * with field IDs or field names as keys
    */
-  data: Record<string, any>;
+  data: Record<string, unknown>;
 }
 
 /**
@@ -58,8 +58,8 @@ export class CreateRecordTool extends BaseTool<CreateRecordParams, CreateRecordR
         description: 'The ID of the Quickbase table'
       },
       data: {
-        type: 'string',
-        description: 'The data for the new record'
+        type: 'object',
+        description: 'The data for the new record, as field ID/value pairs'
       }
     },
     required: ['table_id', 'data']
@@ -92,14 +92,14 @@ export class CreateRecordTool extends BaseTool<CreateRecordParams, CreateRecordR
     
     // Prepare record data
     // Convert data to { [fieldId]: { value: fieldValue } } format expected by the API
-    const recordData: Record<string, { value: any }> = {};
+    const recordData: Record<string, { value: unknown }> = {};
     
     for (const [field, value] of Object.entries(data)) {
       recordData[field] = { value };
     }
     
     // Prepare request body
-    const body: Record<string, any> = {
+    const body = {
       to: table_id,
       data: [recordData]
     };
@@ -119,17 +119,48 @@ export class CreateRecordTool extends BaseTool<CreateRecordParams, CreateRecordR
       throw new Error(response.error?.message || 'Failed to create record');
     }
     
-    const result = response.data as Record<string, any>;
-    const metadata = result.metadata || {};
+    // Safely validate response structure
+    if (typeof response.data !== 'object' || response.data === null) {
+      throw new Error('Invalid API response: data is not an object');
+    }
     
-    if (!metadata.createdRecordIds || metadata.createdRecordIds.length === 0) {
-      logger.error('Record creation response missing record ID', { 
+    const result = response.data as Record<string, unknown>;
+    
+    // Validate metadata exists and is an object
+    if (typeof result.metadata !== 'object' || result.metadata === null) {
+      logger.error('Record creation response missing metadata', { 
         response: result
+      });
+      throw new Error('Record created but response metadata is missing');
+    }
+    
+    const metadata = result.metadata as Record<string, unknown>;
+    
+    // Validate createdRecordIds exists and is an array
+    if (!Array.isArray(metadata.createdRecordIds)) {
+      logger.error('Record creation response missing createdRecordIds array', { 
+        metadata
+      });
+      throw new Error('Record created but no record IDs array was returned');
+    }
+    
+    const createdRecordIds = metadata.createdRecordIds as unknown[];
+    if (createdRecordIds.length === 0) {
+      logger.error('Record creation response has empty createdRecordIds array', { 
+        metadata
       });
       throw new Error('Record created but no record ID was returned');
     }
     
-    const recordId = metadata.createdRecordIds[0];
+    // Validate first record ID is a string
+    const recordId = createdRecordIds[0];
+    if (typeof recordId !== 'string') {
+      logger.error('Record creation response has invalid record ID type', { 
+        recordId,
+        type: typeof recordId
+      });
+      throw new Error('Record created but returned record ID is not a string');
+    }
     
     logger.info('Successfully created record', { 
       recordId,

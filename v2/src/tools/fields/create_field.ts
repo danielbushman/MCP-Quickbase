@@ -10,11 +10,12 @@ const logger = createLogger('CreateFieldTool');
 export interface FieldProperties {
   // Text field properties
   maxLength?: number;
-  defaultValue?: string;
+  
+  // Default value for any field type
+  defaultValue?: string | number;
   
   // Numeric field properties
   precision?: number;
-  defaultValue?: number | string;
   
   // Date field properties
   format?: string;

@@ -61,7 +61,7 @@ export interface QueryRecordsParams {
   /**
    * Additional query options
    */
-  options?: Record<string, any>;
+  options?: Record<string, unknown>;
 }
 
 /**
@@ -90,7 +90,7 @@ export interface QueryRecordsResult {
     /**
      * Fields included in the result
      */
-    fields?: Record<string, any>[];
+    fields?: Record<string, unknown>[];
     
     /**
      * Table ID that was queried
@@ -154,11 +154,11 @@ export class QueryRecordsTool extends BaseTool<QueryRecordsParams, QueryRecordsR
         }
       },
       max_records: {
-        type: 'string',
+        type: 'number',
         description: 'Maximum number of records to return when paginating (default: 1000)'
       },
       skip: {
-        type: 'integer',
+        type: 'number',
         description: 'Number of records to skip'
       },
       paginate: {
@@ -247,10 +247,28 @@ export class QueryRecordsTool extends BaseTool<QueryRecordsParams, QueryRecordsR
       throw new Error(response.error?.message || 'Failed to query records');
     }
     
-    const data = response.data as Record<string, any>;
-    const records = data.data || [];
+    // Safely validate response structure
+    if (typeof response.data !== 'object' || response.data === null) {
+      throw new Error('Invalid API response: data is not an object');
+    }
+    
+    const data = response.data as Record<string, unknown>;
+    
+    // Validate records array exists
+    if (!Array.isArray(data.data)) {
+      logger.error('Query response missing data array', { data });
+      throw new Error('Query response does not contain records array');
+    }
+    
+    const records = data.data;
+    
+    // Validate and type-cast fields array
+    const fields = Array.isArray(data.fields) 
+      ? data.fields as Record<string, unknown>[]
+      : undefined;
+    
     const metadata = {
-      fields: data.fields,
+      fields,
       tableId: table_id,
       numRecords: records.length,
       skip
@@ -267,9 +285,32 @@ export class QueryRecordsTool extends BaseTool<QueryRecordsParams, QueryRecordsR
       });
       
       let currentSkip = skip + records.length;
+      let iterationCount = 0;
+      const maxIterations = 100; // Circuit breaker: prevent infinite loops
+      const startTime = Date.now();
+      const maxTimeMs = 30000; // 30 second timeout
       
       // Continue fetching until we reach the limit or there are no more records
       while (hasMore && allRecords.length < limit) {
+        // Circuit breaker checks
+        iterationCount++;
+        if (iterationCount > maxIterations) {
+          logger.error('Pagination circuit breaker: too many iterations', { 
+            iterationCount, 
+            maxIterations,
+            totalRecords: allRecords.length 
+          });
+          break;
+        }
+        
+        if (Date.now() - startTime > maxTimeMs) {
+          logger.error('Pagination circuit breaker: timeout exceeded', { 
+            timeElapsed: Date.now() - startTime,
+            maxTimeMs,
+            totalRecords: allRecords.length 
+          });
+          break;
+        }
         // Update pagination options
         body.options.skip = currentSkip;
         body.options.top = Math.min(limit - allRecords.length, 1000);
@@ -290,20 +331,64 @@ export class QueryRecordsTool extends BaseTool<QueryRecordsParams, QueryRecordsR
           break;
         }
         
-        const pageData = pageResponse.data as Record<string, any>;
-        const pageRecords = pageData.data || [];
+        // Safely validate pagination response structure
+        if (typeof pageResponse.data !== 'object' || pageResponse.data === null) {
+          logger.error('Invalid pagination response: data is not an object');
+          break;
+        }
+        
+        const pageData = pageResponse.data as Record<string, unknown>;
+        
+        // Validate page records array exists
+        if (!Array.isArray(pageData.data)) {
+          logger.error('Pagination response missing data array', { pageData });
+          break;
+        }
+        
+        const pageRecords = pageData.data;
+        
+        // Zero progress detection - prevent infinite loops from bad API responses
+        if (pageRecords.length === 0) {
+          logger.debug('No more records returned, stopping pagination');
+          hasMore = false;
+          break;
+        }
         
         // Add the new records to our results
         allRecords = [...allRecords, ...pageRecords];
         
-        // Update pagination state
+        // Validate pagination progress to prevent infinite loops
+        const previousSkip = currentSkip;
         currentSkip += pageRecords.length;
+        
+        // Anti-bypass check: ensure offset actually advanced
+        if (currentSkip <= previousSkip) {
+          logger.error('Pagination offset did not advance - potential infinite loop', {
+            previousSkip,
+            currentSkip,
+            recordsReceived: pageRecords.length
+          });
+          break;
+        }
+        
+        // Anti-bypass check: ensure we're not receiving the same data
+        if (pageRecords.length === body.options.top && 
+            allRecords.length + pageRecords.length > limit) {
+          logger.debug('Truncating final page to respect limit');
+          const remainingSlots = limit - allRecords.length;
+          allRecords = [...allRecords, ...pageRecords.slice(0, remainingSlots)];
+          hasMore = false;
+          break;
+        }
+        
         hasMore = pageRecords.length === body.options.top && allRecords.length < limit;
         
         logger.debug('Fetched additional records', { 
           newRecords: pageRecords.length,
           totalRecords: allRecords.length,
-          limit
+          limit,
+          currentSkip,
+          hasMore
         });
       }
       

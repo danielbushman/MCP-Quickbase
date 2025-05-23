@@ -145,15 +145,78 @@ export class UploadFileTool extends BaseTool<UploadFileParams, UploadFileResult>
     if (!fileInfo) {
       throw new Error(`Unable to get file information: ${file_path}`);
     }
+
+    // Validate file size (max 100MB)
+    const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
+    if (fileInfo.size > MAX_FILE_SIZE) {
+      throw new Error(`File size ${fileInfo.size} bytes exceeds maximum allowed size of ${MAX_FILE_SIZE} bytes`);
+    }
+
+    // Secure file path validation - prevent directory traversal attacks
+    const path = await import('path');
+    const fs = await import('fs');
     
-    // Read the file
-    const fileBuffer = readFileAsBuffer(file_path);
-    if (!fileBuffer) {
-      throw new Error(`Unable to read file: ${file_path}`);
+    // First, validate the input path before any resolution
+    if (!file_path || typeof file_path !== 'string') {
+      throw new Error('Invalid file path: must be a non-empty string');
     }
     
-    // Convert Buffer to base64
-    const fileBase64 = fileBuffer.toString('base64');
+    // Reject obvious traversal attempts immediately
+    if (file_path.includes('..') || file_path.startsWith('/') || file_path.includes('\\')) {
+      throw new Error('Invalid file path: directory traversal detected');
+    }
+    
+    // Define allowed working directory (current directory only)
+    const workingDir = process.cwd();
+    let resolvedPath: string;
+    
+    try {
+      // Resolve the path relative to working directory
+      resolvedPath = path.resolve(workingDir, file_path);
+    } catch (error) {
+      throw new Error('Invalid file path format');
+    }
+    
+    // Critical security check: ensure resolved path is within working directory
+    if (!resolvedPath.startsWith(workingDir + path.sep) && resolvedPath !== workingDir) {
+      throw new Error('Invalid file path: access outside working directory denied');
+    }
+    
+    // Verify file exists and is readable
+    try {
+      await fs.promises.access(resolvedPath, fs.constants.R_OK);
+    } catch (error) {
+      throw new Error(`File access denied or file does not exist: ${file_path}`);
+    }
+    
+    // Memory-efficient file reading with size validation
+    const CHUNK_SIZE = 1024 * 1024; // 1MB chunks
+    let fileBase64: string;
+    
+    try {
+      if (fileInfo.size > 10 * 1024 * 1024) { // > 10MB, use streaming
+        logger.debug('Using streaming read for large file', { size: fileInfo.size });
+        
+        // Stream the file in chunks to prevent memory overflow
+        const chunks: string[] = [];
+        const readStream = fs.createReadStream(resolvedPath, { highWaterMark: CHUNK_SIZE });
+        
+        for await (const chunk of readStream) {
+          chunks.push((chunk as Buffer).toString('base64'));
+        }
+        
+        fileBase64 = chunks.join('');
+      } else {
+        // Small files can be read directly
+        const fileBuffer = readFileAsBuffer(file_path);
+        if (!fileBuffer) {
+          throw new Error(`Unable to read file: ${file_path}`);
+        }
+        fileBase64 = fileBuffer.toString('base64');
+      }
+    } catch (error) {
+      throw new Error(`Failed to read file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
     
     // Prepare the file upload request
     const body = {
