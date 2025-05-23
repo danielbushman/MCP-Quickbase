@@ -61,3 +61,4 @@ Thumbs.db
 test_results/
 quickbase_cache/ 
 **/.claude/settings.local.json
+v2/coverage/
