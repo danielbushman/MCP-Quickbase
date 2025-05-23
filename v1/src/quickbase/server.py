@@ -447,7 +447,7 @@ class QuickbaseClient:
         """Retrieves relationships for a table.
 
         Args:
-            table_id (str): The ID of the Quickbase table.
+            table_id (str): The ID of the child Quickbase table.
 
         Returns:
             list[dict]: List of table relationships
@@ -464,7 +464,12 @@ class QuickbaseClient:
                 return cached_relationships
                 
         try:
-            response = self._request("GET", f"tables/{table_id}/relationships")
+            # Remove any trailing slashes and ensure proper format
+            endpoint = f"tables/{table_id.strip('/')}/relationships"
+            
+            self.logger.debug(f"Getting relationships with endpoint: {endpoint}")
+            
+            response = self._request("GET", endpoint)
             relationships = self._handle_response(response)
             
             # Cache the relationships
@@ -476,6 +481,112 @@ class QuickbaseClient:
             raise
         except Exception as e:
             raise QuickbaseError(f"Failed to get table relationships: {str(e)}")
+            
+    def create_relationship(self, table_id: str, relationship_data: dict) -> dict:
+        """Creates a new relationship for a table.
+
+        Args:
+            table_id (str): The ID of the child table where to create the relationship
+            relationship_data (dict): The relationship definition data with parentTableId
+
+        Returns:
+            dict: The created relationship
+            
+        Raises:
+            QuickbaseError: If the API request fails
+        """
+        try:
+            # Validate required fields to provide better error messages
+            if "parentTableId" not in relationship_data:
+                raise QuickbaseValidationError("Missing required field 'parentTableId' in relationship_data")
+                
+            # Remove any trailing slashes and ensure proper format
+            endpoint = f"tables/{table_id.strip('/')}/relationship"
+            
+            print(f"DEBUG: Creating relationship with endpoint: {endpoint}")
+            print(f"DEBUG: Relationship data: {json.dumps(relationship_data)}")
+            
+            response = self._request("POST", endpoint, json=relationship_data)
+            relationship = self._handle_response(response)
+            
+            # Invalidate cache for this table's relationships
+            if self.use_cache:
+                cache_key = f"relationships_{table_id}"
+                table_cache.delete(cache_key)
+                
+            return relationship
+        except QuickbaseError:
+            raise
+        except Exception as e:
+            raise QuickbaseError(f"Failed to create relationship: {str(e)}")
+            
+    def update_relationship(self, table_id: str, relationship_id: str, relationship_data: dict) -> dict:
+        """Updates an existing relationship.
+
+        Args:
+            table_id (str): The ID of the child table where the relationship exists
+            relationship_id (str): The ID of the relationship to update
+            relationship_data (dict): The updated relationship definition data
+
+        Returns:
+            dict: The updated relationship
+            
+        Raises:
+            QuickbaseError: If the API request fails
+        """
+        try:
+            # Remove any trailing slashes and ensure proper format
+            endpoint = f"tables/{table_id.strip('/')}/relationship/{relationship_id.strip('/')}"
+            
+            print(f"DEBUG: Updating relationship with endpoint: {endpoint}")
+            print(f"DEBUG: Relationship data: {json.dumps(relationship_data)}")
+            
+            response = self._request("PUT", endpoint, json=relationship_data)
+            relationship = self._handle_response(response)
+            
+            # Invalidate cache for this table's relationships
+            if self.use_cache:
+                cache_key = f"relationships_{table_id}"
+                table_cache.delete(cache_key)
+                
+            return relationship
+        except QuickbaseError:
+            raise
+        except Exception as e:
+            raise QuickbaseError(f"Failed to update relationship: {str(e)}")
+            
+    def delete_relationship(self, table_id: str, relationship_id: str) -> bool:
+        """Deletes a relationship.
+
+        Args:
+            table_id (str): The ID of the child table where the relationship exists
+            relationship_id (str): The ID of the relationship to delete
+
+        Returns:
+            bool: True if successful
+            
+        Raises:
+            QuickbaseError: If the API request fails
+        """
+        try:
+            # Remove any trailing slashes and ensure proper format
+            endpoint = f"tables/{table_id.strip('/')}/relationship/{relationship_id.strip('/')}"
+            
+            print(f"DEBUG: Deleting relationship with endpoint: {endpoint}")
+            
+            response = self._request("DELETE", endpoint)
+            self._handle_response(response)
+            
+            # Invalidate cache for this table's relationships
+            if self.use_cache:
+                cache_key = f"relationships_{table_id}"
+                table_cache.delete(cache_key)
+                
+            return True
+        except QuickbaseError:
+            raise
+        except Exception as e:
+            raise QuickbaseError(f"Failed to delete relationship: {str(e)}")
 
     # Record Operations
     @retry(exceptions=[requests.exceptions.RequestException], max_tries=3, delay=1.0, backoff=2.0)
@@ -2282,6 +2393,138 @@ async def handle_list_tools() -> list[types.Tool]:
             },
         ),
         
+        # Relationship Operations
+        types.Tool(
+            name="get_table_relationships",
+            description="Retrieves relationships for a Quickbase table",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "table_id": {
+                        "type": "string",
+                        "description": "The ID of the Quickbase table (can be parent or child table)",
+                    },
+                },
+                "required": ["table_id"],
+            },
+        ),
+        types.Tool(
+            name="create_relationship",
+            description="Creates a new relationship between tables",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "table_id": {
+                        "type": "string",
+                        "description": "The ID of the child table where the relationship will be created",
+                    },
+                    "relationship_data": {
+                        "type": "object",
+                        "description": "Relationship definition data",
+                        "properties": {
+                            "parentTableId": {
+                                "type": "string",
+                                "description": "The ID of the parent table"
+                            },
+                            "foreignKeyField": {
+                                "type": "object",
+                                "description": "Optional configuration for the reference field",
+                                "properties": {
+                                    "label": {"type": "string", "description": "Label for the reference field"}
+                                }
+                            },
+                            "lookupFieldIds": {
+                                "type": "array",
+                                "description": "Optional array of field IDs in the parent table to create as lookup fields",
+                                "items": {"type": "integer"}
+                            },
+                            "summaryFields": {
+                                "type": "array",
+                                "description": "Optional array of summary field configurations",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "label": {"type": "string", "description": "Label for the summary field"},
+                                        "summaryFid": {"type": "integer", "description": "Field ID to summarize (0 for COUNT type)"},
+                                        "accumulationType": {"type": "string", "description": "Type: SUM, AVG, MAX, MIN, COUNT, etc."}
+                                    }
+                                }
+                            }
+                        },
+                        "additionalProperties": True,
+                    },
+                },
+                "required": ["table_id", "relationship_data"],
+            },
+        ),
+        types.Tool(
+            name="update_relationship",
+            description="Updates an existing relationship",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "table_id": {
+                        "type": "string",
+                        "description": "The ID of the child table where the relationship exists",
+                    },
+                    "relationship_id": {
+                        "type": "string",
+                        "description": "The ID of the relationship to update",
+                    },
+                    "relationship_data": {
+                        "type": "object",
+                        "description": "Updated relationship definition data",
+                        "properties": {
+                            "foreignKeyField": {
+                                "type": "object",
+                                "description": "Optional configuration for the reference field",
+                                "properties": {
+                                    "label": {"type": "string", "description": "Label for the reference field"}
+                                }
+                            },
+                            "lookupFieldIds": {
+                                "type": "array",
+                                "description": "Optional array of field IDs in the parent table to create as lookup fields",
+                                "items": {"type": "integer"}
+                            },
+                            "summaryFields": {
+                                "type": "array",
+                                "description": "Optional array of summary field configurations",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "label": {"type": "string"},
+                                        "summaryFid": {"type": "integer"},
+                                        "accumulationType": {"type": "string"}
+                                    }
+                                }
+                            }
+                        },
+                        "additionalProperties": True,
+                    },
+                },
+                "required": ["table_id", "relationship_id", "relationship_data"],
+            },
+        ),
+        types.Tool(
+            name="delete_relationship",
+            description="Deletes a relationship",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "table_id": {
+                        "type": "string",
+                        "description": "The ID of the child table where the relationship exists",
+                    },
+                    "relationship_id": {
+                        "type": "string",
+                        "description": "The ID of the relationship to delete",
+                    },
+                },
+                "required": ["table_id", "relationship_id"],
+            },
+        ),
+        
         # Record Operations
         types.Tool(
             name="query_records",
@@ -3188,6 +3431,144 @@ async def handle_call_tool(name: str, arguments: dict[str, str]) -> list[types.T
                          f"To update fields, please use the Quickbase UI or direct API calls with the correct authentication."
                 )
             ]
+        elif name == "get_table_relationships":
+            table_id = arguments.get("table_id")
+            if not table_id:
+                raise ValueError("Missing 'table_id' argument")
+
+            try:
+                results = qb_client.get_table_relationships(table_id)
+                
+                if not results:
+                    return [
+                        types.TextContent(
+                            type="text",
+                            text=f"No relationships found for table {table_id}."
+                        )
+                    ]
+                    
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Table Relationships (JSON):\n{json.dumps(results, indent=2)}",
+                    )
+                ]
+            except QuickbaseError as e:
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Error retrieving relationships: {e.message}\n\n" +
+                             f"Table ID: {table_id}\n\n" +
+                             f"Quickbase API Response:\n{json.dumps(e.response, indent=2) if e.response else 'No response details'}"
+                    )
+                ]
+        elif name == "create_relationship":
+            table_id = arguments.get("table_id")
+            relationship_data = arguments.get("relationship_data")
+            
+            print(f"DEBUG!!!: Creating relationship with data: {json.dumps(relationship_data)}")
+            print(f"DEBUG!!!: Table ID: {table_id}")
+
+            if not table_id or not relationship_data:
+                raise ValueError("Missing 'table_id' or 'relationship_data' argument")
+                
+            # Parse the relationship data if it's a string
+            if isinstance(relationship_data, str):
+                relationship_data = json.loads(relationship_data)
+                
+            # Validate the relationship data
+            if not isinstance(relationship_data, dict) or not relationship_data:
+                raise ValueError("relationship_data must be a non-empty dictionary")
+                
+            # Ensure parentTableId is present
+            if "parentTableId" not in relationship_data:
+                raise ValueError("relationship_data must contain 'parentTableId' field")
+                
+            print(f"DEBUG: Creating relationship with data: {json.dumps(relationship_data)}")
+                
+            try:
+                results = qb_client.create_relationship(table_id, relationship_data)
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Created Relationship (JSON):\n{json.dumps(results, indent=2)}",
+                    )
+                ]
+            except QuickbaseError as e:
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Error creating relationship: {e.message}\n\n" +
+                             f"Request Details:\n" +
+                             f"- Child Table ID: {table_id}\n" +
+                             f"- Parent Table ID: {relationship_data.get('parentTableId')}\n\n" +
+                             f"Quickbase API Response:\n{json.dumps(e.response, indent=2) if e.response else 'No response details'}\n\n" +
+                             f"Please ensure both tables are in the same application and that you have permission to create relationships."
+                    )
+                ]
+        elif name == "update_relationship":
+            table_id = arguments.get("table_id")
+            relationship_id = arguments.get("relationship_id")
+            relationship_data = arguments.get("relationship_data")
+            
+            if not table_id or not relationship_id or not relationship_data:
+                raise ValueError("Missing required arguments: table_id, relationship_id, or relationship_data")
+                
+            # Parse the relationship data if it's a string
+            if isinstance(relationship_data, str):
+                relationship_data = json.loads(relationship_data)
+                
+            # Validate the relationship data
+            if not isinstance(relationship_data, dict) or not relationship_data:
+                raise ValueError("relationship_data must be a non-empty dictionary")
+                
+            try:
+                print(f"DEBUG: Updating relationship {relationship_id} with data: {json.dumps(relationship_data)}")
+                results = qb_client.update_relationship(table_id, relationship_id, relationship_data)
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Updated Relationship (JSON):\n{json.dumps(results, indent=2)}",
+                    )
+                ]
+            except QuickbaseError as e:
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Error updating relationship: {e.message}\n\n" +
+                             f"Request Details:\n" +
+                             f"- Table ID: {table_id}\n" +
+                             f"- Relationship ID: {relationship_id}\n\n" +
+                             f"Quickbase API Response:\n{json.dumps(e.response, indent=2) if e.response else 'No response details'}"
+                    )
+                ]
+        elif name == "delete_relationship":
+            table_id = arguments.get("table_id")
+            relationship_id = arguments.get("relationship_id")
+            
+            if not table_id or not relationship_id:
+                raise ValueError("Missing required arguments: table_id or relationship_id")
+            
+            try:
+                success = qb_client.delete_relationship(table_id, relationship_id)
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Relationship deleted successfully." if success else "Failed to delete relationship.",
+                    )
+                ]
+            except QuickbaseError as e:
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Error deleting relationship: {e.message}\n\n" +
+                             f"Request Details:\n" +
+                             f"- Table ID: {table_id}\n" +
+                             f"- Relationship ID: {relationship_id}\n\n" +
+                             f"Quickbase API Response:\n{json.dumps(e.response, indent=2) if e.response else 'No response details'}"
+                    )
+                ]
+            
         raise ValueError(f"Unknown tool: {name}")
     except QuickbaseError as e:
         return [

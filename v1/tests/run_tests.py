@@ -22,6 +22,7 @@ TESTS = {
     "create": "test_create_record.py",
     "table": "test_table_operations.py",
     "app": "test_app_operations.py",
+    "relationship": "test_relationship_operations.py",
 }
 
 def run_test(test_script):
@@ -70,7 +71,7 @@ def run_all_tests():
 
 def main():
     parser = argparse.ArgumentParser(description='Run Quickbase MCP Integration tests')
-    parser.add_argument('tests', nargs='*', help='Specific tests to run (connection, file, pagination, validate, remaining)')
+    parser.add_argument('tests', nargs='*', help='Specific tests to run (connection, file, pagination, validate, remaining, create, table, app, relationship)')
     parser.add_argument('--all', action='store_true', help='Run all tests')
     args = parser.parse_args()
     
