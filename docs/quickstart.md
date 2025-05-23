@@ -1,17 +1,15 @@
-# Quickstart Guide
+# Quick Start Guide
 
-This guide will help you set up the Quickbase Connector for Claude and start using it within minutes.
+This guide will help you set up the Quickbase MCP Connector and start using it with Claude within minutes.
 
-## Prerequisites
+## 📋 Prerequisites
 
-- Claude Desktop or Claude Code (Claude Pro subscription)
+- Claude Desktop or Claude Code
 - Node.js 14+ and npm
-- Python 3.8+ (for v1 only)
 - Quickbase account with API access
+- Valid Quickbase user token
 
-## Setup Options
-
-### Option 1: Automatic Setup (Recommended)
+## 🚀 Quick Setup (Recommended)
 
 The automatic setup handles everything for you:
 
@@ -27,54 +25,64 @@ cd ~/Quickbase-MCP-connector
 The configure script will:
 1. Ask for your Quickbase realm, token, and app ID
 2. Create the necessary configuration for Claude
-3. Start the connector service
+3. Build and prepare the connector
 
-### Option 2: Manual Setup
+## 🔧 Manual Setup
 
 If you prefer to handle the setup yourself:
 
-1. Clone the repository:
+### Step 1: Clone and Install
+
 ```bash
 git clone https://github.com/danielbushman/Quickbase-MCP-connector.git
-cd Quickbase-MCP-connector
-```
+cd Quickbase-MCP-connector/v2
 
-2. Install dependencies:
-```bash
+# Install dependencies
 npm install
+
+# Build the project
+npm run build
 ```
 
-3. Set up your environment:
-```bash
-# Create .env file
-echo "QUICKBASE_REALM_HOST=your-realm.quickbase.com
+### Step 2: Configure Environment
+
+Create a `.env` file in the v2 directory:
+
+```env
+QUICKBASE_REALM_HOST=your-realm.quickbase.com
 QUICKBASE_USER_TOKEN=your_user_token_here
-QUICKBASE_APP_ID=your_app_id_here" > .env
+QUICKBASE_APP_ID=your_app_id_here
+QUICKBASE_CACHE_ENABLED=true
+QUICKBASE_CACHE_TTL=3600
+DEBUG=false
 ```
 
-4. Start the server:
+### Step 3: Test the Setup
+
 ```bash
-node src/server.js
+# Test the connection
+npm start
 ```
 
-## Connecting to Claude
+## 🔗 Connecting to Claude
 
-### With Claude Desktop
+### Claude Desktop Configuration
 
 1. Find your Claude Desktop config location:
    - **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
    - **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
    - **Linux**: `~/.config/Claude/claude_desktop_config.json`
 
-2. Add the Quickbase connector configuration:
+2. Add the Quickbase MCP Connector configuration:
+
 ```json
 {
   "mcpServers": {
     "quickbase": {
       "command": "node",
-      "args": ["/path/to/Quickbase-MCP-connector/src/server.js"],
+      "args": ["/absolute/path/to/Quickbase-MCP-connector/v2/dist/mcp-stdio-server.js"],
       "env": {
-        "QUICKBASE_REALM_HOST": "your-realm",
+        "QUICKBASE_REALM_HOST": "your-realm.quickbase.com",
         "QUICKBASE_USER_TOKEN": "your-token",
         "QUICKBASE_APP_ID": "your-app-id"
       }
@@ -85,42 +93,77 @@ node src/server.js
 
 3. Restart Claude Desktop
 
-### With Claude Code
+### Claude Code Configuration
 
 Register the MCP connector:
 
 ```bash
-claude mcp add quickbase node /path/to/Quickbase-MCP-connector/src/server.js
+claude mcp add quickbase node /absolute/path/to/Quickbase-MCP-connector/v2/dist/mcp-stdio-server.js
 ```
 
-## Testing the Connection
+## ✅ Testing the Connection
 
 1. Start a conversation with Claude
 2. Ask it to test the Quickbase connection:
 
 ```
-Can you check if my Quickbase connection is working?
+Can you test my Quickbase connection?
 ```
 
-Claude should respond with connection status information.
+Claude should respond with connection status and user information.
 
-## Example Commands
+## 🛠️ Example Commands
 
 Here are some examples of what you can ask Claude to do:
 
+### Basic Operations
 - "List all tables in my Quickbase app"
 - "Show me the fields in the Customers table"
+- "Test my Quickbase connection"
+
+### Record Operations
 - "Create a new project record with the name 'Website Redesign'"
-- "Run my 'Overdue Tasks' report and summarize the results"
 - "Find all customer records created in the last month"
+- "Update record ID 123 in the Projects table"
 
-## Troubleshooting
+### Data Analysis
+- "Run my 'Overdue Tasks' report and summarize the results"
+- "Show me all high-priority items"
+- "Count the total number of open projects"
 
-If you encounter issues:
+### File Operations
+- "Upload this document to record ID 456"
+- "Download the attachment from record ID 789"
 
-1. Check your credentials in the .env file
-2. Make sure the server is running
-3. Verify Claude can access the connector
-4. Check the server logs for error messages
+## 🐛 Troubleshooting
 
-For more detailed help, see the [troubleshooting guide](troubleshooting.md).
+### Common Issues
+
+1. **Connection Failed**
+   - Verify your Quickbase credentials in the .env file
+   - Ensure your user token has the required permissions
+   - Check that your realm hostname is correct
+
+2. **Permission Errors**
+   - Confirm your user token has access to the specified app
+   - Verify you have read/write permissions for the tables you're accessing
+
+3. **Path Issues**
+   - Use absolute paths in Claude configuration
+   - Ensure the built files exist in `v2/dist/`
+
+4. **Claude Not Recognizing Tools**
+   - Restart Claude Desktop after configuration changes
+   - Check Claude logs for connection errors
+   - Verify the JSON configuration syntax
+
+### Debug Mode
+
+Enable debug logging for detailed troubleshooting:
+
+```env
+DEBUG=true
+LOG_LEVEL=DEBUG
+```
+
+For more detailed help, see the [Developer Guide](../v2/docs/developer-guide.md).
