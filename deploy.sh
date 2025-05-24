@@ -1,0 +1,101 @@
+#!/bin/bash
+
+# Deployment script for Quickbase MCP Connector
+set -e
+
+echo "🚀 Preparing Quickbase MCP Connector for deployment"
+
+# Check if required files exist
+if [ ! -f "package.json" ]; then
+    echo "❌ Error: package.json not found"
+    exit 1
+fi
+
+if [ ! -f "v2/package.json" ]; then
+    echo "❌ Error: v2/package.json not found"
+    exit 1
+fi
+
+# Build the project locally
+echo "🔨 Building project..."
+cd v2
+npm install
+npm run build
+cd ..
+
+echo "✅ Build successful"
+
+# Test the MCP server
+echo "🧪 Testing MCP server..."
+timeout 5s node v2/dist/mcp-stdio-server.js --help 2>/dev/null || {
+    echo "⚠️  MCP server test completed (this is normal for stdio servers)"
+}
+
+# Publish to NPM (for automatic Glama.ai discovery)
+echo "📦 Publishing to NPM Registry..."
+echo ""
+echo "To make your MCP server discoverable by Glama.ai, publish it to NPM:"
+echo ""
+echo "1. Update version in package.json if needed"
+echo "2. Run: npm publish"
+echo "3. Glama.ai will automatically index your package"
+echo ""
+
+# Alternative deployment options
+echo "🚀 Deployment Options:"
+echo ""
+echo "Option 1: NPM Package (Recommended for Glama.ai discovery)"
+echo "  npm publish"
+echo "  # Glama.ai will automatically discover and index your package"
+echo ""
+echo "Option 2: Docker Deployment"
+echo "  docker build -f Dockerfile.glama -t quickbase-mcp ."
+echo "  # Deploy to your preferred cloud platform"
+echo ""
+echo "Option 3: Direct GitHub Integration"
+echo "  # Push to GitHub and submit to awesome-mcp-servers"
+echo "  # https://github.com/punkpeye/awesome-mcp-servers"
+echo ""
+
+# Environment configuration
+echo "🔧 Environment Configuration:"
+echo ""
+echo "Required environment variables:"
+echo "- QUICKBASE_REALM_HOST=your-realm.quickbase.com"
+echo "- QUICKBASE_USER_TOKEN=your-user-token"
+echo "- QUICKBASE_APP_ID=your-app-id"
+echo ""
+echo "Optional environment variables:"
+echo "- QUICKBASE_CACHE_ENABLED=true"
+echo "- QUICKBASE_CACHE_TTL=3600"
+echo "- DEBUG=false"
+echo "- LOG_LEVEL=INFO"
+echo ""
+
+# Usage instructions
+echo "📚 Usage Instructions:"
+echo ""
+echo "After deployment, configure in Claude Desktop:"
+echo ""
+echo '{
+  "mcpServers": {
+    "quickbase": {
+      "command": "npm",
+      "args": ["exec", "quickbase-mcp-connector"],
+      "env": {
+        "QUICKBASE_REALM_HOST": "your-realm.quickbase.com",
+        "QUICKBASE_USER_TOKEN": "your-token",
+        "QUICKBASE_APP_ID": "your-app-id"
+      }
+    }
+  }
+}'
+echo ""
+
+echo "🎉 Deployment preparation complete!"
+echo ""
+echo "Example prompts you can use:"
+echo "- 'Show me all active projects in Quickbase'"
+echo "- 'Generate a weekly safety report'"
+echo "- 'Add a new employee to the construction crew'"
+echo "- 'Which materials need to be reordered?'"

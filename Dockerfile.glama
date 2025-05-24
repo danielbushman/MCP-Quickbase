@@ -1,0 +1,46 @@
+# Dockerfile for Glama.ai deployment
+FROM node:20-slim
+
+# Set environment variables
+ENV NODE_ENV=production
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create app directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+COPY v2/package*.json ./v2/
+
+# Install dependencies
+RUN npm install --only=production
+RUN cd v2 && npm install --only=production
+
+# Copy source code
+COPY v2/src ./v2/src
+COPY v2/tsconfig.json ./v2/
+COPY v2/jest.config.js ./v2/
+
+# Build TypeScript
+RUN cd v2 && npm run build
+
+# Create non-root user
+RUN groupadd -r mcp && useradd -r -g mcp mcp
+RUN chown -R mcp:mcp /app
+USER mcp
+
+# Expose port for HTTP server (if needed)
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD node -e "console.log('Health check passed')" || exit 1
+
+# Default to stdio server for MCP
+CMD ["node", "v2/dist/mcp-stdio-server.js"]

@@ -1,6 +1,6 @@
 # Quickbase MCP Connector
 
-Connect Claude directly to your Quickbase data through the Model Context Protocol (MCP). Ask questions, create records, run reports, and more - all through natural language.
+A Model Context Protocol (MCP) connector that enables Claude to interact with Quickbase databases through natural language. Perfect for construction management, project tracking, workforce management, and business operations.
 
 **DISCLAIMER: This is an unofficial, independent project not affiliated with, sponsored, or endorsed by Quickbase, Inc.**
 
@@ -8,22 +8,51 @@ Connect Claude directly to your Quickbase data through the Model Context Protoco
 
 ## 🚀 Quick Start
 
+### Local Development
 ```bash
-# One-line setup
-curl -sSL https://raw.githubusercontent.com/danielbushman/Quickbase-MCP-connector/main/auto_setup.sh | bash
+# Clone and setup
+git clone <repository-url>
+cd Quickbase-MCP-connector/v2
+npm install
+npm run build
 
-# Configure your credentials
-cd ~/Quickbase-MCP-connector
-./configure.sh
+# Configure environment
+cp .env.example .env
+# Edit .env with your Quickbase credentials
+
+# Start the server
+npm start
 ```
 
-## 🛠️ What Can You Do?
+### Deploy for Remote Access (Recommended)
+```bash
+# Build and prepare for deployment
+./deploy.sh
 
-- **Ask about your data**: "How many open projects do we have?"
-- **Create records**: "Create a new customer named Acme Inc."
-- **Run reports**: "Run my 'Overdue Tasks' report"
-- **Upload files**: "Upload this document to the project record"
-- **Analyze data**: "Which sales rep has the highest conversion rate?"
+# Option 1: Publish to NPM (for Glama.ai auto-discovery)
+npm publish
+
+# Option 2: Deploy via Docker to your cloud platform
+docker build -f Dockerfile.glama -t quickbase-mcp .
+```
+
+## 📋 What You Can Do
+
+### Construction Management
+- Track project progress and budgets
+- Manage crews and workforce scheduling  
+- Monitor materials and inventory
+- Report and analyze safety incidents
+- Generate executive dashboards
+
+### Natural Language Interface
+```
+"Show me all active projects with their current status"
+"Add a new safety incident for the downtown site"
+"Which materials need to be reordered this week?"
+"Generate a crew productivity report"
+"Update the concrete pouring task to 85% complete"
+```
 
 ## 🔧 Configuration
 
@@ -55,6 +84,9 @@ claude mcp add quickbase node v2/dist/mcp-stdio-server.js
 
 ## 📚 Documentation
 
+- **[Deployment Guide](docs/deployment.md)**: Complete setup for Glama.ai
+- **[Claude Prompts](docs/claude-prompts.md)**: Comprehensive natural language examples
+- **[Quick Reference](docs/quick-reference.md)**: Common prompts cheat sheet
 - [Quick Start Guide](docs/quickstart.md)
 - [Available Tools](docs/tools.md)
 - [Architecture Overview](docs/architecture.md)
