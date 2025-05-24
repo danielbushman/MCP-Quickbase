@@ -1,15 +1,43 @@
 {
-  "name": "mcp-quickbase-connector",
-  "version": "1.0.0",
-  "description": "MCP connector for Quickbase API",
+  "name": "quickbase-mcp-connector",
+  "version": "2.0.0",
+  "description": "Model Context Protocol connector for Quickbase - enables Claude to interact with Quickbase databases through natural language for construction management, project tracking, and business operations",
   "main": "v2/dist/mcp-stdio-server.js",
   "bin": {
-    "quickbase": "./v2/dist/mcp-stdio-server.js"
+    "quickbase-mcp": "./v2/dist/mcp-stdio-server.js"
   },
   "scripts": {
     "build": "cd v2 && npm run build",
     "start": "cd v2 && npm start",
-    "dev": "cd v2 && npm run dev"
+    "dev": "cd v2 && npm run dev",
+    "test": "cd v2 && npm test",
+    "lint": "cd v2 && npm run lint",
+    "format": "cd v2 && npm run format"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "quickbase",
+    "claude",
+    "ai",
+    "database",
+    "construction",
+    "project-management",
+    "workflow",
+    "automation"
+  ],
+  "author": "Quickbase MCP Connector Contributors",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/danielbushman/Quickbase-MCP-connector.git"
+  },
+  "homepage": "https://github.com/danielbushman/Quickbase-MCP-connector#readme",
+  "bugs": {
+    "url": "https://github.com/danielbushman/Quickbase-MCP-connector/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   },
   "dependencies": {
     "axios": "^1.6.7",

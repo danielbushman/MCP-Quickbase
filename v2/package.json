@@ -17,8 +17,31 @@
     "lint": "eslint src --ext .ts",
     "format": "prettier --write \"src/**/*.ts\""
   },
-  "author": "",
+  "author": "Quickbase MCP Connector Contributors",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/danielbushman/Quickbase-MCP-connector.git"
+  },
+  "homepage": "https://github.com/danielbushman/Quickbase-MCP-connector#readme",
+  "bugs": {
+    "url": "https://github.com/danielbushman/Quickbase-MCP-connector/issues"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "quickbase",
+    "claude",
+    "ai",
+    "database",
+    "construction",
+    "project-management",
+    "workflow",
+    "automation"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.11.2",
     "@types/cors": "^2.8.18",
