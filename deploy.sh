@@ -44,7 +44,7 @@ echo "  npm publish"
 echo "  # Glama.ai will automatically discover and index your package"
 echo ""
 echo "Option 2: Docker Deployment"
-echo "  docker build -f Dockerfile.glama -t quickbase-mcp ."
+echo "  docker build -f Dockerfile.glama -t mcp-quickbase ."
 echo "  # Deploy to your preferred cloud platform"
 echo ""
 echo "Option 3: Direct GitHub Integration"
@@ -91,7 +91,7 @@ echo "2. After global installation (npm install -g mcp-quickbase):"
 echo '{
   "mcpServers": {
     "quickbase": {
-      "command": "quickbase-mcp",
+      "command": "mcp-quickbase",
       "args": [],
       "env": {
         "QUICKBASE_REALM_HOST": "your-realm.quickbase.com",

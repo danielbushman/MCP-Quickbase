@@ -55,7 +55,7 @@ For custom cloud deployments using the provided Docker configuration.
 
 ```bash
 # Build the Docker image
-docker build -f Dockerfile.glama -t quickbase-mcp .
+docker build -f Dockerfile.glama -t mcp-quickbase .
 
 # Deploy to your preferred cloud platform
 # (AWS, Google Cloud, Azure, etc.)

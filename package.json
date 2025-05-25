@@ -5,7 +5,7 @@
   "main": "dist/mcp-stdio-server.js",
   "types": "dist/mcp-stdio-server.d.ts",
   "bin": {
-    "quickbase-mcp": "./dist/mcp-stdio-server.js"
+    "mcp-quickbase": "./dist/mcp-stdio-server.js"
   },
   "scripts": {
     "build": "tsc",
