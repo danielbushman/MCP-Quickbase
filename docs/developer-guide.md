@@ -58,7 +58,7 @@ The connector is built using a modular architecture with the following key compo
 
 ```bash
 # Required tools
-node --version  # v14+
+node --version  # v18+
 npm --version   # v6+
 ```
 
@@ -67,7 +67,7 @@ npm --version   # v6+
 ```bash
 # Clone and setup
 git clone <repository-url>
-cd quickbase-mcp-connector/v2
+cd quickbase-mcp-connector
 
 # Install dependencies
 npm install
@@ -517,7 +517,7 @@ DEBUG=QuickbaseClient npm start
 
 ### Pull Request Process
 
-1. Create feature branch from `v2-development`
+1. Create feature branch from `main`
 2. Implement feature with tests
 3. Ensure all tests pass
 4. Update documentation

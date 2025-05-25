@@ -5,7 +5,7 @@ This guide will help you set up the Quickbase MCP Connector and start using it w
 ## 📋 Prerequisites
 
 - Claude Desktop or Claude Code
-- Node.js 14+ and npm
+- Node.js 18+ and npm
 - Quickbase account with API access
 - Valid Quickbase user token
 
@@ -35,7 +35,7 @@ If you prefer to handle the setup yourself:
 
 ```bash
 git clone https://github.com/danielbushman/Quickbase-MCP-connector.git
-cd Quickbase-MCP-connector/v2
+cd Quickbase-MCP-connector
 
 # Install dependencies
 npm install
@@ -46,7 +46,7 @@ npm run build
 
 ### Step 2: Configure Environment
 
-Create a `.env` file in the v2 directory:
+Create a `.env` file in the project root directory:
 
 ```env
 QUICKBASE_REALM_HOST=your-realm.quickbase.com
@@ -80,7 +80,7 @@ npm start
   "mcpServers": {
     "quickbase": {
       "command": "node",
-      "args": ["/absolute/path/to/Quickbase-MCP-connector/v2/dist/mcp-stdio-server.js"],
+      "args": ["/absolute/path/to/Quickbase-MCP-connector/dist/mcp-stdio-server.js"],
       "env": {
         "QUICKBASE_REALM_HOST": "your-realm.quickbase.com",
         "QUICKBASE_USER_TOKEN": "your-token",
@@ -98,7 +98,7 @@ npm start
 Register the MCP connector:
 
 ```bash
-claude mcp add quickbase node /absolute/path/to/Quickbase-MCP-connector/v2/dist/mcp-stdio-server.js
+claude mcp add quickbase node /absolute/path/to/Quickbase-MCP-connector/dist/mcp-stdio-server.js
 ```
 
 ## ✅ Testing the Connection
@@ -150,7 +150,7 @@ Here are some examples of what you can ask Claude to do:
 
 3. **Path Issues**
    - Use absolute paths in Claude configuration
-   - Ensure the built files exist in `v2/dist/`
+   - Ensure the built files exist in `dist/`
 
 4. **Claude Not Recognizing Tools**
    - Restart Claude Desktop after configuration changes
@@ -166,4 +166,4 @@ DEBUG=true
 LOG_LEVEL=DEBUG
 ```
 
-For more detailed help, see the [Developer Guide](../v2/docs/developer-guide.md).
+For more detailed help, see the [Developer Guide](./developer-guide.md).

@@ -60,5 +60,6 @@ Thumbs.db
 *.log
 test_results/
 quickbase_cache/ 
-**/.claude/settings.local.json
-v2/coverage/
+**/settings.local.json
+coverage/
+
