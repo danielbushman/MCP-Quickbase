@@ -69,9 +69,15 @@ describe('Record Tools', () => {
     });
 
     it('should handle validation errors', async () => {
+      // Mock the request to return an error for empty table_id
+      mockClient.request.mockResolvedValueOnce({
+        success: false,
+        error: { message: 'Invalid table ID', type: 'validation_error', code: 400 }
+      });
+
       const params = {
         table_id: '', // Missing required field
-        data: {}
+        data: { '6': { value: 'test' } } // Valid data to pass data validation
       };
 
       const result = await tool.execute(params);
