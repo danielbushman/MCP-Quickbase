@@ -4,12 +4,22 @@ A TypeScript-based Model Context Protocol (MCP) connector for Quickbase, designe
 
 ## 🚀 Quick Start
 
-### Installation
+### Installation via NPM (Recommended)
+
+```bash
+# Use directly with npx (no installation needed)
+npx -y quickbase-mcp-connector
+
+# Or install globally
+npm install -g quickbase-mcp-connector
+```
+
+### Installation from Source
 
 ```bash
 # Clone the repository
-git clone https://github.com/danielbushman/Quickbase-mcp-connector.git
-cd quickbase-mcp-connector
+git clone https://github.com/danielbushman/Quickbase-MCP-connector.git
+cd Quickbase-MCP-connector
 
 # Install dependencies
 npm install
@@ -19,6 +29,30 @@ npm run build
 ```
 
 ### Configuration
+
+#### For NPM Users
+
+Configure directly in Claude Desktop:
+
+```json
+{
+  "mcpServers": {
+    "quickbase": {
+      "command": "npx",
+      "args": ["-y", "quickbase-mcp-connector"],
+      "env": {
+        "QUICKBASE_REALM_HOST": "your-realm.quickbase.com",
+        "QUICKBASE_USER_TOKEN": "your-user-token",
+        "QUICKBASE_APP_ID": "your-app-id",
+        "QUICKBASE_CACHE_ENABLED": "true",
+        "QUICKBASE_CACHE_TTL": "3600"
+      }
+    }
+  }
+}
+```
+
+#### For Local Development
 
 Create a `.env` file in the root directory:
 
@@ -31,15 +65,14 @@ QUICKBASE_CACHE_TTL=3600
 DEBUG=false
 ```
 
-### Usage with Claude
+Then configure Claude Desktop:
 
-1. **Configure MCP server**: Add to your Claude configuration:
 ```json
 {
   "mcpServers": {
     "quickbase": {
       "command": "node",
-      "args": ["path/to/quickbase-mcp-connector/dist/mcp-stdio-server.js"],
+      "args": ["/path/to/Quickbase-MCP-connector/dist/mcp-stdio-server.js"],
       "env": {
         "QUICKBASE_REALM_HOST": "your-realm.quickbase.com",
         "QUICKBASE_USER_TOKEN": "your-user-token",

@@ -66,14 +66,38 @@ npm start
 
 ## 🔗 Connecting to Claude
 
-### Claude Desktop Configuration
+### Method 1: Using NPM Package (Recommended)
+
+After the package is published to npm, users can configure Claude Desktop:
 
 1. Find your Claude Desktop config location:
    - **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
    - **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
    - **Linux**: `~/.config/Claude/claude_desktop_config.json`
 
-2. Add the Quickbase MCP Connector configuration:
+2. Add the configuration using npx (no installation required):
+
+```json
+{
+  "mcpServers": {
+    "quickbase": {
+      "command": "npx",
+      "args": ["-y", "quickbase-mcp-connector"],
+      "env": {
+        "QUICKBASE_REALM_HOST": "your-realm.quickbase.com",
+        "QUICKBASE_USER_TOKEN": "your-token",
+        "QUICKBASE_APP_ID": "your-app-id"
+      }
+    }
+  }
+}
+```
+
+3. Restart Claude Desktop
+
+### Method 2: Local Installation
+
+For development or if you've cloned the repository:
 
 ```json
 {
@@ -89,16 +113,6 @@ npm start
     }
   }
 }
-```
-
-3. Restart Claude Desktop
-
-### Claude Code Configuration
-
-Register the MCP connector:
-
-```bash
-claude mcp add quickbase node /absolute/path/to/Quickbase-MCP-connector/dist/mcp-stdio-server.js
 ```
 
 ## ✅ Testing the Connection

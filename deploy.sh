@@ -70,13 +70,29 @@ echo ""
 # Usage instructions
 echo "📚 Usage Instructions:"
 echo ""
-echo "After deployment, configure in Claude Desktop:"
+echo "After deployment, users can use the package in two ways:"
 echo ""
+echo "1. Via npx (no installation required):"
 echo '{
   "mcpServers": {
     "quickbase": {
-      "command": "npm",
-      "args": ["exec", "quickbase-mcp-connector"],
+      "command": "npx",
+      "args": ["-y", "quickbase-mcp-connector"],
+      "env": {
+        "QUICKBASE_REALM_HOST": "your-realm.quickbase.com",
+        "QUICKBASE_USER_TOKEN": "your-token",
+        "QUICKBASE_APP_ID": "your-app-id"
+      }
+    }
+  }
+}'
+echo ""
+echo "2. After global installation (npm install -g quickbase-mcp-connector):"
+echo '{
+  "mcpServers": {
+    "quickbase": {
+      "command": "quickbase-mcp",
+      "args": [],
       "env": {
         "QUICKBASE_REALM_HOST": "your-realm.quickbase.com",
         "QUICKBASE_USER_TOKEN": "your-token",

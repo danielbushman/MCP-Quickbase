@@ -1,0 +1,75 @@
+# Development files
+.env
+.env.test
+.env.example
+*.log
+coverage/
+coverage_report.txt
+node_modules/
+*.tgz
+
+# Source files (only ship built files)
+src/
+__tests__/
+
+# Development tools
+.eslintrc.json
+.prettierrc
+jest.config.js
+tsconfig.json
+*.test.ts
+*.test.js
+
+# Scripts and configs
+*.sh
+configure.sh
+auto_setup.sh
+check_dependencies.sh
+deploy.sh
+run_tests.sh
+test_all_tools.sh
+quick_setup.sh
+minimal_setup.sh
+killProcess.sh
+
+# Docker files (not needed for npm)
+Dockerfile
+Dockerfile.glama
+.dockerignore
+glama.yaml
+
+# Documentation files (already on GitHub)
+ai_specs/
+ai_workspace/
+CEO_*.md
+EXECUTIVE_SUMMARY.md
+MIGRATION.md
+RELEASE_NOTES.md
+CLAUDE.md
+
+# Version control
+.git/
+.gitignore
+.claude/
+.nvmrc
+
+# Legacy files
+v1-legacy/
+venv/
+requirements.txt
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Keep these files
+!dist/
+!package.json
+!package-lock.json
+!README.md
+!LICENSE
+!CHANGELOG.md
+!docs/

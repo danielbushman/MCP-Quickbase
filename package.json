@@ -15,7 +15,8 @@
     "dev": "ts-node src/server.ts",
     "test": "jest",
     "lint": "eslint src --ext .ts",
-    "format": "prettier --write \"src/**/*.ts\""
+    "format": "prettier --write \"src/**/*.ts\"",
+    "prepublishOnly": "npm run build && npm test"
   },
   "author": "Quickbase MCP Connector Contributors",
   "license": "MIT",
