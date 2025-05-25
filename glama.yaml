@@ -51,7 +51,7 @@ spec:
       description: "Cache time-to-live in seconds"
       required: false
       type: number
-      default: "3600"
+      default: 3600
       
     - name: DEBUG
       description: "Enable debug logging"
