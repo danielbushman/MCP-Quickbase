@@ -2,10 +2,9 @@
 
 ## 🚀 Build/Run/Test Commands
 
-### v2 (Current TypeScript Implementation)
+### TypeScript Implementation (v2)
 ```bash
 # Setup and build
-cd v2
 npm install
 npm run build
 
@@ -26,21 +25,9 @@ npm run lint               # ESLint
 npm run format             # Prettier formatting
 ```
 
-### v1 (Legacy Python Implementation - Reference Only)
-```bash
-# Setup (v1 legacy)
-cd v1
-./setup.sh
-
-# Testing (v1 legacy)
-./run_tests.sh
-python tests/run_tests.py connection
-python tests/run_tests.py --all
-```
-
 ## 📝 Code Style
 
-### TypeScript (v2 - Current)
+### TypeScript
 - **TypeScript**: Strict type checking enabled
 - **Style**: ESLint + Prettier configuration
 - **Naming**: 
@@ -53,17 +40,10 @@ python tests/run_tests.py --all
 - **Logging**: Centralized logger with sensitive data redaction
 - **API calls**: Built-in retry logic with exponential backoff
 
-### Python (v1 - Legacy Reference)
-- **Python**: PEP 8, typed with annotations (Python 3.8+)
-- **Naming**: snake_case throughout
-- **Docstrings**: Triple quotes with param descriptions
-- **Error handling**: try/except with specific exceptions
-- **Logging**: logging_utils.py with sensitive data redaction
-- **API calls**: retry.py decorator for transient errors
 
 ## 🧪 Testing
 
-### v2 Testing Standards
+### Testing Standards
 - **Coverage**: Maintain >35% coverage, aim for >80%
 - **Types**: Unit tests, integration tests, performance tests
 - **Structure**: Tests mirror src/ directory structure
@@ -85,13 +65,12 @@ src/__tests__/
 
 ## 🛠️ Development Workflow
 
-### v2 Development
-1. Work in `v2/` directory (current implementation)
-2. Use TypeScript with strict typing
-3. Follow existing tool patterns (extend BaseTool)
-4. Add comprehensive tests
-5. Update documentation for public APIs
-6. Run lint and tests before commits
+### Development
+1. Use TypeScript with strict typing
+2. Follow existing tool patterns (extend BaseTool)
+3. Add comprehensive tests
+4. Update documentation for public APIs
+5. Run lint and tests before commits
 
 ### Tool Development Pattern
 ```typescript
@@ -120,6 +99,6 @@ LOG_LEVEL=INFO
 ```
 
 ### Claude Integration
-- Main entry point: `v2/dist/mcp-stdio-server.js`
+- Main entry point: `dist/mcp-stdio-server.js`
 - Use absolute paths in Claude configuration
 - Restart Claude after configuration changes
