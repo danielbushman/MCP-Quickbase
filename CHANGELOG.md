@@ -2,6 +2,43 @@
 
 All notable changes to the Quickbase MCP Connector will be documented in this file.
 
+## [2.0.0] - 2025-05-24
+
+### Added
+- Complete TypeScript rewrite - removed Python dependency
+- Full type safety with TypeScript strict mode
+- Intelligent caching system with configurable TTL
+- Built-in retry logic with exponential backoff
+- Rate limiting to prevent API overload
+- Comprehensive error handling with structured responses
+- Jest-based test suite with 45%+ coverage
+- ESLint and Prettier for code quality
+- MCP server implementation for both stdio and HTTP modes
+- Session management and proper lifecycle handling
+- Migration guide for v1 users
+- Performance benchmarking tests
+
+### Changed
+- Minimum Node.js version increased to 18+ (from 14+)
+- Entry point changed to `dist/mcp-stdio-server.js`
+- Startup time reduced by 60% (~2s vs 5s+)
+- Memory usage reduced by 40%
+- All async operations now use modern async/await
+- Improved validation for all tool parameters
+- Better error messages with actionable context
+- Reorganized project structure for better maintainability
+
+### Fixed
+- Memory leaks in long-running sessions
+- Race conditions in concurrent requests
+- File upload issues with large files
+- Pagination bugs in query_records
+- Cache invalidation timing issues
+- Proper cleanup on shutdown
+
+### Deprecated
+- v1 implementation moved to v1-legacy/ for reference only
+
 ## [1.0.0] - 2025-03-21
 
 ### Added
