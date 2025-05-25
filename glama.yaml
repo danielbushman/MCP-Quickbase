@@ -20,7 +20,7 @@ spec:
     
   # Runtime configuration
   runtime:
-    command: ["node", "v2/dist/mcp-stdio-server.js"]
+    command: ["node", "dist/mcp-stdio-server.js"]
     workingDir: /app
     user: mcp
     

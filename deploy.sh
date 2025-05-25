@@ -11,23 +11,18 @@ if [ ! -f "package.json" ]; then
     exit 1
 fi
 
-if [ ! -f "v2/package.json" ]; then
-    echo "❌ Error: v2/package.json not found"
-    exit 1
-fi
+# No need to check for v2/package.json anymore
 
 # Build the project locally
 echo "🔨 Building project..."
-cd v2
 npm install
 npm run build
-cd ..
 
 echo "✅ Build successful"
 
 # Test the MCP server
 echo "🧪 Testing MCP server..."
-timeout 5s node v2/dist/mcp-stdio-server.js --help 2>/dev/null || {
+timeout 5s node dist/mcp-stdio-server.js --help 2>/dev/null || {
     echo "⚠️  MCP server test completed (this is normal for stdio servers)"
 }
 

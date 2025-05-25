@@ -45,7 +45,7 @@ npm run build
 
 ### Step 3: Update Configuration
 
-1. **Environment Variables** - Your existing `.env` file is compatible! Just ensure it's in the root directory (not in v1/ or v2/).
+1. **Environment Variables** - Your existing `.env` file is compatible! Just ensure it's in the root directory.
 
 2. **Claude Desktop Configuration** - Update your Claude configuration file:
 
