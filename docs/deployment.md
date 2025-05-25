@@ -23,15 +23,13 @@ git clone <repository-url>
 cd Quickbase-MCP-connector
 
 # Build the project
-cd v2
 npm install
 npm run build
-cd ..
 ```
 
 #### 2. Update Package Information
 
-Edit `package.json` and `v2/package.json` to update:
+Edit `package.json` to update:
 - Version number
 - Author information  
 - Repository URL
@@ -121,7 +119,7 @@ After deployment, configure the MCP server in Claude Desktop:
   "mcpServers": {
     "quickbase": {
       "command": "node",
-      "args": ["path/to/Quickbase-MCP-connector/v2/dist/mcp-stdio-server.js"],
+      "args": ["path/to/Quickbase-MCP-connector/dist/mcp-stdio-server.js"],
       "env": {
         "QUICKBASE_REALM_HOST": "your-realm.quickbase.com",
         "QUICKBASE_USER_TOKEN": "your-token",
@@ -154,7 +152,6 @@ Before deploying, test the MCP server locally:
 ./deploy.sh
 
 # Or manually:
-cd v2
 npm install
 npm run build
 node dist/mcp-stdio-server.js

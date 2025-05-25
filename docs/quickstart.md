@@ -166,4 +166,4 @@ DEBUG=true
 LOG_LEVEL=DEBUG
 ```
 
-For more detailed help, see the [Developer Guide](./v2/developer-guide.md).
+For more detailed help, see the [Developer Guide](./developer-guide.md).
