@@ -185,8 +185,6 @@ npm test -- --coverage
 npm test -- --watch
 ```
 
-Current test coverage: **45.96%** with comprehensive unit and integration tests.
-
 ## 🔧 Development
 
 ### Project Structure
@@ -241,7 +239,7 @@ node dist/mcp-stdio-server.js
 
 ## 📋 Requirements
 
-- **Node.js** 14+ 
+- **Node.js** 18+ 
 - **TypeScript** 5.2+
 - **Quickbase** account with API access
 - **Valid user token** with appropriate permissions
@@ -262,7 +260,7 @@ MIT License - see LICENSE file for details.
 
 For issues and questions:
 - Check the [documentation](docs/)
-- Review [common issues](docs/troubleshooting.md)
+- Review the [Quick Start Guide](docs/quickstart.md)
 - Open an issue on GitHub
 
 ---

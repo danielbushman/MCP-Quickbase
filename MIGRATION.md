@@ -27,7 +27,7 @@ This guide helps existing users upgrade from v1 to v2 of the Quickbase MCP Conne
 ### Step 1: Pull Latest Changes
 
 ```bash
-git pull origin v2-release
+git pull origin main
 ```
 
 ### Step 2: Install Dependencies
@@ -138,7 +138,7 @@ QUICKBASE_CACHE_TTL=3600  # seconds
 ## 📞 Getting Help
 
 1. Check the [README](README.md) for updated documentation
-2. Review [common issues](docs/troubleshooting.md)
+2. Review the [Quick Start Guide](docs/quickstart.md#-troubleshooting) for common issues
 3. Open an issue on GitHub if you encounter problems
 
 ## 🔙 Rolling Back (Not Recommended)
