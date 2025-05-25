@@ -1,4 +1,4 @@
-# Claude Guidelines for Quickbase MCP Connector
+# Claude Guidelines for Quickbase MCP Server
 
 ## 🚀 Build/Run/Test Commands
 

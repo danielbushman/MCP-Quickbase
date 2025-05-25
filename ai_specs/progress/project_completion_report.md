@@ -1,4 +1,4 @@
-# Quickbase MCP Connector v2 - Project Status Report
+# Quickbase MCP Server v2 - Project Status Report
 
 **Date:** May 22, 2025  
 **Status:** Functional with Critical Issues Resolved  
@@ -6,7 +6,7 @@
 
 ## 🎯 Executive Summary
 
-The Quickbase MCP Connector v2 has been significantly improved from its initial state. Critical issues have been identified and resolved, transforming a project with serious quality flaws into a working system. While functional, additional work is needed to reach production-ready status.
+The Quickbase MCP Server v2 has been significantly improved from its initial state. Critical issues have been identified and resolved, transforming a project with serious quality flaws into a working system. While functional, additional work is needed to reach production-ready status.
 
 ## 📊 Project Status Assessment
 
@@ -183,7 +183,7 @@ The Quickbase MCP Connector v2 has been significantly improved from its initial 
 
 ### Project Status: **SIGNIFICANTLY IMPROVED - APPROACHING PRODUCTION READY** ✅
 
-The Quickbase MCP Connector v2 has undergone comprehensive remediation and is now a robust, well-architected system. Critical runtime issues have been resolved and quality has been substantially improved.
+The Quickbase MCP Server v2 has undergone comprehensive remediation and is now a robust, well-architected system. Critical runtime issues have been resolved and quality has been substantially improved.
 
 ### ✅ Major Issues Resolved in Second Review
 1. **Type Safety Issues Fixed** - Schema/interface mismatches corrected

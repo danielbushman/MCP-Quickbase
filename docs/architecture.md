@@ -1,8 +1,8 @@
-# 🏗️ Quickbase MCP Connector Architecture
+# 🏗️ Quickbase MCP Server Architecture
 
 ## 📋 Architecture Overview
 
-The Quickbase MCP Connector follows a layered architecture:
+The Quickbase MCP Server follows a layered architecture:
 
 ```
 ┌────────────────────────────────────┐

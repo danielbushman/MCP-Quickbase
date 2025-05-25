@@ -1,4 +1,4 @@
-# Performance Benchmarks - Quickbase MCP Connector v2
+# Performance Benchmarks - Quickbase MCP Server v2
 
 **Date:** May 22, 2025  
 **Environment:** Node.js v23.10.0, macOS Darwin 24.5.0  
@@ -6,7 +6,7 @@
 
 ## 📊 Executive Summary
 
-The Quickbase MCP Connector v2 delivers excellent performance across all key metrics. Significant improvements over v1 include **60% faster startup times**, **40% reduced memory usage**, and **80% improvement in error recovery**. The TypeScript implementation provides both performance gains and enhanced reliability.
+The Quickbase MCP Server v2 delivers excellent performance across all key metrics. Significant improvements over v1 include **60% faster startup times**, **40% reduced memory usage**, and **80% improvement in error recovery**. The TypeScript implementation provides both performance gains and enhanced reliability.
 
 ## 🎯 Performance Targets & Results
 
@@ -282,7 +282,7 @@ NODE_OPTIONS="--max-old-space-size=512"
 
 ### Overall Assessment: **EXCELLENT** ⭐⭐⭐⭐⭐
 
-The Quickbase MCP Connector v2 delivers exceptional performance across all measured metrics:
+The Quickbase MCP Server v2 delivers exceptional performance across all measured metrics:
 
 **Key Achievements:**
 - ✅ **83% faster startup** compared to v1

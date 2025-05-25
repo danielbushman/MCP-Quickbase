@@ -18,7 +18,7 @@
     "format": "prettier --write \"src/**/*.ts\"",
     "prepublishOnly": "npm run build && npm test"
   },
-  "author": "Quickbase MCP Connector Contributors",
+  "author": "Quickbase MCP Server Contributors",
   "license": "MIT",
   "repository": {
     "type": "git",

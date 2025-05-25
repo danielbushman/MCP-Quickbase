@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "========================================="
-echo "    Quickbase MCP Connector Configurator"
+echo "    Quickbase MCP Server Configurator"
 echo "             Part 2: Credentials Setup"
 echo "========================================="
 

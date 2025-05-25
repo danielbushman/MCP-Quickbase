@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# Deployment script for Quickbase MCP Connector
+# Deployment script for Quickbase MCP Server
 set -e
 
-echo "🚀 Preparing Quickbase MCP Connector for deployment"
+echo "🚀 Preparing Quickbase MCP Server for deployment"
 
 # Check if required files exist
 if [ ! -f "package.json" ]; then

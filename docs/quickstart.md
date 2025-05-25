@@ -1,6 +1,6 @@
 # Quick Start Guide
 
-This guide will help you set up the Quickbase MCP Connector and start using it with Claude within minutes.
+This guide will help you set up Quickbase MCP Server and start using it with Claude within minutes.
 
 ## 📋 Prerequisites
 

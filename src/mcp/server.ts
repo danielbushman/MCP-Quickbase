@@ -17,7 +17,7 @@ const logger = createLogger('mcp-server');
 export function createMcpServer(): McpServer {
   // Initialize the MCP server with our app info
   const server = new McpServer({
-    name: 'Quickbase MCP Connector',
+    name: 'Quickbase MCP Server',
     version: '2.0.0',
   });
 

@@ -1,6 +1,6 @@
-# 📚 Quickbase MCP Connector Documentation
+# 📚 Quickbase MCP Server Documentation
 
-This directory contains comprehensive documentation for the Quickbase MCP Connector v2.
+This directory contains comprehensive documentation for Quickbase MCP Server v2.
 
 ## 📋 Documentation Index
 

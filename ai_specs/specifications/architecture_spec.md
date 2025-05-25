@@ -1,6 +1,6 @@
 # Architecture Specification
 
-This document defines the architecture for the Quickbase MCP Connector v2.
+This document defines the architecture for Quickbase MCP Server v2.
 
 ## System Components
 

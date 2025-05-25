@@ -1,6 +1,6 @@
-# Developer Guide - Quickbase MCP Connector v2
+# Developer Guide - Quickbase MCP Server v2
 
-This guide provides detailed information for developers working on or extending the Quickbase MCP Connector v2.
+This guide provides detailed information for developers working on or extending Quickbase MCP Server v2.
 
 ## 📋 Table of Contents
 

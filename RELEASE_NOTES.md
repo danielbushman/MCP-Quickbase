@@ -2,7 +2,7 @@
 
 ## 🎉 Major Release: v2.0.0
 
-This release represents a complete rewrite of the Quickbase MCP Connector with significant improvements in performance, reliability, and developer experience.
+This release represents a complete rewrite of Quickbase MCP Server with significant improvements in performance, reliability, and developer experience.
 
 ### 🚀 Key Improvements
 

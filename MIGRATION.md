@@ -1,6 +1,6 @@
 # Migration Guide: V1 to V2
 
-This guide helps existing users upgrade from v1 to v2 of the Quickbase MCP Connector.
+This guide helps existing users upgrade from v1 to v2 of Quickbase MCP Server.
 
 ## 🎯 Key Benefits of V2
 

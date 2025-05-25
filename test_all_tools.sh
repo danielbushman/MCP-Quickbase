@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# Test Script for Quickbase MCP Connector
+# Test Script for Quickbase MCP Server
 # This script tests all 18 tools to ensure they work correctly
 
-echo "🧪 Quickbase MCP Connector - Comprehensive Tool Test"
+echo "🧪 Quickbase MCP Server - Comprehensive Tool Test"
 echo "===================================================="
 echo ""
 

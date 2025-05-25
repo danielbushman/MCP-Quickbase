@@ -1,9 +1,9 @@
 #!/bin/bash
-# This script will install and configure the Quickbase MCP connector
+# This script will install and configure Quickbase MCP Server
 # It's designed to work when run both locally and via curl | bash
 
 echo "========================================="
-echo "    Quickbase MCP Connector Installer"
+echo "    Quickbase MCP Server Installer"
 echo "             Part 1: Environment Setup"
 echo "========================================="
 
@@ -57,7 +57,7 @@ DEFAULT_INSTALL_DIR="$HOME/MCP-Quickbase"
 if [ -t 0 ]; then
     # Interactive terminal, ask for location
     echo
-    echo "Where would you like to install the Quickbase MCP connector?"
+    echo "Where would you like to install Quickbase MCP Server?"
     echo "Default: $DEFAULT_INSTALL_DIR"
     read -p "Installation path [$DEFAULT_INSTALL_DIR]: " user_install_dir
     if [ -z "$user_install_dir" ]; then
@@ -96,7 +96,7 @@ fi
 mkdir -p "${INSTALL_DIR}"
 
 # Clone or update the repository
-echo "Setting up the Quickbase MCP connector repository..."
+echo "Setting up Quickbase MCP Server repository..."
 
 # Check if .git directory exists (it's already a git repo)
 if [ -d "${INSTALL_DIR}/.git" ]; then
@@ -150,7 +150,7 @@ echo "======================================================"
 echo "    Environment Setup Complete! 🎉"
 echo "======================================================"
 echo
-echo "The Quickbase MCP connector has been installed to:"
+echo "The Quickbase MCP Server has been installed to:"
 echo "$CURRENT_DIR"
 echo
 echo "Next steps:"

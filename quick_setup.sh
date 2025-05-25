@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# Quick setup script for Quickbase MCP Connector v2
+# Quick setup script for Quickbase MCP Server v2
 
-echo "🚀 Quickbase MCP Connector v2 Quick Setup"
+echo "🚀 Quickbase MCP Server v2 Quick Setup"
 echo "========================================="
 
 # Check if we're in the right directory

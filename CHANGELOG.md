@@ -1,6 +1,6 @@
 # 📋 Changelog
 
-All notable changes to the Quickbase MCP Connector will be documented in this file.
+All notable changes to Quickbase MCP Server will be documented in this file.
 
 ## [2.0.0] - 2025-05-24
 

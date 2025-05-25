@@ -1,6 +1,6 @@
-# Deploying Quickbase MCP Connector
+# Deploying Quickbase MCP Server
 
-This guide walks you through deploying the Quickbase MCP Connector for remote access and discovery through various platforms including Glama.ai.
+This guide walks you through deploying Quickbase MCP Server for remote access and discovery through various platforms including Glama.ai.
 
 ## Prerequisites
 

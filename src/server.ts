@@ -243,7 +243,7 @@ app.get('/api/schema', (_req, res) => {
 // Status route
 app.get('/status', (_req, res) => {
   res.json({
-    name: 'Quickbase MCP Connector',
+    name: 'Quickbase MCP Server',
     version: '2.0.0',
     status: connectorStatus.status,
     error: connectorStatus.error,
@@ -306,7 +306,7 @@ app.get('/mcp', async (req, res) => {
 
 // Start server
 app.listen(PORT, async () => {
-  logger.info(`Quickbase MCP Connector v2 server running on port ${PORT}`);
+  logger.info(`Quickbase MCP Server v2 server running on port ${PORT}`);
   
   // Initialize Quickbase client
   initializeClient();

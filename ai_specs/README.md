@@ -1,6 +1,6 @@
 # Project Management System
 
-This directory contains specifications, plans, and progress tracking for the Quickbase MCP Connector v2 development.
+This directory contains specifications, plans, and progress tracking for Quickbase MCP Server v2 development.
 
 ## Directory Structure
 

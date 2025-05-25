@@ -1,6 +1,6 @@
 # Claude Desktop Prompts for Quickbase Construction Management
 
-This document provides natural language prompts you can use directly in Claude Desktop to manage your construction projects through the Quickbase MCP connector. Simply copy and paste these prompts, then modify the details as needed.
+This document provides natural language prompts you can use directly in Claude Desktop to manage your construction projects through Quickbase MCP Server. Simply copy and paste these prompts, then modify the details as needed.
 
 ## Table of Contents
 1. [Daily Operations](#daily-operations)

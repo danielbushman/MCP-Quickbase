@@ -1,4 +1,4 @@
-# Final QA Report - Quickbase MCP Connector v2
+# Final QA Report - Quickbase MCP Server v2
 
 **Date:** May 22, 2025  
 **QA Status:** PASSED ✅  
@@ -7,7 +7,7 @@
 
 ## 🎯 Executive Summary
 
-The Quickbase MCP Connector v2 has successfully completed comprehensive QA validation and is **approved for production release**. All critical functionality tests pass, security review completed with zero vulnerabilities, and performance benchmarks exceed targets.
+The Quickbase MCP Server v2 has successfully completed comprehensive QA validation and is **approved for production release**. All critical functionality tests pass, security review completed with zero vulnerabilities, and performance benchmarks exceed targets.
 
 ## ✅ QA Test Results
 
@@ -221,7 +221,7 @@ Total Test Suites: 6
 
 ### **RECOMMENDATION: APPROVE FOR PRODUCTION RELEASE** ✅
 
-The Quickbase MCP Connector v2 has successfully passed comprehensive QA validation and is ready for production deployment. The TypeScript implementation provides significant improvements over v1 while maintaining full feature parity.
+The Quickbase MCP Server v2 has successfully passed comprehensive QA validation and is ready for production deployment. The TypeScript implementation provides significant improvements over v1 while maintaining full feature parity.
 
 ### Key Achievements
 - **Zero critical bugs** identified

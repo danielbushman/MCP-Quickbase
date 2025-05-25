@@ -1,4 +1,4 @@
-# Security Review - Quickbase MCP Connector v2
+# Security Review - Quickbase MCP Server v2
 
 **Date:** May 22, 2025  
 **Reviewer:** Claude AI Assistant  
@@ -7,7 +7,7 @@
 
 ## 🛡️ Executive Summary
 
-The Quickbase MCP Connector v2 has undergone a comprehensive security review. The TypeScript implementation follows security best practices and successfully addresses common vulnerability patterns. **No critical or high-risk security issues were identified.**
+The Quickbase MCP Server v2 has undergone a comprehensive security review. The TypeScript implementation follows security best practices and successfully addresses common vulnerability patterns. **No critical or high-risk security issues were identified.**
 
 ## 🔍 Review Methodology
 
@@ -243,7 +243,7 @@ if (!this.config.userToken) {
 
 ### Security Status: **APPROVED FOR PRODUCTION** ✅
 
-The Quickbase MCP Connector v2 demonstrates excellent security practices throughout the codebase. The TypeScript implementation provides strong type safety, and all security controls are properly implemented.
+The Quickbase MCP Server v2 demonstrates excellent security practices throughout the codebase. The TypeScript implementation provides strong type safety, and all security controls are properly implemented.
 
 ### Key Security Strengths
 1. **Comprehensive input validation** at multiple layers

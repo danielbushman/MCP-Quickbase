@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-The Quickbase MCP Connector v2 is a complete rewrite of the original connector with a focus on:
+The Quickbase MCP Server v2 is a complete rewrite of the original connector with a focus on:
 - Single language (TypeScript) architecture
 - Improved usability with Claude
 - Better error handling and reliability

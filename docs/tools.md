@@ -1,6 +1,6 @@
 # 🛠️ Available Tools
 
-The Quickbase MCP Connector provides 18 comprehensive tools for Claude to interact with your Quickbase data:
+The Quickbase MCP Server provides 18 comprehensive tools for Claude to interact with your Quickbase data:
 
 ## 🔗 Connection & Configuration
 

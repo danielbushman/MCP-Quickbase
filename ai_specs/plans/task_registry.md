@@ -1,6 +1,6 @@
 # Task Registry
 
-This registry contains all planned and in-progress tasks for the Quickbase MCP Connector v2.
+This registry contains all planned and in-progress tasks for Quickbase MCP Server v2.
 
 ## Status Key
 - 🔄 **Planning**: Task is being defined and planned
