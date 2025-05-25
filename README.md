@@ -1,4 +1,4 @@
-# Quickbase MCP Connector v2
+# Quickbase MCP Connector
 
 A TypeScript-based Model Context Protocol (MCP) connector for Quickbase, designed for seamless integration with Claude and other AI assistants.
 
