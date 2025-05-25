@@ -36,7 +36,7 @@ describe('Record Tools', () => {
         success: true,
         data: {
           metadata: {
-            createdRecordIds: [123],
+            createdRecordIds: ['123'],
             totalNumberOfRecordsProcessed: 1
           }
         }

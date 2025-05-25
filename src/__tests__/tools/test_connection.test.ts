@@ -103,8 +103,9 @@ describe('TestConnectionTool', () => {
 
       const result = await tool.execute({});
       
-      expect(result.success).toBe(false);
-      expect(result.error?.message).toContain('Unauthorized');
+      expect(result.success).toBe(true);
+      expect(result.data?.connected).toBe(false);
+      expect(result.data?.errorMessage).toContain('Unauthorized');
     });
 
     it('should handle network errors', async () => {
@@ -112,8 +113,9 @@ describe('TestConnectionTool', () => {
 
       const result = await tool.execute({});
 
-      expect(result.success).toBe(false);
-      expect(result.error?.message).toContain('Failed to connect to Quickbase');
+      expect(result.success).toBe(true);
+      expect(result.data?.connected).toBe(false);
+      expect(result.data?.errorMessage).toContain('Failed to connect to Quickbase');
     });
 
     it('should provide specific error for 401', async () => {
@@ -121,8 +123,9 @@ describe('TestConnectionTool', () => {
 
       const result = await tool.execute({});
 
-      expect(result.success).toBe(false);
-      expect(result.error?.message).toContain('Authentication failed');
+      expect(result.success).toBe(true);
+      expect(result.data?.connected).toBe(false);
+      expect(result.data?.errorMessage).toContain('Authentication failed');
     });
 
     it('should provide specific error for 404', async () => {
@@ -130,8 +133,9 @@ describe('TestConnectionTool', () => {
 
       const result = await tool.execute({});
 
-      expect(result.success).toBe(false);
-      expect(result.error?.message).toContain('App not found');
+      expect(result.success).toBe(true);
+      expect(result.data?.connected).toBe(false);
+      expect(result.data?.errorMessage).toContain('App not found');
     });
 
     it('should provide specific error for 403', async () => {
@@ -139,8 +143,9 @@ describe('TestConnectionTool', () => {
 
       const result = await tool.execute({});
 
-      expect(result.success).toBe(false);
-      expect(result.error?.message).toContain('Access denied');
+      expect(result.success).toBe(true);
+      expect(result.data?.connected).toBe(false);
+      expect(result.data?.errorMessage).toContain('Access denied');
     });
 
     it('should provide specific error for network issues', async () => {
@@ -148,8 +153,9 @@ describe('TestConnectionTool', () => {
 
       const result = await tool.execute({});
 
-      expect(result.success).toBe(false);
-      expect(result.error?.message).toContain('Network error');
+      expect(result.success).toBe(true);
+      expect(result.data?.connected).toBe(false);
+      expect(result.data?.errorMessage).toContain('ENOTFOUND');
     });
 
     it('should handle missing error response', async () => {
@@ -160,7 +166,11 @@ describe('TestConnectionTool', () => {
 
       mockClient.request = jest.fn().mockResolvedValue(mockError);
 
-      await expect(tool.execute({})).rejects.toThrow('Failed to connect to Quickbase');
+      const result = await tool.execute({});
+      
+      expect(result.success).toBe(true);
+      expect(result.data?.connected).toBe(false);
+      expect(result.data?.errorMessage).toContain('Failed to connect to Quickbase');
     });
 
     it('should validate parameters', async () => {

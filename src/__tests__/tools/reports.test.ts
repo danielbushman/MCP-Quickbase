@@ -252,7 +252,8 @@ describe('Report Tools', () => {
         report_id: 'nonexistent'
       });
 
-      expect(result).toEqual(mockError);
+      expect(result.success).toBe(true);
+      expect(result.data).toEqual(mockError);
     });
 
     it('should handle permission error', async () => {
@@ -270,7 +271,8 @@ describe('Report Tools', () => {
         report_id: 'restricted-report'
       });
 
-      expect(result).toEqual(mockError);
+      expect(result.success).toBe(true);
+      expect(result.data).toEqual(mockError);
     });
 
     it('should handle empty report results', async () => {
