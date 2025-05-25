@@ -1,5 +1,5 @@
 
-> quickbase-mcp-connector@2.0.0 test
+> mcp-quickbase@2.0.0 test
 > jest --coverage --silent
 
 [INFO] cache: Cache initialized with TTL of 3600 seconds, enabled: true 

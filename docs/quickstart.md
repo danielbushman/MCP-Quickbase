@@ -15,10 +15,10 @@ The automatic setup handles everything for you:
 
 ```bash
 # Download and run the setup script
-curl -sSL https://raw.githubusercontent.com/danielbushman/Quickbase-MCP-connector/main/auto_setup.sh | bash
+curl -sSL https://raw.githubusercontent.com/danielbushman/MCP-Quickbase/main/auto_setup.sh | bash
 
 # Configure your Quickbase credentials
-cd ~/Quickbase-MCP-connector
+cd ~/MCP-Quickbase
 ./configure.sh
 ```
 
@@ -34,8 +34,8 @@ If you prefer to handle the setup yourself:
 ### Step 1: Clone and Install
 
 ```bash
-git clone https://github.com/danielbushman/Quickbase-MCP-connector.git
-cd Quickbase-MCP-connector
+git clone https://github.com/danielbushman/MCP-Quickbase.git
+cd MCP-Quickbase
 
 # Install dependencies
 npm install
@@ -82,7 +82,7 @@ After the package is published to npm, users can configure Claude Desktop:
   "mcpServers": {
     "quickbase": {
       "command": "npx",
-      "args": ["-y", "quickbase-mcp-connector"],
+      "args": ["-y", "mcp-quickbase"],
       "env": {
         "QUICKBASE_REALM_HOST": "your-realm.quickbase.com",
         "QUICKBASE_USER_TOKEN": "your-token",
@@ -104,7 +104,7 @@ For development or if you've cloned the repository:
   "mcpServers": {
     "quickbase": {
       "command": "node",
-      "args": ["/absolute/path/to/Quickbase-MCP-connector/dist/mcp-stdio-server.js"],
+      "args": ["/absolute/path/to/MCP-Quickbase/dist/mcp-stdio-server.js"],
       "env": {
         "QUICKBASE_REALM_HOST": "your-realm.quickbase.com",
         "QUICKBASE_USER_TOKEN": "your-token",

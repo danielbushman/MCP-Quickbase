@@ -67,7 +67,7 @@ npm --version   # v6+
 ```bash
 # Clone and setup
 git clone <repository-url>
-cd quickbase-mcp-connector
+cd mcp-quickbase
 
 # Install dependencies
 npm install

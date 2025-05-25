@@ -20,7 +20,7 @@ Glama.ai automatically indexes MCP servers published to NPM.
 ```bash
 # Clone this repository (if not already done)
 git clone <repository-url>
-cd Quickbase-MCP-connector
+cd MCP-Quickbase
 
 # Build the project
 npm install
@@ -102,7 +102,7 @@ After deployment, configure the MCP server in Claude Desktop:
   "mcpServers": {
     "quickbase": {
       "command": "npm",
-      "args": ["exec", "quickbase-mcp-connector"],
+      "args": ["exec", "mcp-quickbase"],
       "env": {
         "QUICKBASE_REALM_HOST": "your-realm.quickbase.com",
         "QUICKBASE_USER_TOKEN": "your-token",
@@ -119,7 +119,7 @@ After deployment, configure the MCP server in Claude Desktop:
   "mcpServers": {
     "quickbase": {
       "command": "node",
-      "args": ["path/to/Quickbase-MCP-connector/dist/mcp-stdio-server.js"],
+      "args": ["path/to/MCP-Quickbase/dist/mcp-stdio-server.js"],
       "env": {
         "QUICKBASE_REALM_HOST": "your-realm.quickbase.com",
         "QUICKBASE_USER_TOKEN": "your-token",

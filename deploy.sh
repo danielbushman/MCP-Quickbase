@@ -77,7 +77,7 @@ echo '{
   "mcpServers": {
     "quickbase": {
       "command": "npx",
-      "args": ["-y", "quickbase-mcp-connector"],
+      "args": ["-y", "mcp-quickbase"],
       "env": {
         "QUICKBASE_REALM_HOST": "your-realm.quickbase.com",
         "QUICKBASE_USER_TOKEN": "your-token",
@@ -87,7 +87,7 @@ echo '{
   }
 }'
 echo ""
-echo "2. After global installation (npm install -g quickbase-mcp-connector):"
+echo "2. After global installation (npm install -g mcp-quickbase):"
 echo '{
   "mcpServers": {
     "quickbase": {

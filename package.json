@@ -1,5 +1,5 @@
 {
-  "name": "quickbase-mcp-connector",
+  "name": "mcp-quickbase",
   "version": "2.0.1",
   "description": "Quickbase connector for Model Context Protocol",
   "main": "dist/mcp-stdio-server.js",
@@ -22,11 +22,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/danielbushman/Quickbase-MCP-connector.git"
+    "url": "https://github.com/danielbushman/MCP-Quickbase.git"
   },
-  "homepage": "https://github.com/danielbushman/Quickbase-MCP-connector#readme",
+  "homepage": "https://github.com/danielbushman/MCP-Quickbase#readme",
   "bugs": {
-    "url": "https://github.com/danielbushman/Quickbase-MCP-connector/issues"
+    "url": "https://github.com/danielbushman/MCP-Quickbase/issues"
   },
   "keywords": [
     "mcp",

@@ -8,18 +8,18 @@ A TypeScript-based Model Context Protocol (MCP) connector for Quickbase, designe
 
 ```bash
 # Use directly with npx (no installation needed)
-npx -y quickbase-mcp-connector
+npx -y mcp-quickbase
 
 # Or install globally
-npm install -g quickbase-mcp-connector
+npm install -g mcp-quickbase
 ```
 
 ### Installation from Source
 
 ```bash
 # Clone the repository
-git clone https://github.com/danielbushman/Quickbase-MCP-connector.git
-cd Quickbase-MCP-connector
+git clone https://github.com/danielbushman/MCP-Quickbase.git
+cd MCP-Quickbase
 
 # Install dependencies
 npm install
@@ -39,7 +39,7 @@ Configure directly in Claude Desktop:
   "mcpServers": {
     "quickbase": {
       "command": "npx",
-      "args": ["-y", "quickbase-mcp-connector"],
+      "args": ["-y", "mcp-quickbase"],
       "env": {
         "QUICKBASE_REALM_HOST": "your-realm.quickbase.com",
         "QUICKBASE_USER_TOKEN": "your-user-token",
@@ -72,7 +72,7 @@ Then configure Claude Desktop:
   "mcpServers": {
     "quickbase": {
       "command": "node",
-      "args": ["/path/to/Quickbase-MCP-connector/dist/mcp-stdio-server.js"],
+      "args": ["/path/to/MCP-Quickbase/dist/mcp-stdio-server.js"],
       "env": {
         "QUICKBASE_REALM_HOST": "your-realm.quickbase.com",
         "QUICKBASE_USER_TOKEN": "your-user-token",
