@@ -45,7 +45,7 @@ spec:
       description: "Enable caching for better performance"
       required: false
       type: boolean
-      default: "true"
+      default: true
       
     - name: QUICKBASE_CACHE_TTL
       description: "Cache time-to-live in seconds"
