@@ -31,8 +31,20 @@ let globalLogLevel = process.env.LOG_LEVEL
  * Set the global log level
  * @param level New log level
  */
-export function setLogLevel(level: LogLevel): void {
-  globalLogLevel = level;
+export function setLogLevel(level: LogLevel | string): void {
+  if (typeof level === 'string') {
+    globalLogLevel = LogLevel[level.toUpperCase() as keyof typeof LogLevel] || LogLevel.INFO;
+  } else {
+    globalLogLevel = level;
+  }
+}
+
+/**
+ * Get the current global log level
+ * @returns Current log level
+ */
+export function getLogLevel(): string {
+  return LogLevel[globalLogLevel] || 'INFO';
 }
 
 /**
