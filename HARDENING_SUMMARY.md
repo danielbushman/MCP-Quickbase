@@ -52,7 +52,7 @@ This document summarizes the security hardening and consistency improvements mad
 - **Sensitive data redaction** in logs (tokens, auth headers)
 - **Input validation** using Zod schemas
 - **Environment variable validation** at startup
-- **Memory-efficient file streaming** for large files
+- **Memory-efficient file streaming** for large files using streaming APIs (e.g., Node.js `fs.createReadStream`) to handle large files without excessive memory usage
 
 ## Remaining Improvements (Lower Priority)
 
