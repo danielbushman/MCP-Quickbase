@@ -93,19 +93,14 @@ export class QuickbaseClient {
     this.config = {
       userAgent: 'QuickbaseMCPConnector/2.0',
       cacheEnabled: true,
+      debug: false,
+      ...config,
+      // Override with validated values
       cacheTtl,
       maxRetries,
       retryDelay,
       requestTimeout,
-      rateLimit,
-      debug: false,
-      ...config,
-      // Ensure validated values are used
-      rateLimit,
-      cacheTtl,
-      maxRetries,
-      retryDelay,
-      requestTimeout
+      rateLimit
     };
     
     if (!this.config.realmHost) {
