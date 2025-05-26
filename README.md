@@ -1,6 +1,6 @@
 # Quickbase MCP Server
 
-A TypeScript-based Model Context Protocol (MCP) connector for Quickbase, designed for seamless integration with Claude Desktop and other AI assistants.
+A TypeScript-based Model Context Protocol (MCP) server for Quickbase, designed for seamless integration with Claude Desktop and other AI assistants.
 
 > **📋 Community Project Notice**  
 > This is a community-developed integration that is not an official Quickbase product. While it uses Quickbase's public APIs, it is not officially supported by Quickbase, Inc. This project is provided "as is" and maintained by the community. For official Quickbase products and support, please visit [quickbase.com](https://www.quickbase.com).

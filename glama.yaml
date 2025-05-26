@@ -3,7 +3,7 @@ apiVersion: v1
 kind: MCPServer
 metadata:
   name: mcp-quickbase
-  description: "Quickbase MCP Server for construction management and business operations"
+  description: "Quickbase MCP Server"
   version: "2.0.0"
   tags:
     - quickbase
@@ -15,7 +15,7 @@ metadata:
 spec:
   # Docker configuration
   docker:
-    dockerfile: Dockerfile.glama
+    dockerfile: Dockerfile
     context: .
     
   # Runtime configuration
