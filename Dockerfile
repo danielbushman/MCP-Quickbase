@@ -15,6 +15,6 @@ RUN git clone https://github.com/danielbushman/MCP-Quickbase . && git checkout c
 # RUN (apt-get install -y --no-install-recommends python3-pip python3-full) 
 # RUN (pip install -r requirements.txt) 
 RUN (npm install)
-RUN (chmod +x src/quickbase/server.js)
+RUN (chmod +x dist/mcp-stdio-server.js)
 
-CMD ["mcp-proxy","node","./src/quickbase/server.js"]
+CMD ["mcp-proxy","node","./dist/mcp-stdio-server.js"]

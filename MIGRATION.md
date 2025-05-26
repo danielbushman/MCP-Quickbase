@@ -55,7 +55,7 @@ npm run build
      "mcpServers": {
        "quickbase": {
          "command": "node",
-         "args": ["path/to/mcp-quickbase/src/quickbase/server.js"],
+         "args": ["path/to/mcp-quickbase/dist/mcp-stdio-server.js"],
          "env": {
            "QUICKBASE_REALM_HOST": "your-realm.quickbase.com",
            "QUICKBASE_USER_TOKEN": "your-token"

@@ -67,7 +67,7 @@ if [ ! -z "${config_file}" ]; then
     # Get absolute paths
     current_dir=$(pwd)
     node_path=$(which node)
-    server_path="${current_dir}/src/quickbase/server.js"
+    server_path="${current_dir}/dist/mcp-stdio-server.js"
     
     # Create or update Claude Desktop config
     echo "{

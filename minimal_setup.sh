@@ -54,7 +54,7 @@ npm install
 
 # Make scripts executable
 echo "Setting up executables..."
-chmod +x src/quickbase/server.js
+chmod +x dist/mcp-stdio-server.js
 chmod +x run_tests.sh
 
 echo ""
@@ -67,7 +67,7 @@ echo "- QUICKBASE_USER_TOKEN"
 echo "- QUICKBASE_APP_ID"
 echo "- MCP_SERVER_PORT (default: 3535)"
 echo ""
-echo "To start the server: node src/quickbase/server.js"
+echo "To start the server: node dist/mcp-stdio-server.js"
 echo "To run tests: ./run_tests.sh"
 echo ""
 echo "For more information, see README.md"
