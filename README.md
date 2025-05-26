@@ -86,11 +86,16 @@ For source installation, use this Claude Desktop configuration:
 
 ## 🔧 Configuration
 
+The server can start without environment variables configured, but tools will not be functional until proper configuration is provided. Use the `check_configuration` tool to verify your setup.
+
 ### Required Environment Variables
 
 - **`QUICKBASE_REALM_HOST`** - Your Quickbase realm (e.g., `company.quickbase.com`)
 - **`QUICKBASE_USER_TOKEN`** - Your Quickbase API token ([Get one here](https://help.quickbase.com/en/articles/8672050))
-- **`QUICKBASE_APP_ID`** - Default application ID (optional)
+
+### Optional Environment Variables
+
+- **`QUICKBASE_APP_ID`** - Default application ID
 
 ### Optional Settings
 
@@ -102,6 +107,7 @@ For source installation, use this Claude Desktop configuration:
 ## 🛠️ Available Tools
 
 ### Connection & Configuration
+- **`check_configuration`** - Check if Quickbase configuration is properly set up
 - **`test_connection`** - Test connection to Quickbase
 - **`configure_cache`** - Configure caching behavior
 
