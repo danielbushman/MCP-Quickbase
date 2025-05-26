@@ -198,8 +198,8 @@ export function writeFile(filePath: string, data: Buffer | string): boolean {
     
     const dirPath = path.dirname(safePath);
     const safeDirPath = sanitizePath(dirPath);
-    if (!safeDirPath || !ensureDirectoryExists(dirPath)) {
-      logger.error('Could not create directory for file', { dirPath });
+    if (!safeDirPath || !ensureDirectoryExists(safeDirPath)) {
+      logger.error('Could not create directory for file', { dirPath: safeDirPath });
       return false;
     }
     
