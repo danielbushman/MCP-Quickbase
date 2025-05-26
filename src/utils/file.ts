@@ -5,8 +5,45 @@ import { createLogger } from './logger';
 const logger = createLogger('FileUtil');
 
 /**
- * Utility functions for file operations
+ * Utility functions for file operations with security hardening
  */
+
+// Maximum file size for reads (10MB)
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+
+// Get the working directory (can be overridden by environment variable)
+const WORKING_DIR = process.env.QUICKBASE_WORKING_DIR || process.cwd();
+
+/**
+ * Validate and sanitize a file path to prevent directory traversal
+ * @param filePath The file path to validate
+ * @returns Sanitized absolute path or null if invalid
+ */
+function sanitizePath(filePath: string): string | null {
+  try {
+    // Resolve to absolute path
+    const absolutePath = path.resolve(WORKING_DIR, filePath);
+    
+    // Ensure the path is within the working directory
+    const relative = path.relative(WORKING_DIR, absolutePath);
+    
+    // Check for directory traversal attempts
+    if (relative.startsWith('..') || path.isAbsolute(relative)) {
+      logger.error('Path traversal attempt detected', { 
+        filePath, 
+        absolutePath, 
+        relative,
+        workingDir: WORKING_DIR 
+      });
+      return null;
+    }
+    
+    return absolutePath;
+  } catch (error) {
+    logger.error('Error sanitizing path', { filePath, error });
+    return null;
+  }
+}
 
 /**
  * Check if a file exists
@@ -15,7 +52,12 @@ const logger = createLogger('FileUtil');
  */
 export function fileExists(filePath: string): boolean {
   try {
-    return fs.existsSync(filePath) && fs.statSync(filePath).isFile();
+    const safePath = sanitizePath(filePath);
+    if (!safePath) {
+      return false;
+    }
+    
+    return fs.existsSync(safePath) && fs.statSync(safePath).isFile();
   } catch (error) {
     logger.error('Error checking if file exists', { filePath, error });
     return false;
@@ -29,12 +71,17 @@ export function fileExists(filePath: string): boolean {
  */
 export function ensureDirectoryExists(dirPath: string): boolean {
   try {
-    if (fs.existsSync(dirPath)) {
-      return fs.statSync(dirPath).isDirectory();
+    const safePath = sanitizePath(dirPath);
+    if (!safePath) {
+      return false;
+    }
+    
+    if (fs.existsSync(safePath)) {
+      return fs.statSync(safePath).isDirectory();
     }
     
     // Create the directory
-    fs.mkdirSync(dirPath, { recursive: true });
+    fs.mkdirSync(safePath, { recursive: true });
     return true;
   } catch (error) {
     logger.error('Error ensuring directory exists', { dirPath, error });
@@ -55,11 +102,12 @@ export function getFileInfo(filePath: string): {
   lastModified: Date 
 } | null {
   try {
-    if (!fileExists(filePath)) {
+    const safePath = sanitizePath(filePath);
+    if (!safePath || !fileExists(filePath)) {
       return null;
     }
     
-    const stats = fs.statSync(filePath);
+    const stats = fs.statSync(safePath);
     const ext = path.extname(filePath).toLowerCase();
     
     // Simple mime type mapping
@@ -105,12 +153,29 @@ export function getFileInfo(filePath: string): {
  */
 export function readFileAsBuffer(filePath: string): Buffer | null {
   try {
+    const safePath = sanitizePath(filePath);
+    if (!safePath) {
+      logger.error('Invalid file path', { filePath });
+      return null;
+    }
+    
     if (!fileExists(filePath)) {
       logger.error('File does not exist', { filePath });
       return null;
     }
     
-    return fs.readFileSync(filePath);
+    // Check file size before reading
+    const stats = fs.statSync(safePath);
+    if (stats.size > MAX_FILE_SIZE) {
+      logger.error('File too large', { 
+        filePath, 
+        size: stats.size, 
+        maxSize: MAX_FILE_SIZE 
+      });
+      return null;
+    }
+    
+    return fs.readFileSync(safePath);
   } catch (error) {
     logger.error('Error reading file', { filePath, error });
     return null;
@@ -125,13 +190,31 @@ export function readFileAsBuffer(filePath: string): Buffer | null {
  */
 export function writeFile(filePath: string, data: Buffer | string): boolean {
   try {
-    const dirPath = path.dirname(filePath);
-    if (!ensureDirectoryExists(dirPath)) {
-      logger.error('Could not create directory for file', { dirPath });
+    const safePath = sanitizePath(filePath);
+    if (!safePath) {
+      logger.error('Invalid file path', { filePath });
       return false;
     }
     
-    fs.writeFileSync(filePath, data);
+    const dirPath = path.dirname(safePath);
+    const safeDirPath = sanitizePath(dirPath);
+    if (!safeDirPath || !ensureDirectoryExists(safeDirPath)) {
+      logger.error('Could not create directory for file', { dirPath: safeDirPath });
+      return false;
+    }
+    
+    // Check data size limit
+    const dataSize = Buffer.isBuffer(data) ? data.length : Buffer.byteLength(data);
+    if (dataSize > MAX_FILE_SIZE) {
+      logger.error('Data too large to write', { 
+        filePath, 
+        size: dataSize, 
+        maxSize: MAX_FILE_SIZE 
+      });
+      return false;
+    }
+    
+    fs.writeFileSync(safePath, data);
     return true;
   } catch (error) {
     logger.error('Error writing file', { filePath, error });
