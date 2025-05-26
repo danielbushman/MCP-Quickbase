@@ -66,14 +66,46 @@ export class QuickbaseClient {
    * @param config Client configuration
    */
   constructor(config: QuickbaseConfig) {
+    // Validate and sanitize configuration
+    const rateLimit = config.rateLimit !== undefined ? config.rateLimit : 10;
+    const cacheTtl = config.cacheTtl !== undefined ? config.cacheTtl : 3600;
+    const maxRetries = config.maxRetries !== undefined ? config.maxRetries : 3;
+    const retryDelay = config.retryDelay !== undefined ? config.retryDelay : 1000;
+    const requestTimeout = config.requestTimeout !== undefined ? config.requestTimeout : 30000;
+    
+    // Validate numeric values
+    if (rateLimit < 1 || rateLimit > 100) {
+      throw new Error('Rate limit must be between 1 and 100 requests per second');
+    }
+    if (cacheTtl < 0 || cacheTtl > 86400) { // Max 24 hours
+      throw new Error('Cache TTL must be between 0 and 86400 seconds (24 hours)');
+    }
+    if (maxRetries < 0 || maxRetries > 10) {
+      throw new Error('Max retries must be between 0 and 10');
+    }
+    if (retryDelay < 100 || retryDelay > 60000) {
+      throw new Error('Retry delay must be between 100ms and 60 seconds');
+    }
+    if (requestTimeout < 1000 || requestTimeout > 300000) { // 1s to 5 minutes
+      throw new Error('Request timeout must be between 1 second and 5 minutes');
+    }
+    
     this.config = {
       userAgent: 'QuickbaseMCPConnector/2.0',
       cacheEnabled: true,
-      cacheTtl: 3600,
-      maxRetries: 3,
-      retryDelay: 1000,
+      cacheTtl,
+      maxRetries,
+      retryDelay,
+      requestTimeout,
+      rateLimit,
       debug: false,
-      ...config
+      ...config,
+      // Ensure validated values are used
+      rateLimit,
+      cacheTtl,
+      maxRetries,
+      retryDelay,
+      requestTimeout
     };
     
     if (!this.config.realmHost) {
@@ -161,8 +193,9 @@ export class QuickbaseClient {
         redactedHeaders.Authorization = '***REDACTED***';
       }
       if (redactedHeaders['QB-Realm-Hostname']) {
-        // Keep realm hostname for debugging but redact sensitive parts
-        redactedHeaders['QB-Realm-Hostname'] = redactedHeaders['QB-Realm-Hostname'].replace(/[a-zA-Z0-9-]+/, '***');
+        // Keep realm hostname structure for debugging but redact sensitive parts
+        // Example: "company-name.quickbase.com" becomes "***.quickbase.com"
+        redactedHeaders['QB-Realm-Hostname'] = redactedHeaders['QB-Realm-Hostname'].replace(/^[^.]+/, '***');
       }
       
       logger.debug('Sending API request', {
