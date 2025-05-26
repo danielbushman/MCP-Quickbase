@@ -61,7 +61,7 @@ This document summarizes the security hardening and consistency improvements mad
 - Could be improved but not critical for security
 
 ### 2. Test Coverage
-- Current coverage: 43.51%
+- Current coverage: 42.57%
 - File operations have low coverage (20%)
 - Many tools lack dedicated test files
 
