@@ -2,12 +2,15 @@
 
 A TypeScript-based Model Context Protocol (MCP) connector for Quickbase, designed for seamless integration with Claude Desktop and other AI assistants.
 
+> **📋 Community Project Notice**  
+> This is a community-developed integration that is not an official Quickbase product. While it uses Quickbase's public APIs, it is not officially supported by Quickbase, Inc. This project is provided "as is" and maintained by the community. For official Quickbase products and support, please visit [quickbase.com](https://www.quickbase.com).
+
 ## 🚀 Quick Start for Claude Desktop
 
 ### One-Line Setup Check
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/danielbushman/quickbase-mcp-connector/main/check_dependencies.sh | bash
+curl -fsSL https://raw.githubusercontent.com/danielbushman/MCP-Quickbase/main/check_dependencies.sh | bash
 ```
 
 ### Configure Claude Desktop
@@ -22,7 +25,7 @@ Add this to your Claude Desktop configuration file:
   "mcpServers": {
     "quickbase": {
       "command": "npx",
-      "args": ["-y", "quickbase-mcp-connector"],
+      "args": ["-y", "mcp-quickbase"],
       "env": {
         "QUICKBASE_REALM_HOST": "your-realm.quickbase.com",
         "QUICKBASE_USER_TOKEN": "your-user-token",
@@ -43,18 +46,18 @@ Add this to your Claude Desktop configuration file:
 
 ```bash
 # Use directly with npx (no installation needed)
-npx -y quickbase-mcp-connector
+npx -y mcp-quickbase
 
 # Or install globally
-npm install -g quickbase-mcp-connector
+npm install -g mcp-quickbase
 ```
 
 ### Option 2: From Source
 
 ```bash
 # Clone the repository
-git clone https://github.com/danielbushman/quickbase-mcp-connector.git
-cd quickbase-mcp-connector
+git clone https://github.com/danielbushman/MCP-Quickbase.git
+cd MCP-Quickbase
 
 # Install dependencies
 npm install
@@ -70,7 +73,7 @@ For source installation, use this Claude Desktop configuration:
   "mcpServers": {
     "quickbase": {
       "command": "node",
-      "args": ["/path/to/quickbase-mcp-connector/dist/mcp-stdio-server.js"],
+      "args": ["/path/to/MCP-Quickbase/dist/mcp-stdio-server.js"],
       "env": {
         "QUICKBASE_REALM_HOST": "your-realm.quickbase.com",
         "QUICKBASE_USER_TOKEN": "your-user-token",
