@@ -63,3 +63,4 @@ quickbase_cache/
 **/settings.local.json
 coverage/
 
+.mcp.json
