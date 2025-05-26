@@ -5,7 +5,7 @@
   "main": "dist/mcp-stdio-server.js",
   "types": "dist/mcp-stdio-server.d.ts",
   "bin": {
-    "mcp-quickbase": "./dist/mcp-stdio-server.js"
+    "mcp-quickbase": "dist/mcp-stdio-server.js"
   },
   "scripts": {
     "build": "tsc",
@@ -22,7 +22,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/danielbushman/MCP-Quickbase.git"
+    "url": "git+https://github.com/danielbushman/MCP-Quickbase.git"
   },
   "homepage": "https://github.com/danielbushman/MCP-Quickbase#readme",
   "bugs": {
