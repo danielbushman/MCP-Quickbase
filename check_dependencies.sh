@@ -1,8 +1,10 @@
 #!/bin/bash
 
+# Quickbase MCP Server v2 Dependency Checker
+# This script checks for required dependencies for the TypeScript-based v2
+
 # Initialize dependency flags
 git_ok=false
-python_ok=false
 node_ok=false
 auto_install=false
 
@@ -14,7 +16,7 @@ if [[ "$OSTYPE" != "darwin"* ]]; then
 fi
 
 echo "✅ Detected macOS"
-echo "Checking for required dependencies..."
+echo "🔍 Checking dependencies for Quickbase MCP Server v2..."
 
 # Ask user if they want to try auto-installing missing dependencies
 ask_for_auto_install() {
@@ -76,58 +78,7 @@ else
     git_ok=true
 fi
 
-# Check Python version
-if ! command -v python3 &> /dev/null; then
-    echo "❌ Python 3 is not installed."
-    
-    if [ "$auto_install" = true ]; then
-        if check_homebrew; then
-            echo "Attempting to install Python 3.8 or higher..."
-            brew install python
-            if command -v python3 &> /dev/null; then
-                python_version=$(python3 --version 2>&1 | cut -d " " -f 2)
-                echo "✅ Python $python_version installed successfully."
-                python_ok=true
-            else
-                echo "❌ Failed to install Python."
-            fi
-        fi
-    else
-        echo "Please install Python 3.8 or higher before running auto_setup.sh."
-    fi
-else
-    python_version=$(python3 --version 2>&1 | cut -d " " -f 2)
-    python_major=$(echo $python_version | cut -d. -f1)
-    python_minor=$(echo $python_version | cut -d. -f2)
-
-    echo "🔍 Detected Python version: $python_version"
-
-    if [ "$python_major" -lt 3 ] || [ "$python_major" -eq 3 -a "$python_minor" -lt 8 ]; then
-        echo "❌ Python 3.8 or higher is required. Found Python $python_version"
-        
-        if [ "$auto_install" = true ]; then
-            if check_homebrew; then
-                echo "Attempting to upgrade Python..."
-                brew upgrade python || brew install python
-                python_version=$(python3 --version 2>&1 | cut -d " " -f 2)
-                python_major=$(echo $python_version | cut -d. -f1)
-                python_minor=$(echo $python_version | cut -d. -f2)
-                
-                if [ "$python_major" -ge 3 ] && [ "$python_minor" -ge 8 ]; then
-                    echo "✅ Python $python_version installed successfully."
-                    python_ok=true
-                else
-                    echo "❌ Failed to install Python 3.8 or higher."
-                fi
-            fi
-        else
-            echo "Please upgrade Python to version 3.8 or higher."
-        fi
-    else
-        echo "✅ Python version is compatible."
-        python_ok=true
-    fi
-fi
+# Note: Python is no longer required for v2 (TypeScript-based)
 
 # Check Node.js version
 if ! command -v node &> /dev/null; then
@@ -135,10 +86,10 @@ if ! command -v node &> /dev/null; then
     
     if [ "$auto_install" = true ]; then
         if check_homebrew; then
-            echo "Attempting to install Node.js 14 or higher..."
-            brew install node@16
+            echo "Attempting to install Node.js 18 or higher..."
+            brew install node@20
             # Try to link the new Node.js version
-            brew link --force --overwrite node@16
+            brew link --force --overwrite node@20
             
             if command -v node &> /dev/null; then
                 node_version=$(node --version | cut -c 2-)
@@ -149,7 +100,7 @@ if ! command -v node &> /dev/null; then
             fi
         fi
     else
-        echo "Please install Node.js 14 or higher before running auto_setup.sh."
+        echo "Please install Node.js 18 or higher for v2."
     fi
 else
     node_version=$(node --version | cut -c 2-)
@@ -157,28 +108,28 @@ else
 
     echo "🔍 Detected Node.js version: $node_version"
 
-    if [ "$node_major" -lt 14 ]; then
-        echo "❌ Node.js 14 or higher is required. Found Node.js $node_version"
+    if [ "$node_major" -lt 18 ]; then
+        echo "❌ Node.js 18 or higher is required for v2. Found Node.js $node_version"
         
         if [ "$auto_install" = true ]; then
             if check_homebrew; then
                 echo "Attempting to upgrade Node.js..."
-                brew upgrade node || brew install node@16
+                brew upgrade node || brew install node@20
                 # Try to link the new Node.js version
-                brew link --force --overwrite node@16
+                brew link --force --overwrite node@20
                 
                 node_version=$(node --version | cut -c 2-)
                 node_major=$(echo $node_version | cut -d. -f1)
                 
-                if [ "$node_major" -ge 14 ]; then
+                if [ "$node_major" -ge 18 ]; then
                     echo "✅ Node.js $node_version installed successfully."
                     node_ok=true
                 else
-                    echo "❌ Failed to install Node.js 14 or higher."
+                    echo "❌ Failed to install Node.js 18 or higher."
                 fi
             fi
         else
-            echo "Please upgrade Node.js to version 14 or higher."
+            echo "Please upgrade Node.js to version 18 or higher."
         fi
     else
         echo "✅ Node.js version is compatible."
@@ -187,9 +138,19 @@ else
 fi
 
 # First check if all dependencies are already satisfied
-if [ "$git_ok" = true ] && [ "$python_ok" = true ] && [ "$node_ok" = true ]; then
+if [ "$git_ok" = true ] && [ "$node_ok" = true ]; then
     echo ""
-    echo "✅ All dependencies are satisfied! You can run auto_setup.sh safely."
+    echo "✅ All dependencies are satisfied!"
+    echo ""
+    echo "🚀 Next steps:"
+    echo "1. Clone the repository:"
+    echo "   git clone https://github.com/danielbushman/quickbase-mcp-connector.git"
+    echo "2. Install dependencies:"
+    echo "   cd quickbase-mcp-connector && npm install"
+    echo "3. Build the project:"
+    echo "   npm run build"
+    echo "4. Configure Claude Desktop with the path to:"
+    echo "   $(pwd)/quickbase-mcp-connector/dist/mcp-stdio-server.js"
     exit 0
 else
     # If not all dependencies are satisfied, offer to auto-install if not already enabled

@@ -19,21 +19,11 @@ if ! command -v git &> /dev/null; then
     exit 1
 fi
 
-# Check Python version
-python_version=$(python3 --version 2>&1 | cut -d " " -f 2)
-python_major=$(echo $python_version | cut -d. -f1)
-python_minor=$(echo $python_version | cut -d. -f2)
-
-echo "Detected Python version: $python_version"
-
-if [ "$python_major" -lt 3 ] || [ "$python_major" -eq 3 -a "$python_minor" -lt 8 ]; then
-    echo "Error: Python 3.8 or higher is required. Found Python $python_version"
-    exit 1
-fi
+# Note: Python is no longer required for v2 (TypeScript-based)
 
 # Check Node.js version
 if ! command -v node &> /dev/null; then
-    echo "Error: Node.js is not installed. Please install Node.js 14 or higher."
+    echo "Error: Node.js is not installed. Please install Node.js 18 or higher."
     exit 1
 fi
 
@@ -42,15 +32,15 @@ node_major=$(echo $node_version | cut -d. -f1)
 
 echo "Detected Node.js version: $node_version"
 
-if [ "$node_major" -lt 14 ]; then
-    echo "Error: Node.js 14 or higher is required. Found Node.js $node_version"
+if [ "$node_major" -lt 18 ]; then
+    echo "Error: Node.js 18 or higher is required for v2. Found Node.js $node_version"
     exit 1
 fi
 
 echo "Environment checks passed. Proceeding with installation..."
 
 # Set a default installation directory
-DEFAULT_INSTALL_DIR="$HOME/MCP-Quickbase"
+DEFAULT_INSTALL_DIR="$HOME/quickbase-mcp-connector"
 
 # When running curl | bash, let's just use the default location
 # for a more reliable experience
@@ -106,7 +96,7 @@ if [ -d "${INSTALL_DIR}/.git" ]; then
 else
     # Fresh clone
     echo "Cloning the repository..."
-    git clone https://github.com/danielbushman/MCP-Quickbase.git "${INSTALL_DIR}"
+    git clone https://github.com/danielbushman/quickbase-mcp-connector.git "${INSTALL_DIR}"
 fi
 
 if [ $? -ne 0 ]; then
@@ -119,27 +109,19 @@ echo "Repository setup completed successfully."
 # Change to the installation directory
 cd "${INSTALL_DIR}" || { echo "Failed to change to installation directory"; exit 1; }
 
-# Create virtual environment
-echo "Creating Python virtual environment..."
-python3 -m venv venv
-
-# Activate virtual environment
-source venv/bin/activate
-
-# Install Python dependencies
-echo "Installing Python dependencies..."
-pip install --upgrade pip
-pip install -r requirements.txt
-
 # Install npm dependencies
 echo "Installing Node.js dependencies..."
 npm install
 
+# Build the TypeScript project
+echo "Building TypeScript project..."
+npm run build
+
 # Make scripts executable
 echo "Setting up executables..."
-chmod +x src/quickbase/server.js
 chmod +x run_tests.sh
 chmod +x configure.sh
+chmod +x check_dependencies.sh
 
 # Full and complete path now stored in INSTALL_DIR
 # Use current directory for certainty

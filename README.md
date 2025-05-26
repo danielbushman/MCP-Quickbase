@@ -1,78 +1,28 @@
 # Quickbase MCP Server
 
-A TypeScript-based Model Context Protocol (MCP) connector for Quickbase, designed for seamless integration with Claude and other AI assistants.
+A TypeScript-based Model Context Protocol (MCP) connector for Quickbase, designed for seamless integration with Claude Desktop and other AI assistants.
 
-## 🚀 Quick Start
+## 🚀 Quick Start for Claude Desktop
 
-### Installation via NPM (Recommended)
-
-```bash
-# Use directly with npx (no installation needed)
-npx -y mcp-quickbase
-
-# Or install globally
-npm install -g mcp-quickbase
-```
-
-### Installation from Source
+### One-Line Setup Check
 
 ```bash
-# Clone the repository
-git clone https://github.com/danielbushman/MCP-Quickbase.git
-cd MCP-Quickbase
-
-# Install dependencies
-npm install
-
-# Build the project
-npm run build
+curl -fsSL https://raw.githubusercontent.com/danielbushman/quickbase-mcp-connector/main/check_dependencies.sh | bash
 ```
 
-### Configuration
+### Configure Claude Desktop
 
-#### For NPM Users
+Add this to your Claude Desktop configuration file:
 
-Configure directly in Claude Desktop:
+**macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`  
+**Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
 
 ```json
 {
   "mcpServers": {
     "quickbase": {
       "command": "npx",
-      "args": ["-y", "mcp-quickbase"],
-      "env": {
-        "QUICKBASE_REALM_HOST": "your-realm.quickbase.com",
-        "QUICKBASE_USER_TOKEN": "your-user-token",
-        "QUICKBASE_APP_ID": "your-app-id",
-        "QUICKBASE_CACHE_ENABLED": "true",
-        "QUICKBASE_CACHE_TTL": "3600"
-      }
-    }
-  }
-}
-```
-
-#### For Local Development
-
-Create a `.env` file in the root directory:
-
-```env
-QUICKBASE_REALM_HOST=your-realm.quickbase.com
-QUICKBASE_USER_TOKEN=your-user-token
-QUICKBASE_APP_ID=your-app-id
-QUICKBASE_CACHE_ENABLED=true
-QUICKBASE_CACHE_TTL=3600
-DEBUG=false
-```
-
-Then configure Claude Desktop:
-
-```json
-{
-  "mcpServers": {
-    "quickbase": {
-      "command": "node",
-      "args": ["/path/to/MCP-Quickbase/dist/mcp-stdio-server.js"],
+      "args": ["-y", "quickbase-mcp-connector"],
       "env": {
         "QUICKBASE_REALM_HOST": "your-realm.quickbase.com",
         "QUICKBASE_USER_TOKEN": "your-user-token",
@@ -83,7 +33,68 @@ Then configure Claude Desktop:
 }
 ```
 
-2. **Start using tools**: The connector provides 18 comprehensive tools for Quickbase operations.
+**That's it!** Restart Claude Desktop and you can start using Quickbase tools.
+
+---
+
+## 📦 Installation Options
+
+### Option 1: NPM (Recommended)
+
+```bash
+# Use directly with npx (no installation needed)
+npx -y quickbase-mcp-connector
+
+# Or install globally
+npm install -g quickbase-mcp-connector
+```
+
+### Option 2: From Source
+
+```bash
+# Clone the repository
+git clone https://github.com/danielbushman/quickbase-mcp-connector.git
+cd quickbase-mcp-connector
+
+# Install dependencies
+npm install
+
+# Build the project
+npm run build
+```
+
+For source installation, use this Claude Desktop configuration:
+
+```json
+{
+  "mcpServers": {
+    "quickbase": {
+      "command": "node",
+      "args": ["/path/to/quickbase-mcp-connector/dist/mcp-stdio-server.js"],
+      "env": {
+        "QUICKBASE_REALM_HOST": "your-realm.quickbase.com",
+        "QUICKBASE_USER_TOKEN": "your-user-token",
+        "QUICKBASE_APP_ID": "your-app-id"
+      }
+    }
+  }
+}
+```
+
+## 🔧 Configuration
+
+### Required Environment Variables
+
+- **`QUICKBASE_REALM_HOST`** - Your Quickbase realm (e.g., `company.quickbase.com`)
+- **`QUICKBASE_USER_TOKEN`** - Your Quickbase API token ([Get one here](https://help.quickbase.com/en/articles/8672050))
+- **`QUICKBASE_APP_ID`** - Default application ID (optional)
+
+### Optional Settings
+
+- **`QUICKBASE_CACHE_ENABLED`** - Enable caching (`true`/`false`, default: `true`)
+- **`QUICKBASE_CACHE_TTL`** - Cache duration in seconds (default: `3600`)
+- **`DEBUG`** - Enable debug logging (`true`/`false`, default: `false`)
+- **`LOG_LEVEL`** - Logging level (`DEBUG`/`INFO`/`WARN`/`ERROR`, default: `INFO`)
 
 ## 🛠️ Available Tools
 
@@ -98,204 +109,66 @@ Then configure Claude Desktop:
 
 ### Table Operations
 - **`create_table`** - Create new tables
-- **`update_table`** - Update existing tables
-- **`get_table_fields`** - Retrieve table field definitions
+- **`update_table`** - Update table properties
+- **`get_table_fields`** - Get field information for a table
 
 ### Field Management
 - **`create_field`** - Create new fields in tables
-- **`update_field`** - Update existing field properties
+- **`update_field`** - Update field properties
 
 ### Record Operations
-- **`query_records`** - Query records with advanced filtering
+- **`query_records`** - Query records with filtering and sorting
 - **`create_record`** - Create single records
 - **`update_record`** - Update existing records
-- **`bulk_create_records`** - Create multiple records efficiently
-- **`bulk_update_records`** - Update multiple records efficiently
-
-### File Handling
-- **`upload_file`** - Upload files to record fields
-- **`download_file`** - Download files from record fields
-
-### Reports
-- **`run_report`** - Execute Quickbase reports with filters
-
-## 🏗️ Architecture
-
-### TypeScript-First Design
-- **100% TypeScript** for type safety and developer experience
-- **Comprehensive type definitions** for all Quickbase API interactions
-- **Modern async/await** patterns throughout
-
-### Performance Features
-- **Intelligent caching** with configurable TTL
-- **Automatic retry logic** for transient failures
-- **Bulk operations** for high-performance data manipulation
-- **Pagination support** for large datasets
-
-### Error Handling
-- **Structured error responses** with detailed context
-- **Graceful degradation** for API failures
-- **Comprehensive logging** for debugging
-
-## 📚 Examples
-
-### Basic Record Operations
-
-```typescript
-// Query records
-const records = await queryRecords({
-  table_id: "bqrxzt5wq",
-  where: "{6.CT.'Project'}",
-  select: ["1", "6", "7", "8"]
-});
-
-// Create a record
-const newRecord = await createRecord({
-  table_id: "bqrxzt5wq",
-  data: {
-    "6": "New Project",
-    "7": "Project description",
-    "8": "High"
-  }
-});
-
-// Update multiple records
-const updates = await bulkUpdateRecords({
-  table_id: "bqrxzt5wq",
-  records: [
-    { "3": "123", "8": "Critical" },
-    { "3": "124", "8": "Low" }
-  ]
-});
-```
+- **`bulk_create_records`** - Create multiple records
+- **`bulk_update_records`** - Update multiple records
 
 ### File Operations
+- **`upload_file`** - Upload files to file attachment fields
+- **`download_file`** - Download files from records
 
-```typescript
-// Upload a file
-const upload = await uploadFile({
-  table_id: "bqrxzt5wq",
-  record_id: "123",
-  field_id: "9",
-  file_path: "/path/to/document.pdf"
-});
+### Reporting
+- **`run_report`** - Execute Quickbase reports
 
-// Download a file
-const download = await downloadFile({
-  table_id: "bqrxzt5wq",
-  record_id: "123",
-  field_id: "9",
-  output_path: "/downloads/document.pdf"
-});
+## 📚 Usage Examples
+
+### Basic Record Query
+```
+Query all customers from the Customers table
 ```
 
-### Advanced Queries with Pagination
-
-```typescript
-// Paginated query for large datasets
-const largeDataset = await queryRecords({
-  table_id: "bqrxzt5wq",
-  select: ["1", "6", "7", "8"],
-  paginate: true,
-  max_records: "1000",
-  options: {
-    orderBy: [{ fieldId: "6", order: "ASC" }],
-    top: 100
-  }
-});
+### Create a New Record
+```
+Create a new customer record with name "Acme Corp" and status "Active"
 ```
 
-## 🧪 Testing
-
-```bash
-# Run all tests
-npm test
-
-# Run tests with coverage
-npm test -- --coverage
-
-# Run tests in watch mode
-npm test -- --watch
+### Upload a File
+```
+Upload invoice.pdf to the Documents field in record 123
 ```
 
-## 🔧 Development
+## 🔒 Security
 
-### Project Structure
-
-```
-src/
-├── client/           # Quickbase API client
-├── tools/           # MCP tool implementations
-│   ├── apps/        # Application management tools
-│   ├── fields/      # Field management tools
-│   ├── files/       # File operation tools
-│   ├── records/     # Record operation tools
-│   ├── reports/     # Report execution tools
-│   └── tables/      # Table operation tools
-├── types/           # TypeScript type definitions
-├── utils/           # Utility functions
-└── mcp/             # MCP server implementation
-```
-
-### Adding New Tools
-
-1. Create tool class extending `BaseTool<TParams, TResult>`
-2. Implement required properties and `run()` method
-3. Register in appropriate tool category
-4. Add comprehensive tests
-
-Example:
-
-```typescript
-export class MyCustomTool extends BaseTool<MyParams, MyResult> {
-  public readonly name = 'my_custom_tool';
-  public readonly description = 'Description of my tool';
-  public readonly paramSchema = { /* JSON Schema */ };
-
-  protected async run(params: MyParams): Promise<MyResult> {
-    // Implementation
-  }
-}
-```
-
-## 🚦 Deployment
-
-### HTTP Server Mode
-```bash
-npm start  # Runs on port 3536
-```
-
-### MCP Stdio Mode
-```bash
-node dist/mcp-stdio-server.js
-```
+- API tokens are handled securely and never logged
+- All file operations are sandboxed to the working directory
+- Supports field-level permissions and access controls
 
 ## 📋 Requirements
 
-- **Node.js** 18+ 
-- **TypeScript** 5.2+
-- **Quickbase** account with API access
-- **Valid user token** with appropriate permissions
+- Node.js 18 or higher
+- Valid Quickbase account with API access
+- Claude Desktop (for MCP integration)
 
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Add tests for new functionality
-4. Ensure all tests pass
-5. Submit a pull request
+Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## 📄 License
 
-MIT License - see LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🆘 Support
+## 🔗 Links
 
-For issues and questions:
-- Check the [documentation](docs/)
-- Review the [Quick Start Guide](docs/quickstart.md)
-- Open an issue on GitHub
-
----
-
-Built with ❤️ for seamless Quickbase integration with AI assistants.
+- [Quickbase API Documentation](https://developer.quickbase.com/)
+- [Model Context Protocol](https://modelcontextprotocol.io/)
+- [Claude Desktop](https://claude.ai/download)
