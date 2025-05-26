@@ -40,7 +40,7 @@ fi
 echo "Environment checks passed. Proceeding with installation..."
 
 # Set a default installation directory
-DEFAULT_INSTALL_DIR="$HOME/quickbase-mcp-connector"
+DEFAULT_INSTALL_DIR="$HOME/mcp-quickbase"
 
 # When running curl | bash, let's just use the default location
 # for a more reliable experience
@@ -96,7 +96,7 @@ if [ -d "${INSTALL_DIR}/.git" ]; then
 else
     # Fresh clone
     echo "Cloning the repository..."
-    git clone https://github.com/danielbushman/quickbase-mcp-connector.git "${INSTALL_DIR}"
+    git clone https://github.com/danielbushman/mcp-quickbase.git "${INSTALL_DIR}"
 fi
 
 if [ $? -ne 0 ]; then

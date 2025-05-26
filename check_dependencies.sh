@@ -144,13 +144,13 @@ if [ "$git_ok" = true ] && [ "$node_ok" = true ]; then
     echo ""
     echo "🚀 Next steps:"
     echo "1. Clone the repository:"
-    echo "   git clone https://github.com/danielbushman/quickbase-mcp-connector.git"
+    echo "   git clone https://github.com/danielbushman/mcp-quickbase.git"
     echo "2. Install dependencies:"
-    echo "   cd quickbase-mcp-connector && npm install"
+    echo "   cd mcp-quickbase && npm install"
     echo "3. Build the project:"
     echo "   npm run build"
     echo "4. Configure Claude Desktop with the path to:"
-    echo "   $(pwd)/quickbase-mcp-connector/dist/mcp-stdio-server.js"
+    echo "   $(pwd)/mcp-quickbase/dist/mcp-stdio-server.js"
     exit 0
 else
     # If not all dependencies are satisfied, offer to auto-install if not already enabled
