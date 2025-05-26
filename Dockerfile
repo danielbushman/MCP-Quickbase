@@ -10,11 +10,8 @@ USER service-user
 
 WORKDIR /app
 
-RUN git clone https://github.com/danielbushman/MCP-Quickbase . && git checkout c744b26125b378ae976fd4a415a029276875b12d
+RUN git clone https://github.com/danielbushman/MCP-Quickbase . && git checkout 74595fe271dd4a7816e7594d672debf02088dca8
 
-# RUN (apt-get install -y --no-install-recommends python3-pip python3-full) 
-# RUN (pip install -r requirements.txt) 
-RUN (npm install)
-RUN (chmod +x dist/mcp-stdio-server.js)
+RUN (npm install) && (npm run build) && (chmod +x dist/mcp-stdio-server.js)
 
-CMD ["mcp-proxy","node","./dist/mcp-stdio-server.js"]
+CMD ["mcp-proxy","node","dist/mcp-stdio-server.js"]
