@@ -1,4 +1,5 @@
 # Quickbase MCP Server
+[![smithery badge](https://smithery.ai/badge/@danielbushman/mcp-quickbase)](https://smithery.ai/server/@danielbushman/mcp-quickbase)
 
 A TypeScript-based Model Context Protocol (MCP) server for Quickbase, designed for seamless integration with Claude Desktop and other AI assistants.
 
@@ -41,6 +42,14 @@ Add this to your Claude Desktop configuration file:
 ---
 
 ## 📦 Installation Options
+
+### Installing via Smithery
+
+To install mcp-quickbase for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@danielbushman/mcp-quickbase):
+
+```bash
+npx -y @smithery/cli install @danielbushman/mcp-quickbase --client claude
+```
 
 ### Option 1: NPM (Recommended)
 
