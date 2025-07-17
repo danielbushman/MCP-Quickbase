@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/danielbushman-mcp-quickbase-badge.png)](https://mseep.ai/app/danielbushman-mcp-quickbase)
+
 # Quickbase MCP Server
 
 A TypeScript-based Model Context Protocol (MCP) server for Quickbase, designed for seamless integration with Claude Desktop and other AI assistants.
