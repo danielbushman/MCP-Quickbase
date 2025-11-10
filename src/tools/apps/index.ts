@@ -5,6 +5,8 @@ import { UpdateAppTool } from './update_app';
 import { GetAppTool } from './get_app';
 import { DeleteAppTool } from './delete_app';
 import { ListTablesTool } from './list_tables';
+import { CopyAppTool } from './copy_app';
+import { GetAppEventsTool } from './get_app_events';
 import { createLogger } from '../../utils/logger';
 
 const logger = createLogger('AppTools');
@@ -22,6 +24,8 @@ export function registerAppTools(client: QuickbaseClient): void {
   toolRegistry.registerTool(new UpdateAppTool(client));
   toolRegistry.registerTool(new DeleteAppTool(client));
   toolRegistry.registerTool(new ListTablesTool(client));
+  toolRegistry.registerTool(new CopyAppTool(client));
+  toolRegistry.registerTool(new GetAppEventsTool(client));
 
   logger.info('App management tools registered');
 }
@@ -32,3 +36,5 @@ export * from './get_app';
 export * from './update_app';
 export * from './delete_app';
 export * from './list_tables';
+export * from './copy_app';
+export * from './get_app_events';
