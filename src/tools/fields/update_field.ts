@@ -162,11 +162,15 @@ export class UpdateFieldTool extends BaseTool<UpdateFieldParams, UpdateFieldResu
       body.properties = { ...options };
     }
     
-    // Update the field
+    // Update the field (Quickbase uses POST for field updates with the field ID in the path)
     const response = await this.client.request({
       method: 'POST',
-      path: `/fields/${field_id}?tableId=${table_id}`,
-      body
+      path: `/fields`,
+      body: {
+        ...body,
+        fieldId: field_id,
+        tableId: table_id
+      }
     });
     
     if (!response.success || !response.data) {

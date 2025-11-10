@@ -9,6 +9,13 @@ import { registerFieldTools } from './fields';
 import { registerRecordTools } from './records';
 import { registerFileTools } from './files';
 import { registerReportTools } from './reports';
+import { registerRelationshipTools } from './relationships';
+import { registerFormulaTools } from './formulas';
+import { registerWebhookTools } from './webhooks';
+import { registerUserTools } from './users';
+import { registerGroupTools } from './groups';
+import { registerTokenTools } from './tokens';
+import { registerAuditTools } from './audit';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('ToolsInit');
@@ -23,31 +30,50 @@ export function initializeTools(
   cacheService: CacheService
 ): void {
   logger.info('Initializing MCP tools');
-  
+
   // Register connection tools
   toolRegistry.registerTool(new TestConnectionTool(client));
   toolRegistry.registerTool(new ConfigureCacheTool(client, cacheService));
-  
+
   // Register app management tools
   registerAppTools(client);
-  
+
   // Register table operation tools
   registerTableTools(client);
-  
+
   // Register field management tools
   registerFieldTools(client);
-  
+
   // Register record operation tools
   registerRecordTools(client);
-  
+
   // Register file operation tools
   registerFileTools(client);
-  
+
   // Register report operation tools
   registerReportTools(client);
-  
-  // Additional tools will be registered here
-  
+
+  // Register relationship management tools
+  registerRelationshipTools(client);
+
+  // Register formula tools
+  registerFormulaTools(client);
+
+  // Register webhook tools
+  registerWebhookTools(client);
+
+  // Register SCIM user management tools
+  registerUserTools(client);
+
+  // Register SCIM group management tools
+  registerGroupTools(client);
+
+  // Register user token management tools
+  registerTokenTools(client);
+
+  // Register audit log tools
+  registerAuditTools(client);
+
   logger.info(`Registered ${toolRegistry.getToolCount()} tools`);
 }
 
@@ -62,3 +88,10 @@ export * from './fields';
 export * from './records';
 export * from './files';
 export * from './reports';
+export * from './relationships';
+export * from './formulas';
+export * from './webhooks';
+export * from './users';
+export * from './groups';
+export * from './tokens';
+export * from './audit';

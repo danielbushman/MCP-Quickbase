@@ -115,12 +115,16 @@ export class UpdateRecordTool extends BaseTool<UpdateRecordParams, UpdateRecordR
     }
     
     // Prepare request body
+    // For updates, we need to include the record ID along with the field data
+    const recordWithId = {
+      "3": { value: record_id }, // Field 3 is the Record ID field
+      ...recordData
+    };
+
     const body: Record<string, any> = {
       to: table_id,
-      data: [{
-        id: record_id,
-        ...recordData
-      }]
+      data: [recordWithId],
+      mergeFieldId: 3 // Use Record ID field for matching
     };
     
     // Update the record
