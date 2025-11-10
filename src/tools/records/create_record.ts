@@ -152,15 +152,16 @@ export class CreateRecordTool extends BaseTool<CreateRecordParams, CreateRecordR
       throw new Error('Record created but no record ID was returned');
     }
     
-    // Validate first record ID is a string
-    const recordId = createdRecordIds[0];
-    if (typeof recordId !== 'string') {
-      logger.error('Record creation response has invalid record ID type', { 
-        recordId,
-        type: typeof recordId
+    // Get and convert the first record ID to string (API may return number or string)
+    const rawRecordId = createdRecordIds[0];
+    if (typeof rawRecordId !== 'string' && typeof rawRecordId !== 'number') {
+      logger.error('Record creation response has invalid record ID type', {
+        recordId: rawRecordId,
+        type: typeof rawRecordId
       });
-      throw new Error('Record created but returned record ID is not a string');
+      throw new Error('Record created but returned record ID is neither string nor number');
     }
+    const recordId = String(rawRecordId);
     
     logger.info('Successfully created record', { 
       recordId,

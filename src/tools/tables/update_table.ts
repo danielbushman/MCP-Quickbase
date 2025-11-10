@@ -133,9 +133,9 @@ export class UpdateTableTool extends BaseTool<UpdateTableParams, UpdateTableResu
       Object.assign(body, options);
     }
     
-    // Update the table
+    // Update the table (Quickbase uses PUT for table updates)
     const response = await this.client.request({
-      method: 'POST',
+      method: 'PUT',
       path: `/tables/${table_id}`,
       body
     });

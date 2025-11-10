@@ -133,19 +133,39 @@ export class UpdateAppTool extends BaseTool<UpdateAppParams, UpdateAppResult> {
       Object.assign(body, options);
     }
     
-    // Update the application
+    // Update the application (Quickbase uses PUT for app updates)
     const response = await this.client.request({
-      method: 'POST',
+      method: 'PUT',
       path: `/apps/${app_id}`,
       body
     });
-    
+
     if (!response.success || !response.data) {
-      logger.error('Failed to update application', { 
+      // Provide better error messages for common failures
+      const errorMessage = response.error?.message || 'Failed to update application';
+      const errorCode = response.error?.code;
+
+      if (errorCode === 401) {
+        logger.error('Unauthorized: Insufficient permissions to update application', {
+          error: response.error,
+          appId: app_id
+        });
+        throw new Error(`Unauthorized: You don't have permission to update this application (${app_id}). ` +
+          'Please verify your API token has the necessary permissions.');
+      } else if (errorCode === 403) {
+        logger.error('Forbidden: Access denied to update application', {
+          error: response.error,
+          appId: app_id
+        });
+        throw new Error(`Forbidden: Access denied to update application (${app_id}). ` +
+          'You may not be the application owner or lack required permissions.');
+      }
+
+      logger.error('Failed to update application', {
         error: response.error,
-        appId: app_id 
+        appId: app_id
       });
-      throw new Error(response.error?.message || 'Failed to update application');
+      throw new Error(errorMessage);
     }
     
     const app = response.data as Record<string, any>;

@@ -106,21 +106,25 @@ export class BulkUpdateRecordsTool extends BaseTool<BulkUpdateRecordsParams, Bul
     }
     
     // Prepare record data
+    // For updates, we need to include the record ID in field 3 along with the field data
     const formattedRecords = records.map(record => {
       const { id, ...fields } = record;
-      const recordData: Record<string, any> = { id };
-      
+      const recordData: Record<string, any> = {
+        "3": { value: id } // Field 3 is the Record ID field
+      };
+
       for (const [field, value] of Object.entries(fields)) {
         recordData[field] = { value };
       }
-      
+
       return recordData;
     });
-    
+
     // Prepare request body
     const body: Record<string, any> = {
       to: table_id,
-      data: formattedRecords
+      data: formattedRecords,
+      mergeFieldId: 3 // Use Record ID field for matching
     };
     
     // Update the records

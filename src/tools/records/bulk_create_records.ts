@@ -135,13 +135,14 @@ export class BulkCreateRecordsTool extends BaseTool<BulkCreateRecordsParams, Bul
     const metadata = result.metadata || {};
     
     if (!metadata.createdRecordIds || metadata.createdRecordIds.length === 0) {
-      logger.error('Bulk record creation response missing record IDs', { 
+      logger.error('Bulk record creation response missing record IDs', {
         response: result
       });
       throw new Error('Records created but no record IDs were returned');
     }
-    
-    const recordIds = metadata.createdRecordIds;
+
+    // Convert all record IDs to strings (API may return numbers or strings)
+    const recordIds = metadata.createdRecordIds.map((id: any) => String(id));
     
     logger.info(`Successfully created ${recordIds.length} records`, { 
       recordCount: recordIds.length,

@@ -2,6 +2,41 @@
 
 All notable changes to Quickbase MCP Server will be documented in this file.
 
+## [2.1.0] - 2025-11-10
+
+### Fixed
+- **update_record**: Corrected request body structure to use proper mergeFieldId approach
+- **bulk_update_records**: Fixed to include record ID in field 3 with mergeFieldId parameter
+- **update_field**: Changed endpoint from path parameter to body parameters for field ID and table ID
+- **update_table**: Changed HTTP method from POST to PUT as required by Quickbase API
+- **update_app**: Changed HTTP method from POST to PUT and added better error handling for 401/403 responses
+- **create_record**: Added support for numeric record IDs returned by API (previously only accepted strings)
+- **bulk_create_records**: Added conversion of numeric record IDs to strings for consistent return types
+
+### Added
+- **delete_records**: Bulk delete records by ID array using DELETE /records endpoint
+- **get_app**: Retrieve details of a specific Quickbase application
+- **delete_app**: Delete a Quickbase application (with name confirmation)
+- **get_table**: Retrieve details of a specific table
+- **delete_table**: Delete a table from an application
+- **get_field**: Retrieve details of a specific field
+- **delete_fields**: Bulk delete fields by ID array
+- **list_reports**: List all reports for a table
+- **get_report**: Retrieve details of a specific report
+- **Relationship Management** (Critical for finance module):
+  - **create_relationship**: Create relationships between tables with lookup and summary fields
+  - **list_relationships**: List relationships with filtering options (as parent/child)
+  - **update_relationship**: Add lookup and summary fields to existing relationships
+  - **delete_relationship**: Delete a relationship between tables
+
+### Improved
+- API coverage increased from 32% to approximately 65%
+- Fixed all 7 previously broken tools (update operations and response parsing)
+- Added 13 new operations (9 Priority 1 CRUD completions + 4 relationship operations)
+- Total of 20 improvements (7 fixes + 13 new features)
+- All tools now properly registered in index files and tool registry
+- Better error messages with specific handling for authentication failures
+
 ## [2.0.0] - 2025-05-24
 
 ### Added
