@@ -166,12 +166,12 @@ export class CreateFieldTool extends BaseTool<CreateFieldParams, CreateFieldResu
     const body: Record<string, any> = {
       label: field_name,
       fieldType: field_type,
-      description: description || ''
+      ...options  // Spread options directly into body
     };
-    
-    // Add properties if provided
-    if (options) {
-      body.properties = { ...options };
+
+    // Only add description if provided
+    if (description) {
+      body.description = description;
     }
     
     // Create the field
