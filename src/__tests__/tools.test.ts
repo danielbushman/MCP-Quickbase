@@ -40,7 +40,9 @@ describe("Tool Registry", () => {
       expect(toolNames).toContain("update_table");
       expect(toolNames).toContain("get_table_fields");
       expect(toolNames).toContain("create_field");
+      expect(toolNames).toContain("get_field");
       expect(toolNames).toContain("update_field");
+      expect(toolNames).toContain("delete_field");
       expect(toolNames).toContain("query_records");
       expect(toolNames).toContain("create_record");
       expect(toolNames).toContain("update_record");
@@ -55,7 +57,7 @@ describe("Tool Registry", () => {
       expect(toolNames).toContain("delete_relationship");
 
       // Verify total count
-      expect(toolNames.length).toBe(22);
+      expect(toolNames.length).toBe(24);
     });
 
     it("should register tools in correct categories", () => {
@@ -73,7 +75,9 @@ describe("Tool Registry", () => {
         ),
       );
       const fieldTools = allTools.filter((tool) =>
-        ["create_field", "update_field"].includes(tool.name),
+        ["create_field", "get_field", "update_field", "delete_field"].includes(
+          tool.name,
+        ),
       );
       const recordTools = allTools.filter((tool) =>
         tool.name.includes("record"),
@@ -88,7 +92,7 @@ describe("Tool Registry", () => {
 
       expect(appTools.length).toBe(3);
       expect(tableTools.length).toBe(3);
-      expect(fieldTools.length).toBe(2);
+      expect(fieldTools.length).toBe(4);
       expect(recordTools.length).toBe(5);
       expect(fileTools.length).toBe(2);
       expect(reportTools.length).toBe(1);
@@ -115,7 +119,7 @@ describe("Tool Registry", () => {
 
       initializeTools(mockClient, mockCache);
 
-      expect(toolRegistry.getToolCount()).toBe(22);
+      expect(toolRegistry.getToolCount()).toBe(24);
     });
   });
 });

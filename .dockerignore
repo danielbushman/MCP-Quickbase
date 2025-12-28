@@ -45,10 +45,6 @@ Thumbs.db
 # Legacy v1 implementation
 v1/
 
-# AI documentation
-ai_specs/
-ai_workspace/
-
 # Development scripts
 auto_setup.sh
 check_dependencies.sh

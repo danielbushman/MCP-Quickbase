@@ -48,7 +48,7 @@ This release represents a complete rewrite of Quickbase MCP Server with signific
 
 ### 🔄 Migration from v1
 
-See [MIGRATION.md](MIGRATION.md) for detailed migration instructions.
+See [Migration Guide](migration-guide.md) for detailed migration instructions.
 
 **Quick Summary**:
 1. Pull latest changes

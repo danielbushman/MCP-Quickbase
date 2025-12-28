@@ -28,7 +28,7 @@ describe("Integration Tests", () => {
 
       initializeTools(client, cache);
 
-      expect(toolRegistry.getToolCount()).toBe(22);
+      expect(toolRegistry.getToolCount()).toBe(24);
 
       // Verify all expected tools are present
       const expectedTools = [
@@ -41,7 +41,9 @@ describe("Integration Tests", () => {
         "update_table",
         "get_table_fields",
         "create_field",
+        "get_field",
         "update_field",
+        "delete_field",
         "query_records",
         "create_record",
         "update_record",

@@ -153,6 +153,15 @@ export class QuickbaseClient {
   }
 
   /**
+   * Invalidate a cache entry
+   * @param key Cache key to invalidate
+   */
+  public invalidateCache(key: string): void {
+    this.cache.del(key);
+    logger.debug(`Cache invalidated for key: ${key}`);
+  }
+
+  /**
    * Sends a request to the Quickbase API with retry logic
    * @param options Request options
    * @returns API response

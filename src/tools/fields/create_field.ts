@@ -48,17 +48,18 @@ export interface CreateFieldParams {
   table_id: string;
 
   /**
-   * Name of the field
+   * Display label for the field
    */
   field_name: string;
 
   /**
-   * Type of the field (e.g., text, numeric, date, etc.)
+   * Type of the field: text, text-multi-line, rich-text, numeric, currency,
+   * percent, rating, date, datetime, checkbox, user, email, url, phone, address, file
    */
   field_type: string;
 
   /**
-   * Description of the field
+   * Help text shown to users when editing the field (stored as fieldHelp)
    */
   description?: string;
 
@@ -88,9 +89,9 @@ export interface CreateFieldResult {
   fieldType: string;
 
   /**
-   * The description of the created field
+   * Help text for the field (shown to users when editing)
    */
-  description?: string;
+  fieldHelp?: string;
 
   /**
    * The ID of the table the field was created in
@@ -111,7 +112,12 @@ export class CreateFieldTool extends BaseTool<
   CreateFieldResult
 > {
   public name = "create_field";
-  public description = "Creates a new field in a Quickbase table";
+  public description =
+    "Creates a new field in a Quickbase table. " +
+    "Valid field_type values: text, text-multi-line, text-multiple-choice, rich-text, " +
+    "numeric, currency, percent, rating, date, datetime, timestamp, timeofday, duration, " +
+    "checkbox, user, multiuser, email, url, phone, address, file. " +
+    "Use options to set field properties like maxLength, defaultValue, numLines, etc.";
 
   /**
    * Parameter schema for create_field
@@ -121,23 +127,28 @@ export class CreateFieldTool extends BaseTool<
     properties: {
       table_id: {
         type: "string",
-        description: "The ID of the table",
+        description: "The ID of the table (e.g., 'bqx7xkw3r')",
       },
       field_name: {
         type: "string",
-        description: "Name of the field",
+        description: "Display label for the field",
       },
       field_type: {
         type: "string",
-        description: "Type of the field (e.g., text, number, date)",
+        description:
+          "Field type: text, text-multi-line, rich-text, numeric, currency, " +
+          "percent, rating, date, datetime, checkbox, user, email, url, phone, address, file",
       },
       description: {
         type: "string",
-        description: "Description of the field",
+        description:
+          "Help text shown to users when editing the field (stored as fieldHelp)",
       },
       options: {
         type: "object",
-        description: "Additional field options",
+        description:
+          "Field properties: appearsByDefault, findEnabled, required, unique, " +
+          "maxLength (text), numLines (multi-line), defaultValue, etc.",
       },
     },
     required: ["table_id", "field_name", "field_type"],
@@ -166,14 +177,19 @@ export class CreateFieldTool extends BaseTool<
     });
 
     // Prepare request body
+    // Note: Quickbase API uses 'fieldHelp' at root level for help text (not 'description')
     const body: Record<string, any> = {
       label: field_name,
       fieldType: field_type,
-      description: description || "",
     };
 
+    // Add fieldHelp if description provided (maps to root-level fieldHelp)
+    if (description) {
+      body.fieldHelp = description;
+    }
+
     // Add properties if provided
-    if (options) {
+    if (options && Object.keys(options).length > 0) {
       body.properties = { ...options };
     }
 
@@ -205,7 +221,7 @@ export class CreateFieldTool extends BaseTool<
       fieldId: field.id,
       label: field.label,
       fieldType: field.fieldType,
-      description: field.description,
+      fieldHelp: field.fieldHelp,
       tableId: table_id,
       ...field,
     };
