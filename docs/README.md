@@ -26,6 +26,7 @@ This directory contains comprehensive documentation for Quickbase MCP Server v2.
 - **[Hardening Summary](hardening-summary.md)** - Security hardening decisions and remaining improvements
 - **[Migration Guide](migration-guide.md)** - V1 to V2 migration instructions
 - **[Release Notes](release-notes.md)** - Version history and release information
+- **[Future Improvements](future-improvements.md)** - Roadmap items for future development
 
 ## 🎯 Quick Links
 
