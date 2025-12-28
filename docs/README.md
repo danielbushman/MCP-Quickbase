@@ -22,6 +22,11 @@ This directory contains comprehensive documentation for Quickbase MCP Server v2.
 - **[Performance Benchmarks](performance-benchmarks.md)** - Performance metrics and optimization
 - **[QA Report](final-qa-report.md)** - Quality assurance testing results
 
+### History & Releases
+- **[Hardening Summary](hardening-summary.md)** - Security hardening decisions and remaining improvements
+- **[Migration Guide](migration-guide.md)** - V1 to V2 migration instructions
+- **[Release Notes](release-notes.md)** - Version history and release information
+
 ## 🎯 Quick Links
 
 - **New users**: Start with [Quick Start Guide](quickstart.md)
