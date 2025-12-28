@@ -172,6 +172,8 @@ export class CreateTableTool extends BaseTool<
     };
 
     // Add fields if provided
+    // Note: The Quickbase REST API may not support inline field creation with POST /tables.
+    // Fields may need to be created separately using the create_field tool after table creation.
     if (fields && fields.length > 0) {
       body.fields = fields.map((field) => ({
         fieldType: field.type,
