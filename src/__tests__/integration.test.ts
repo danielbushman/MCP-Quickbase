@@ -28,7 +28,7 @@ describe("Integration Tests", () => {
 
       initializeTools(client, cache);
 
-      expect(toolRegistry.getToolCount()).toBe(18);
+      expect(toolRegistry.getToolCount()).toBe(20);
 
       // Verify all expected tools are present
       const expectedTools = [

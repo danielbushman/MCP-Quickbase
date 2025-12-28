@@ -51,7 +51,7 @@ describe("Tool Registry", () => {
       expect(toolNames).toContain("run_report");
 
       // Verify total count
-      expect(toolNames.length).toBe(18);
+      expect(toolNames.length).toBe(20);
     });
 
     it("should register tools in correct categories", () => {
@@ -107,7 +107,7 @@ describe("Tool Registry", () => {
 
       initializeTools(mockClient, mockCache);
 
-      expect(toolRegistry.getToolCount()).toBe(18);
+      expect(toolRegistry.getToolCount()).toBe(20);
     });
   });
 });
