@@ -59,16 +59,6 @@ describe("Field Tools", () => {
     properties: { format: "MM/DD/YYYY" },
   };
 
-  const mockCheckboxField = {
-    id: "9",
-    label: "Is Active",
-    fieldType: "checkbox",
-    required: false,
-    unique: false,
-    description: "Whether the item is active",
-    properties: {},
-  };
-
   describe("GetFieldTool", () => {
     let tool: GetFieldTool;
 
