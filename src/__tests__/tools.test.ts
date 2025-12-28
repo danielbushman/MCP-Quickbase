@@ -71,7 +71,9 @@ describe("Tool Registry", () => {
         ),
       );
       const fieldTools = allTools.filter((tool) =>
-        ["create_field", "update_field"].includes(tool.name),
+        ["create_field", "get_field", "update_field", "delete_field"].includes(
+          tool.name,
+        ),
       );
       const recordTools = allTools.filter((tool) =>
         tool.name.includes("record"),
@@ -83,7 +85,7 @@ describe("Tool Registry", () => {
 
       expect(appTools.length).toBe(3);
       expect(tableTools.length).toBe(3);
-      expect(fieldTools.length).toBe(2);
+      expect(fieldTools.length).toBe(4);
       expect(recordTools.length).toBe(5);
       expect(fileTools.length).toBe(2);
       expect(reportTools.length).toBe(1);
