@@ -1,4 +1,7 @@
-import { GetRelationshipsTool } from "../../tools/relationships";
+import {
+  GetRelationshipsTool,
+  CreateRelationshipTool,
+} from "../../tools/relationships";
 import { QuickbaseClient } from "../../client/quickbase";
 import { QuickbaseConfig } from "../../types/config";
 
@@ -450,6 +453,775 @@ describe("Relationship Tools", () => {
         method: "GET",
         path: "/tables/bqr123/relationships",
         params: { skip: "5" },
+      });
+    });
+  });
+
+  describe("CreateRelationshipTool", () => {
+    let tool: CreateRelationshipTool;
+
+    beforeEach(() => {
+      tool = new CreateRelationshipTool(mockClient);
+    });
+
+    it("should have correct properties", () => {
+      expect(tool.name).toBe("create_relationship");
+      expect(tool.description).toBeTruthy();
+      expect(tool.description).toContain("table-to-table relationship");
+      expect(tool.description).toContain("SAFE");
+      expect(tool.paramSchema).toBeDefined();
+      expect(tool.paramSchema.required).toContain("table_id");
+      expect(tool.paramSchema.required).toContain("parent_table_id");
+    });
+
+    it("should have conditional validation in schema", () => {
+      expect(tool.paramSchema.if).toBeDefined();
+      expect(tool.paramSchema.then).toBeDefined();
+      expect(tool.paramSchema.if.required).toContain("summary_field_id");
+      expect(tool.paramSchema.then.required).toContain(
+        "summary_accumulation_type",
+      );
+    });
+
+    // Happy Path Tests
+    describe("Happy Path", () => {
+      it("should create basic relationship (parent + child only)", async () => {
+        const mockResponse = {
+          success: true,
+          data: {
+            id: 10,
+            parentTableId: "bqrparent123",
+            childTableId: "bqrchild456",
+            foreignKeyField: {
+              id: 10,
+              label: "Related Parent",
+              type: "numeric",
+            },
+            lookupFields: [],
+            summaryFields: [],
+          },
+        };
+
+        mockClient.request = jest.fn().mockResolvedValue(mockResponse);
+
+        const params = {
+          table_id: "bqrchild456",
+          parent_table_id: "bqrparent123",
+        };
+
+        const result = await tool.execute(params);
+
+        expect(result.success).toBe(true);
+        expect(result.data?.id).toBe(10);
+        expect(result.data?.parentTableId).toBe("bqrparent123");
+        expect(result.data?.childTableId).toBe("bqrchild456");
+        expect(result.data?.foreignKeyField.id).toBe(10);
+        expect(result.data?.lookupFields).toHaveLength(0);
+        expect(result.data?.summaryFields).toHaveLength(0);
+        expect(mockClient.request).toHaveBeenCalledWith({
+          method: "POST",
+          path: "/tables/bqrchild456/relationships",
+          body: {
+            parentTableId: "bqrparent123",
+          },
+        });
+      });
+
+      it("should create relationship with custom foreign key label", async () => {
+        const mockResponse = {
+          success: true,
+          data: {
+            id: 11,
+            parentTableId: "bqrparent123",
+            childTableId: "bqrchild456",
+            foreignKeyField: {
+              id: 11,
+              label: "Customer Link",
+              type: "numeric",
+            },
+            lookupFields: [],
+            summaryFields: [],
+          },
+        };
+
+        mockClient.request = jest.fn().mockResolvedValue(mockResponse);
+
+        const params = {
+          table_id: "bqrchild456",
+          parent_table_id: "bqrparent123",
+          foreign_key_label: "Customer Link",
+        };
+
+        const result = await tool.execute(params);
+
+        expect(result.success).toBe(true);
+        expect(result.data?.foreignKeyField.label).toBe("Customer Link");
+        expect(mockClient.request).toHaveBeenCalledWith({
+          method: "POST",
+          path: "/tables/bqrchild456/relationships",
+          body: {
+            parentTableId: "bqrparent123",
+            foreignKeyField: {
+              label: "Customer Link",
+            },
+          },
+        });
+      });
+
+      it("should create relationship with lookup field IDs", async () => {
+        const mockResponse = {
+          success: true,
+          data: {
+            id: 12,
+            parentTableId: "bqrparent123",
+            childTableId: "bqrchild456",
+            foreignKeyField: {
+              id: 12,
+              label: "Related Parent",
+              type: "numeric",
+            },
+            lookupFields: [
+              { id: 20, label: "Parent Name", type: "text" },
+              { id: 21, label: "Parent Email", type: "email" },
+            ],
+            summaryFields: [],
+          },
+        };
+
+        mockClient.request = jest.fn().mockResolvedValue(mockResponse);
+
+        const params = {
+          table_id: "bqrchild456",
+          parent_table_id: "bqrparent123",
+          lookup_field_ids: [6, 7],
+        };
+
+        const result = await tool.execute(params);
+
+        expect(result.success).toBe(true);
+        expect(result.data?.lookupFields).toHaveLength(2);
+        expect(result.data?.lookupFields[0].label).toBe("Parent Name");
+        expect(result.data?.lookupFields[1].label).toBe("Parent Email");
+        expect(mockClient.request).toHaveBeenCalledWith({
+          method: "POST",
+          path: "/tables/bqrchild456/relationships",
+          body: {
+            parentTableId: "bqrparent123",
+            lookupFieldIds: [6, 7],
+          },
+        });
+      });
+
+      it("should create relationship with summary field using SUM", async () => {
+        const mockResponse = {
+          success: true,
+          data: {
+            id: 13,
+            parentTableId: "bqrparent123",
+            childTableId: "bqrchild456",
+            foreignKeyField: {
+              id: 13,
+              label: "Related Parent",
+              type: "numeric",
+            },
+            lookupFields: [],
+            summaryFields: [{ id: 30, label: "Total Amount", type: "numeric" }],
+          },
+        };
+
+        mockClient.request = jest.fn().mockResolvedValue(mockResponse);
+
+        const params = {
+          table_id: "bqrchild456",
+          parent_table_id: "bqrparent123",
+          summary_field_id: 8,
+          summary_accumulation_type: "SUM" as const,
+          summary_label: "Total Amount",
+        };
+
+        const result = await tool.execute(params);
+
+        expect(result.success).toBe(true);
+        expect(result.data?.summaryFields).toHaveLength(1);
+        expect(result.data?.summaryFields[0].label).toBe("Total Amount");
+        expect(mockClient.request).toHaveBeenCalledWith({
+          method: "POST",
+          path: "/tables/bqrchild456/relationships",
+          body: {
+            parentTableId: "bqrparent123",
+            summaryFields: [
+              {
+                summaryFid: 8,
+                accumulationType: "SUM",
+                label: "Total Amount",
+              },
+            ],
+          },
+        });
+      });
+
+      it("should create relationship with summary field using COUNT", async () => {
+        const mockResponse = {
+          success: true,
+          data: {
+            id: 14,
+            parentTableId: "bqrparent123",
+            childTableId: "bqrchild456",
+            foreignKeyField: {
+              id: 14,
+              label: "Related Parent",
+              type: "numeric",
+            },
+            lookupFields: [],
+            summaryFields: [{ id: 31, label: "Child Count", type: "numeric" }],
+          },
+        };
+
+        mockClient.request = jest.fn().mockResolvedValue(mockResponse);
+
+        const params = {
+          table_id: "bqrchild456",
+          parent_table_id: "bqrparent123",
+          summary_field_id: 3,
+          summary_accumulation_type: "COUNT" as const,
+        };
+
+        const result = await tool.execute(params);
+
+        expect(result.success).toBe(true);
+        expect(result.data?.summaryFields).toHaveLength(1);
+        expect(mockClient.request).toHaveBeenCalledWith({
+          method: "POST",
+          path: "/tables/bqrchild456/relationships",
+          body: {
+            parentTableId: "bqrparent123",
+            summaryFields: [
+              {
+                summaryFid: 3,
+                accumulationType: "COUNT",
+              },
+            ],
+          },
+        });
+      });
+
+      it("should create relationship with summary field using AVG", async () => {
+        const mockResponse = {
+          success: true,
+          data: {
+            id: 15,
+            parentTableId: "bqrparent123",
+            childTableId: "bqrchild456",
+            foreignKeyField: {
+              id: 15,
+              label: "Related Parent",
+              type: "numeric",
+            },
+            lookupFields: [],
+            summaryFields: [
+              { id: 32, label: "Average Score", type: "numeric" },
+            ],
+          },
+        };
+
+        mockClient.request = jest.fn().mockResolvedValue(mockResponse);
+
+        const params = {
+          table_id: "bqrchild456",
+          parent_table_id: "bqrparent123",
+          summary_field_id: 9,
+          summary_accumulation_type: "AVG" as const,
+        };
+
+        const result = await tool.execute(params);
+
+        expect(result.success).toBe(true);
+        expect(mockClient.request).toHaveBeenCalledWith({
+          method: "POST",
+          path: "/tables/bqrchild456/relationships",
+          body: {
+            parentTableId: "bqrparent123",
+            summaryFields: [
+              {
+                summaryFid: 9,
+                accumulationType: "AVG",
+              },
+            ],
+          },
+        });
+      });
+
+      it("should create relationship with summary field using MAX", async () => {
+        const mockResponse = {
+          success: true,
+          data: {
+            id: 16,
+            parentTableId: "bqrparent123",
+            childTableId: "bqrchild456",
+            foreignKeyField: {
+              id: 16,
+              label: "Related Parent",
+              type: "numeric",
+            },
+            lookupFields: [],
+            summaryFields: [{ id: 33, label: "Latest Date", type: "date" }],
+          },
+        };
+
+        mockClient.request = jest.fn().mockResolvedValue(mockResponse);
+
+        const params = {
+          table_id: "bqrchild456",
+          parent_table_id: "bqrparent123",
+          summary_field_id: 10,
+          summary_accumulation_type: "MAX" as const,
+        };
+
+        const result = await tool.execute(params);
+
+        expect(result.success).toBe(true);
+        expect(mockClient.request).toHaveBeenCalledWith({
+          method: "POST",
+          path: "/tables/bqrchild456/relationships",
+          body: {
+            parentTableId: "bqrparent123",
+            summaryFields: [
+              {
+                summaryFid: 10,
+                accumulationType: "MAX",
+              },
+            ],
+          },
+        });
+      });
+
+      it("should create relationship with summary field using MIN", async () => {
+        const mockResponse = {
+          success: true,
+          data: {
+            id: 17,
+            parentTableId: "bqrparent123",
+            childTableId: "bqrchild456",
+            foreignKeyField: {
+              id: 17,
+              label: "Related Parent",
+              type: "numeric",
+            },
+            lookupFields: [],
+            summaryFields: [{ id: 34, label: "Earliest Date", type: "date" }],
+          },
+        };
+
+        mockClient.request = jest.fn().mockResolvedValue(mockResponse);
+
+        const params = {
+          table_id: "bqrchild456",
+          parent_table_id: "bqrparent123",
+          summary_field_id: 11,
+          summary_accumulation_type: "MIN" as const,
+        };
+
+        const result = await tool.execute(params);
+
+        expect(result.success).toBe(true);
+        expect(mockClient.request).toHaveBeenCalledWith({
+          method: "POST",
+          path: "/tables/bqrchild456/relationships",
+          body: {
+            parentTableId: "bqrparent123",
+            summaryFields: [
+              {
+                summaryFid: 11,
+                accumulationType: "MIN",
+              },
+            ],
+          },
+        });
+      });
+
+      it("should create relationship with both lookup and summary fields", async () => {
+        const mockResponse = {
+          success: true,
+          data: {
+            id: 18,
+            parentTableId: "bqrparent123",
+            childTableId: "bqrchild456",
+            foreignKeyField: {
+              id: 18,
+              label: "Customer",
+              type: "numeric",
+            },
+            lookupFields: [
+              { id: 40, label: "Customer Name", type: "text" },
+              { id: 41, label: "Customer Status", type: "text" },
+            ],
+            summaryFields: [{ id: 50, label: "Total Orders", type: "numeric" }],
+          },
+        };
+
+        mockClient.request = jest.fn().mockResolvedValue(mockResponse);
+
+        const params = {
+          table_id: "bqrchild456",
+          parent_table_id: "bqrparent123",
+          foreign_key_label: "Customer",
+          lookup_field_ids: [6, 7],
+          summary_field_id: 8,
+          summary_accumulation_type: "COUNT" as const,
+          summary_label: "Total Orders",
+        };
+
+        const result = await tool.execute(params);
+
+        expect(result.success).toBe(true);
+        expect(result.data?.foreignKeyField.label).toBe("Customer");
+        expect(result.data?.lookupFields).toHaveLength(2);
+        expect(result.data?.summaryFields).toHaveLength(1);
+        expect(mockClient.request).toHaveBeenCalledWith({
+          method: "POST",
+          path: "/tables/bqrchild456/relationships",
+          body: {
+            parentTableId: "bqrparent123",
+            foreignKeyField: {
+              label: "Customer",
+            },
+            lookupFieldIds: [6, 7],
+            summaryFields: [
+              {
+                summaryFid: 8,
+                accumulationType: "COUNT",
+                label: "Total Orders",
+              },
+            ],
+          },
+        });
+      });
+    });
+
+    // Error Cases
+    describe("Error Cases", () => {
+      it("should handle parent table not found error", async () => {
+        const mockResponse = {
+          success: false,
+          error: {
+            message: "Parent table not found",
+            type: "NotFoundError",
+            code: 404,
+          },
+        };
+
+        mockClient.request = jest.fn().mockResolvedValue(mockResponse);
+
+        const params = {
+          table_id: "bqrchild456",
+          parent_table_id: "bqrnonexistent",
+        };
+
+        const result = await tool.execute(params);
+
+        expect(result.success).toBe(false);
+        expect(result.error?.message).toContain("Parent table not found");
+      });
+
+      it("should handle invalid field IDs for lookups", async () => {
+        const mockResponse = {
+          success: false,
+          error: {
+            message: "Invalid field ID: 999",
+            type: "ValidationError",
+            code: 400,
+          },
+        };
+
+        mockClient.request = jest.fn().mockResolvedValue(mockResponse);
+
+        const params = {
+          table_id: "bqrchild456",
+          parent_table_id: "bqrparent123",
+          lookup_field_ids: [999],
+        };
+
+        const result = await tool.execute(params);
+
+        expect(result.success).toBe(false);
+        expect(result.error?.message).toContain("Invalid field ID");
+      });
+
+      it("should fail when summary_field_id provided without summary_accumulation_type", async () => {
+        const params = {
+          table_id: "bqrchild456",
+          parent_table_id: "bqrparent123",
+          summary_field_id: 8,
+          // Missing summary_accumulation_type
+        };
+
+        const result = await tool.execute(params);
+
+        expect(result.success).toBe(false);
+        expect(result.error?.message).toContain("summary_accumulation_type");
+        expect(result.error?.message).toContain("required");
+      });
+
+      it("should handle tables in different apps error", async () => {
+        const mockResponse = {
+          success: false,
+          error: {
+            message:
+              "Cannot create relationship between tables in different applications",
+            type: "ValidationError",
+            code: 400,
+          },
+        };
+
+        mockClient.request = jest.fn().mockResolvedValue(mockResponse);
+
+        const params = {
+          table_id: "bqrchild456",
+          parent_table_id: "bqrparentOtherApp",
+        };
+
+        const result = await tool.execute(params);
+
+        expect(result.success).toBe(false);
+        expect(result.error?.message).toContain("different applications");
+      });
+
+      it("should handle 401 unauthorized error", async () => {
+        const mockResponse = {
+          success: false,
+          error: {
+            message: "Unauthorized",
+            type: "UnauthorizedError",
+            code: 401,
+          },
+        };
+
+        mockClient.request = jest.fn().mockResolvedValue(mockResponse);
+
+        const params = {
+          table_id: "bqrchild456",
+          parent_table_id: "bqrparent123",
+        };
+
+        const result = await tool.execute(params);
+
+        expect(result.success).toBe(false);
+        expect(result.error?.message).toContain("Unauthorized");
+      });
+
+      it("should handle 403 forbidden error", async () => {
+        const mockResponse = {
+          success: false,
+          error: {
+            message: "Access denied to this table",
+            type: "ForbiddenError",
+            code: 403,
+          },
+        };
+
+        mockClient.request = jest.fn().mockResolvedValue(mockResponse);
+
+        const params = {
+          table_id: "bqrrestricted",
+          parent_table_id: "bqrparent123",
+        };
+
+        const result = await tool.execute(params);
+
+        expect(result.success).toBe(false);
+        expect(result.error?.message).toContain("Access denied");
+      });
+
+      it("should handle network error", async () => {
+        mockClient.request = jest
+          .fn()
+          .mockRejectedValue(new Error("Network error: connection refused"));
+
+        const params = {
+          table_id: "bqrchild456",
+          parent_table_id: "bqrparent123",
+        };
+
+        const result = await tool.execute(params);
+
+        expect(result.success).toBe(false);
+        expect(result.error?.message).toContain("Network error");
+      });
+    });
+
+    // Edge Cases
+    describe("Edge Cases", () => {
+      it("should handle creating relationship that already exists", async () => {
+        const mockResponse = {
+          success: false,
+          error: {
+            message: "A relationship between these tables already exists",
+            type: "ConflictError",
+            code: 409,
+          },
+        };
+
+        mockClient.request = jest.fn().mockResolvedValue(mockResponse);
+
+        const params = {
+          table_id: "bqrchild456",
+          parent_table_id: "bqrparent123",
+        };
+
+        const result = await tool.execute(params);
+
+        expect(result.success).toBe(false);
+        expect(result.error?.message).toContain("already exists");
+      });
+
+      it("should create relationship with summary field and WHERE filter", async () => {
+        const mockResponse = {
+          success: true,
+          data: {
+            id: 19,
+            parentTableId: "bqrparent123",
+            childTableId: "bqrchild456",
+            foreignKeyField: {
+              id: 19,
+              label: "Related Parent",
+              type: "numeric",
+            },
+            lookupFields: [],
+            summaryFields: [
+              { id: 60, label: "Active Orders Total", type: "numeric" },
+            ],
+          },
+        };
+
+        mockClient.request = jest.fn().mockResolvedValue(mockResponse);
+
+        const params = {
+          table_id: "bqrchild456",
+          parent_table_id: "bqrparent123",
+          summary_field_id: 8,
+          summary_accumulation_type: "SUM" as const,
+          summary_label: "Active Orders Total",
+          summary_where: "{6.EX.'Active'}",
+        };
+
+        const result = await tool.execute(params);
+
+        expect(result.success).toBe(true);
+        expect(result.data?.summaryFields).toHaveLength(1);
+        expect(mockClient.request).toHaveBeenCalledWith({
+          method: "POST",
+          path: "/tables/bqrchild456/relationships",
+          body: {
+            parentTableId: "bqrparent123",
+            summaryFields: [
+              {
+                summaryFid: 8,
+                accumulationType: "SUM",
+                label: "Active Orders Total",
+                where: "{6.EX.'Active'}",
+              },
+            ],
+          },
+        });
+      });
+
+      it("should handle response with missing optional fields", async () => {
+        const mockResponse = {
+          success: true,
+          data: {
+            id: 20,
+            parentTableId: "bqrparent123",
+            childTableId: "bqrchild456",
+            foreignKeyField: {
+              id: 20,
+              label: "Related Parent",
+              type: "numeric",
+            },
+            // Missing lookupFields and summaryFields
+          },
+        };
+
+        mockClient.request = jest.fn().mockResolvedValue(mockResponse);
+
+        const params = {
+          table_id: "bqrchild456",
+          parent_table_id: "bqrparent123",
+        };
+
+        const result = await tool.execute(params);
+
+        expect(result.success).toBe(true);
+        expect(result.data?.lookupFields).toEqual([]);
+        expect(result.data?.summaryFields).toEqual([]);
+      });
+
+      it("should handle empty lookup_field_ids array", async () => {
+        const mockResponse = {
+          success: true,
+          data: {
+            id: 21,
+            parentTableId: "bqrparent123",
+            childTableId: "bqrchild456",
+            foreignKeyField: {
+              id: 21,
+              label: "Related Parent",
+              type: "numeric",
+            },
+            lookupFields: [],
+            summaryFields: [],
+          },
+        };
+
+        mockClient.request = jest.fn().mockResolvedValue(mockResponse);
+
+        const params = {
+          table_id: "bqrchild456",
+          parent_table_id: "bqrparent123",
+          lookup_field_ids: [],
+        };
+
+        const result = await tool.execute(params);
+
+        expect(result.success).toBe(true);
+        // Empty array should not be included in the request body
+        expect(mockClient.request).toHaveBeenCalledWith({
+          method: "POST",
+          path: "/tables/bqrchild456/relationships",
+          body: {
+            parentTableId: "bqrparent123",
+          },
+        });
+      });
+
+      it("should handle response missing foreignKeyField", async () => {
+        const mockResponse = {
+          success: true,
+          data: {
+            id: 22,
+            parentTableId: "bqrparent123",
+            childTableId: "bqrchild456",
+            // Missing foreignKeyField
+            lookupFields: [],
+            summaryFields: [],
+          },
+        };
+
+        mockClient.request = jest.fn().mockResolvedValue(mockResponse);
+
+        const params = {
+          table_id: "bqrchild456",
+          parent_table_id: "bqrparent123",
+        };
+
+        const result = await tool.execute(params);
+
+        expect(result.success).toBe(true);
+        // Should provide default empty foreignKeyField
+        expect(result.data?.foreignKeyField).toEqual({
+          id: 0,
+          label: "",
+          type: "",
+        });
       });
     });
   });

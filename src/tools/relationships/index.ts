@@ -2,6 +2,7 @@ import { QuickbaseClient } from "../../client/quickbase";
 import { toolRegistry } from "../registry";
 import { createLogger } from "../../utils/logger";
 import { GetRelationshipsTool } from "./get_relationships";
+import { CreateRelationshipTool } from "./create_relationship";
 
 const logger = createLogger("RelationshipTools");
 
@@ -15,8 +16,10 @@ export function registerRelationshipTools(client: QuickbaseClient): void {
   // Register get_relationships tool (RELS.1002)
   toolRegistry.registerTool(new GetRelationshipsTool(client));
 
+  // Register create_relationship tool (RELS.2001)
+  toolRegistry.registerTool(new CreateRelationshipTool(client));
+
   // Future tools to be registered:
-  // - CreateRelationshipTool (RELS.1003)
   // - UpdateRelationshipTool (RELS.1004)
   // - DeleteRelationshipTool (RELS.1005)
 
@@ -32,7 +35,13 @@ export type {
   RelationshipFieldInfo,
 } from "./get_relationships";
 
+export { CreateRelationshipTool } from "./create_relationship";
+export type {
+  CreateRelationshipParams,
+  CreateRelationshipResult,
+  SummaryAccumulationType,
+} from "./create_relationship";
+
 // Future exports for relationship tools
-// export { CreateRelationshipTool } from './create_relationship';
 // export { UpdateRelationshipTool } from './update_relationship';
 // export { DeleteRelationshipTool } from './delete_relationship';

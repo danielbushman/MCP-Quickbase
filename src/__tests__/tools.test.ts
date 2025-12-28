@@ -52,7 +52,7 @@ describe("Tool Registry", () => {
       expect(toolNames).toContain("get_relationships");
 
       // Verify total count
-      expect(toolNames.length).toBe(19);
+      expect(toolNames.length).toBe(20);
     });
 
     it("should register tools in correct categories", () => {
@@ -89,7 +89,7 @@ describe("Tool Registry", () => {
       expect(recordTools.length).toBe(5);
       expect(fileTools.length).toBe(2);
       expect(reportTools.length).toBe(1);
-      expect(relationshipTools.length).toBe(1);
+      expect(relationshipTools.length).toBe(2);
     });
   });
 
@@ -112,7 +112,7 @@ describe("Tool Registry", () => {
 
       initializeTools(mockClient, mockCache);
 
-      expect(toolRegistry.getToolCount()).toBe(19);
+      expect(toolRegistry.getToolCount()).toBe(20);
     });
   });
 });
