@@ -28,7 +28,7 @@ describe("Integration Tests", () => {
 
       initializeTools(client, cache);
 
-      expect(toolRegistry.getToolCount()).toBe(21);
+      expect(toolRegistry.getToolCount()).toBe(22);
 
       // Verify all expected tools are present
       const expectedTools = [
@@ -53,6 +53,7 @@ describe("Integration Tests", () => {
         "get_relationships",
         "create_relationship",
         "update_relationship",
+        "delete_relationship",
       ];
 
       expectedTools.forEach((toolName) => {

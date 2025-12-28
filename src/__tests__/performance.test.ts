@@ -32,9 +32,9 @@ describe("Performance Tests", () => {
       const endTime = Date.now();
       const initializationTime = endTime - startTime;
 
-      // Should initialize all 21 tools in under 100ms
+      // Should initialize all 22 tools in under 100ms
       expect(initializationTime).toBeLessThan(100);
-      expect(toolRegistry.getToolCount()).toBe(21);
+      expect(toolRegistry.getToolCount()).toBe(22);
     });
 
     it("should handle concurrent tool registrations efficiently", () => {

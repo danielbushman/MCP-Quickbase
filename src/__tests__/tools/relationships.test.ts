@@ -2,6 +2,7 @@ import {
   GetRelationshipsTool,
   CreateRelationshipTool,
   UpdateRelationshipTool,
+  DeleteRelationshipTool,
 } from "../../tools/relationships";
 import { QuickbaseClient } from "../../client/quickbase";
 import { QuickbaseConfig } from "../../types/config";
@@ -1887,6 +1888,261 @@ describe("Relationship Tools", () => {
         });
         expect(result.data?.lookupFields).toEqual([]);
         expect(result.data?.summaryFields).toEqual([]);
+      });
+    });
+  });
+
+  describe("DeleteRelationshipTool", () => {
+    let tool: DeleteRelationshipTool;
+
+    beforeEach(() => {
+      tool = new DeleteRelationshipTool(mockClient);
+    });
+
+    it("should have correct properties", () => {
+      expect(tool.name).toBe("delete_relationship");
+      expect(tool.description).toBeTruthy();
+      expect(tool.paramSchema).toBeDefined();
+      expect(tool.paramSchema.required).toContain("table_id");
+      expect(tool.paramSchema.required).toContain("relationship_id");
+    });
+
+    // Safety Warning Verification Tests
+    describe("Safety Warnings", () => {
+      it("should have WARNING in description", () => {
+        expect(tool.description).toContain("WARNING");
+      });
+
+      it("should have DESTRUCTIVE in description", () => {
+        expect(tool.description).toContain("DESTRUCTIVE");
+      });
+
+      it("should mention lookup fields deletion", () => {
+        expect(tool.description).toContain("LOOKUP");
+      });
+
+      it("should mention summary fields deletion", () => {
+        expect(tool.description).toContain("SUMMARY");
+      });
+
+      it("should mention data loss is permanent", () => {
+        expect(tool.description).toContain("permanently");
+        expect(tool.description).toContain("CANNOT be recovered");
+      });
+
+      it("should recommend get_relationships first", () => {
+        expect(tool.description).toContain("get_relationships");
+      });
+
+      it("should recommend user confirmation", () => {
+        expect(tool.description).toContain("Confirm with the user");
+      });
+    });
+
+    // Happy Path Tests
+    describe("Happy Path", () => {
+      it("should delete relationship successfully", async () => {
+        const mockResponse = {
+          success: true,
+          data: {},
+        };
+
+        mockClient.request = jest.fn().mockResolvedValue(mockResponse);
+
+        const params = {
+          table_id: "bqrchild456",
+          relationship_id: 10,
+        };
+
+        const result = await tool.execute(params);
+
+        expect(result.success).toBe(true);
+        expect(result.data?.relationshipId).toBe(10);
+        expect(result.data?.deleted).toBe(true);
+        expect(mockClient.request).toHaveBeenCalledWith({
+          method: "DELETE",
+          path: "/tables/bqrchild456/relationships/10",
+        });
+      });
+
+      it("should return deleted: true in result", async () => {
+        const mockResponse = {
+          success: true,
+          data: {},
+        };
+
+        mockClient.request = jest.fn().mockResolvedValue(mockResponse);
+
+        const params = {
+          table_id: "bqr123",
+          relationship_id: 5,
+        };
+
+        const result = await tool.execute(params);
+
+        expect(result.success).toBe(true);
+        expect(result.data?.deleted).toBe(true);
+      });
+    });
+
+    // Error Cases
+    describe("Error Cases", () => {
+      it("should handle relationship not found (404)", async () => {
+        const mockResponse = {
+          success: false,
+          error: {
+            message: "Relationship not found",
+            type: "NotFoundError",
+            code: 404,
+          },
+        };
+
+        mockClient.request = jest.fn().mockResolvedValue(mockResponse);
+
+        const params = {
+          table_id: "bqrchild456",
+          relationship_id: 999,
+        };
+
+        const result = await tool.execute(params);
+
+        expect(result.success).toBe(false);
+        expect(result.error?.message).toContain("Relationship not found");
+      });
+
+      it("should handle 401 unauthorized error", async () => {
+        const mockResponse = {
+          success: false,
+          error: {
+            message: "Unauthorized",
+            type: "UnauthorizedError",
+            code: 401,
+          },
+        };
+
+        mockClient.request = jest.fn().mockResolvedValue(mockResponse);
+
+        const params = {
+          table_id: "bqrchild456",
+          relationship_id: 10,
+        };
+
+        const result = await tool.execute(params);
+
+        expect(result.success).toBe(false);
+        expect(result.error?.message).toContain("Unauthorized");
+      });
+
+      it("should handle 403 forbidden error", async () => {
+        const mockResponse = {
+          success: false,
+          error: {
+            message: "Access denied to this table",
+            type: "ForbiddenError",
+            code: 403,
+          },
+        };
+
+        mockClient.request = jest.fn().mockResolvedValue(mockResponse);
+
+        const params = {
+          table_id: "bqrrestricted",
+          relationship_id: 10,
+        };
+
+        const result = await tool.execute(params);
+
+        expect(result.success).toBe(false);
+        expect(result.error?.message).toContain("Access denied");
+      });
+
+      it("should handle network error", async () => {
+        mockClient.request = jest
+          .fn()
+          .mockRejectedValue(new Error("Network error: connection refused"));
+
+        const params = {
+          table_id: "bqrchild456",
+          relationship_id: 10,
+        };
+
+        const result = await tool.execute(params);
+
+        expect(result.success).toBe(false);
+        expect(result.error?.message).toContain("Network error");
+      });
+    });
+
+    // Edge Cases
+    describe("Edge Cases", () => {
+      it("should handle deleting relationship with many lookup/summary fields", async () => {
+        // The API handles the deletion of associated fields internally
+        // We just need to confirm the deletion succeeds
+        const mockResponse = {
+          success: true,
+          data: {},
+        };
+
+        mockClient.request = jest.fn().mockResolvedValue(mockResponse);
+
+        const params = {
+          table_id: "bqrchild456",
+          relationship_id: 10, // Relationship with many lookup/summary fields
+        };
+
+        const result = await tool.execute(params);
+
+        expect(result.success).toBe(true);
+        expect(result.data?.deleted).toBe(true);
+        expect(result.data?.relationshipId).toBe(10);
+      });
+
+      it("should preserve API error messages in response", async () => {
+        const customErrorMessage =
+          "Cannot delete relationship: active records depend on lookup fields";
+        const mockResponse = {
+          success: false,
+          error: {
+            message: customErrorMessage,
+            type: "ValidationError",
+            code: 400,
+          },
+        };
+
+        mockClient.request = jest.fn().mockResolvedValue(mockResponse);
+
+        const params = {
+          table_id: "bqrchild456",
+          relationship_id: 10,
+        };
+
+        const result = await tool.execute(params);
+
+        expect(result.success).toBe(false);
+        expect(result.error?.message).toBe(customErrorMessage);
+      });
+
+      it("should handle table not found error", async () => {
+        const mockResponse = {
+          success: false,
+          error: {
+            message: "Table not found",
+            type: "NotFoundError",
+            code: 404,
+          },
+        };
+
+        mockClient.request = jest.fn().mockResolvedValue(mockResponse);
+
+        const params = {
+          table_id: "bqrnonexistent",
+          relationship_id: 10,
+        };
+
+        const result = await tool.execute(params);
+
+        expect(result.success).toBe(false);
+        expect(result.error?.message).toContain("Table not found");
       });
     });
   });
