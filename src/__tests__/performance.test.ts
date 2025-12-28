@@ -1,53 +1,53 @@
-import { QuickbaseClient } from '../client/quickbase';
-import { CacheService } from '../utils/cache';
-import { initializeTools, toolRegistry } from '../tools';
-import { QuickbaseConfig } from '../types/config';
+import { QuickbaseClient } from "../client/quickbase";
+import { CacheService } from "../utils/cache";
+import { initializeTools, toolRegistry } from "../tools";
+import { QuickbaseConfig } from "../types/config";
 
-describe('Performance Tests', () => {
+describe("Performance Tests", () => {
   let client: QuickbaseClient;
   let cache: CacheService;
 
   beforeEach(() => {
     // Clear registry before each test
-    toolRegistry['tools'].clear();
+    toolRegistry["tools"].clear();
 
     const config: QuickbaseConfig = {
-      realmHost: 'test.quickbase.com',
-      userToken: 'test-token',
-      appId: 'test-app-id',
+      realmHost: "test.quickbase.com",
+      userToken: "test-token",
+      appId: "test-app-id",
       cacheEnabled: true,
-      cacheTtl: 3600
+      cacheTtl: 3600,
     };
 
     client = new QuickbaseClient(config);
     cache = new CacheService(3600, true);
   });
 
-  describe('Tool initialization performance', () => {
-    it('should initialize all tools within performance target', () => {
+  describe("Tool initialization performance", () => {
+    it("should initialize all tools within performance target", () => {
       const startTime = Date.now();
-      
+
       initializeTools(client, cache);
-      
+
       const endTime = Date.now();
       const initializationTime = endTime - startTime;
-      
-      // Should initialize all 18 tools in under 100ms
+
+      // Should initialize all 20 tools in under 100ms
       expect(initializationTime).toBeLessThan(100);
-      expect(toolRegistry.getToolCount()).toBe(18);
+      expect(toolRegistry.getToolCount()).toBe(20);
     });
 
-    it('should handle concurrent tool registrations efficiently', () => {
+    it("should handle concurrent tool registrations efficiently", () => {
       const iterations = 10;
       const times: number[] = [];
 
       for (let i = 0; i < iterations; i++) {
-        toolRegistry['tools'].clear();
-        
+        toolRegistry["tools"].clear();
+
         const startTime = Date.now();
         initializeTools(client, cache);
         const endTime = Date.now();
-        
+
         times.push(endTime - startTime);
       }
 
@@ -60,11 +60,11 @@ describe('Performance Tests', () => {
     });
   });
 
-  describe('Cache performance', () => {
-    it('should cache operations efficiently', () => {
+  describe("Cache performance", () => {
+    it("should cache operations efficiently", () => {
       const cache = new CacheService(3600, true);
-      const key = 'test-key';
-      const value = { data: 'test-data' };
+      const key = "test-key";
+      const value = { data: "test-data" };
 
       // Measure set operation
       const setStart = Date.now();
@@ -82,7 +82,7 @@ describe('Performance Tests', () => {
       expect(retrieved).toEqual(value);
     });
 
-    it('should handle large cache volumes efficiently', () => {
+    it("should handle large cache volumes efficiently", () => {
       const cache = new CacheService(3600, true);
       const itemCount = 1000;
 
@@ -105,9 +105,9 @@ describe('Performance Tests', () => {
       expect(bulkGetTime).toBeLessThan(50);
     });
 
-    it('should provide fast cache operations', () => {
+    it("should provide fast cache operations", () => {
       const cache = new CacheService(3600, true);
-      
+
       // Add some data
       for (let i = 0; i < 100; i++) {
         cache.set(`key-${i}`, `value-${i}`);
@@ -123,16 +123,16 @@ describe('Performance Tests', () => {
     });
   });
 
-  describe('Client performance', () => {
-    it('should create client instances quickly', () => {
+  describe("Client performance", () => {
+    it("should create client instances quickly", () => {
       const iterations = 100;
       const times: number[] = [];
 
       for (let i = 0; i < iterations; i++) {
         const config: QuickbaseConfig = {
-          realmHost: 'test.quickbase.com',
-          userToken: 'test-token',
-          cacheEnabled: false
+          realmHost: "test.quickbase.com",
+          userToken: "test-token",
+          cacheEnabled: false,
         };
 
         const startTime = Date.now();
@@ -150,16 +150,24 @@ describe('Performance Tests', () => {
       expect(maxTime).toBeLessThan(20);
     });
 
-    it('should validate configuration efficiently', () => {
+    it("should validate configuration efficiently", () => {
       const validConfigs = [
-        { realmHost: 'test.quickbase.com', userToken: 'token1' },
-        { realmHost: 'another.quickbase.com', userToken: 'token2', appId: 'app123' },
-        { realmHost: 'third.quickbase.com', userToken: 'token3', cacheEnabled: true }
+        { realmHost: "test.quickbase.com", userToken: "token1" },
+        {
+          realmHost: "another.quickbase.com",
+          userToken: "token2",
+          appId: "app123",
+        },
+        {
+          realmHost: "third.quickbase.com",
+          userToken: "token3",
+          cacheEnabled: true,
+        },
       ];
 
       const startTime = Date.now();
-      
-      validConfigs.forEach(config => {
+
+      validConfigs.forEach((config) => {
         new QuickbaseClient(config);
       });
 
@@ -170,8 +178,8 @@ describe('Performance Tests', () => {
     });
   });
 
-  describe('Memory usage', () => {
-    it('should not leak memory during repeated operations', () => {
+  describe("Memory usage", () => {
+    it("should not leak memory during repeated operations", () => {
       const initialMemory = process.memoryUsage().heapUsed;
       const iterations = 1000;
 
@@ -195,19 +203,19 @@ describe('Performance Tests', () => {
       expect(memoryIncrease).toBeLessThan(10 * 1024 * 1024);
     });
 
-    it('should clean up resources properly', () => {
+    it("should clean up resources properly", () => {
       const initialMemory = process.memoryUsage().heapUsed;
 
       // Create and destroy many clients
       for (let i = 0; i < 100; i++) {
         new QuickbaseClient({
-          realmHost: 'test.quickbase.com',
-          userToken: 'test-token'
+          realmHost: "test.quickbase.com",
+          userToken: "test-token",
         });
-        
+
         // Simulate some usage
         const cache = new CacheService(3600, true);
-        cache.set('test', 'data');
+        cache.set("test", "data");
         cache.clear();
       }
 
@@ -224,19 +232,19 @@ describe('Performance Tests', () => {
     });
   });
 
-  describe('Scalability', () => {
-    it('should handle tool registry scaling', () => {
+  describe("Scalability", () => {
+    it("should handle tool registry scaling", () => {
       // Test with multiple parallel initializations
       const promises = Array.from({ length: 10 }, () => {
         return new Promise<number>((resolve) => {
           const startTime = Date.now();
-          toolRegistry['tools'].clear();
+          toolRegistry["tools"].clear();
           initializeTools(client, cache);
           resolve(Date.now() - startTime);
         });
       });
 
-      return Promise.all(promises).then(times => {
+      return Promise.all(promises).then((times) => {
         const maxTime = Math.max(...times);
         const averageTime = times.reduce((a, b) => a + b, 0) / times.length;
 
@@ -246,9 +254,9 @@ describe('Performance Tests', () => {
       });
     });
 
-    it('should maintain performance with large parameter objects', async () => {
+    it("should maintain performance with large parameter objects", async () => {
       initializeTools(client, cache);
-      const testTool = toolRegistry.getTool('test_connection');
+      const testTool = toolRegistry.getTool("test_connection");
       expect(testTool).toBeDefined();
 
       // Create large parameter object
@@ -258,7 +266,7 @@ describe('Performance Tests', () => {
       }
 
       const startTime = Date.now();
-      
+
       // Test parameter validation directly with large params
       try {
         // Call validateParams directly (protected method, so we cast to access it)
@@ -268,7 +276,7 @@ describe('Performance Tests', () => {
       }
 
       const validationTime = Date.now() - startTime;
-      
+
       // Parameter validation should be fast even for large objects
       expect(validationTime).toBeLessThan(10); // Much more reasonable expectation for validation
     });

@@ -64,3 +64,10 @@ quickbase_cache/
 coverage/
 
 .mcp.json
+
+.crewchief-meta.json
+.crewchief/runs/
+crewchief.config.local.js
+crewchief.config.js
+
+**/*.local.*
