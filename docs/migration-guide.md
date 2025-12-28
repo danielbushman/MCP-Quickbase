@@ -137,8 +137,8 @@ QUICKBASE_CACHE_TTL=3600  # seconds
 
 ## 📞 Getting Help
 
-1. Check the [README](README.md) for updated documentation
-2. Review the [Quick Start Guide](docs/quickstart.md#-troubleshooting) for common issues
+1. Check the [README](../README.md) for updated documentation
+2. Review the [Quick Start Guide](quickstart.md#-troubleshooting) for common issues
 3. Open an issue on GitHub if you encounter problems
 
 ## 🔙 Rolling Back (Not Recommended)
