@@ -5,31 +5,6 @@ import { createLogger } from "../../utils/logger";
 const logger = createLogger("CreateTableTool");
 
 /**
- * Field definition for table creation
- */
-export interface FieldDefinition {
-  /**
-   * Name of the field
-   */
-  name: string;
-
-  /**
-   * Type of the field (e.g., text, number, date)
-   */
-  type: string;
-
-  /**
-   * Description of the field
-   */
-  description?: string;
-
-  /**
-   * Additional field properties
-   */
-  properties?: Record<string, any>;
-}
-
-/**
  * Parameters for create_table tool
  */
 export interface CreateTableParams {
@@ -47,11 +22,6 @@ export interface CreateTableParams {
    * Description of the table
    */
   description?: string;
-
-  /**
-   * Initial fields to create with the table
-   */
-  fields?: FieldDefinition[];
 
   /**
    * Additional options for table creation
@@ -102,7 +72,8 @@ export class CreateTableTool extends BaseTool<
   CreateTableResult
 > {
   public name = "create_table";
-  public description = "Creates a new table in a Quickbase application";
+  public description =
+    "Creates a new table in a Quickbase application. IMPORTANT: This only creates the table structure with system fields. To add custom fields, use the create_field tool after creating the table.";
 
   /**
    * Parameter schema for create_table
@@ -121,20 +92,6 @@ export class CreateTableTool extends BaseTool<
       description: {
         type: "string",
         description: "Description of the table",
-      },
-      fields: {
-        type: "array",
-        description: "List of field definitions",
-        items: {
-          type: "object",
-          properties: {
-            name: { type: "string" },
-            type: { type: "string" },
-            description: { type: "string" },
-            properties: { type: "object" },
-          },
-          required: ["name", "type"],
-        },
       },
       options: {
         type: "object",
@@ -163,25 +120,13 @@ export class CreateTableTool extends BaseTool<
       tableName: params.name,
     });
 
-    const { app_id, name, description, fields, options } = params;
+    const { app_id, name, description, options } = params;
 
     // Prepare request body
     const body: Record<string, any> = {
       name,
       description: description || "",
     };
-
-    // Add fields if provided
-    // Note: The Quickbase REST API may not support inline field creation with POST /tables.
-    // Fields may need to be created separately using the create_field tool after table creation.
-    if (fields && fields.length > 0) {
-      body.fields = fields.map((field) => ({
-        fieldType: field.type,
-        label: field.name,
-        description: field.description || "",
-        ...(field.properties || {}),
-      }));
-    }
 
     // Add any additional options
     if (options) {
