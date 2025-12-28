@@ -1,7 +1,7 @@
-import { McpTool, ToolRegistry } from '../types/mcp';
-import { createLogger } from '../utils/logger';
+import { McpTool, ToolRegistry } from "../types/mcp";
+import { createLogger } from "../utils/logger";
 
-const logger = createLogger('ToolRegistry');
+const logger = createLogger("ToolRegistry");
 
 /**
  * Implementation of the MCP Tool Registry
@@ -9,7 +9,7 @@ const logger = createLogger('ToolRegistry');
  */
 export class ToolRegistryImpl implements ToolRegistry {
   private tools: Map<string, McpTool<any, any>> = new Map();
-  
+
   /**
    * Get a tool by name
    * @param name Tool name
@@ -18,7 +18,7 @@ export class ToolRegistryImpl implements ToolRegistry {
   public getTool(name: string): McpTool<any, any> | undefined {
     return this.tools.get(name);
   }
-  
+
   /**
    * Register a tool
    * @param tool Tool to register
@@ -27,11 +27,11 @@ export class ToolRegistryImpl implements ToolRegistry {
     if (this.tools.has(tool.name)) {
       logger.warn(`Tool with name ${tool.name} already exists, overwriting`);
     }
-    
+
     this.tools.set(tool.name, tool);
     logger.info(`Registered tool: ${tool.name}`);
   }
-  
+
   /**
    * Get all registered tools
    * @returns Array of all registered tools
@@ -39,7 +39,7 @@ export class ToolRegistryImpl implements ToolRegistry {
   public getAllTools(): McpTool<any, any>[] {
     return Array.from(this.tools.values());
   }
-  
+
   /**
    * Get tool names
    * @returns Array of tool names
@@ -47,7 +47,7 @@ export class ToolRegistryImpl implements ToolRegistry {
   public getToolNames(): string[] {
     return Array.from(this.tools.keys());
   }
-  
+
   /**
    * Check if a tool exists
    * @param name Tool name
@@ -56,7 +56,7 @@ export class ToolRegistryImpl implements ToolRegistry {
   public hasTool(name: string): boolean {
     return this.tools.has(name);
   }
-  
+
   /**
    * Get tool count
    * @returns Number of registered tools

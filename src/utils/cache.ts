@@ -1,7 +1,7 @@
-import NodeCache from 'node-cache';
-import { createLogger } from './logger';
+import NodeCache from "node-cache";
+import { createLogger } from "./logger";
 
-const logger = createLogger('cache');
+const logger = createLogger("cache");
 
 /**
  * Cache service for API responses
@@ -21,17 +21,19 @@ export class CacheService {
   constructor(ttl: number = 3600, enabled: boolean = true) {
     this.cache = new NodeCache({ stdTTL: ttl, checkperiod: ttl * 0.2 });
     this.enabled = enabled;
-    
+
     // Register this instance for cleanup
     CacheService.instances.add(this);
-    
+
     // Install cleanup handlers once
     if (!CacheService.cleanupHandlerInstalled) {
       CacheService.installCleanupHandlers();
       CacheService.cleanupHandlerInstalled = true;
     }
-    
-    logger.info(`Cache initialized with TTL of ${ttl} seconds, enabled: ${enabled}`);
+
+    logger.info(
+      `Cache initialized with TTL of ${ttl} seconds, enabled: ${enabled}`,
+    );
   }
 
   /**
@@ -64,7 +66,7 @@ export class CacheService {
       return;
     }
 
-    if (typeof ttl === 'number') {
+    if (typeof ttl === "number") {
       this.cache.set(key, value, ttl);
     } else {
       this.cache.set(key, value);
@@ -86,7 +88,7 @@ export class CacheService {
    */
   clear(): void {
     this.cache.flushAll();
-    logger.info('Cache cleared');
+    logger.info("Cache cleared");
   }
 
   /**
@@ -95,7 +97,7 @@ export class CacheService {
    */
   setEnabled(enabled: boolean): void {
     this.enabled = enabled;
-    logger.info(`Cache ${enabled ? 'enabled' : 'disabled'}`);
+    logger.info(`Cache ${enabled ? "enabled" : "disabled"}`);
     if (!enabled) {
       this.clear();
     }
@@ -137,7 +139,7 @@ export class CacheService {
     return {
       hits: stats.hits,
       misses: stats.misses,
-      keys: this.cache.keys().length
+      keys: this.cache.keys().length,
     };
   }
 
@@ -154,13 +156,13 @@ export class CacheService {
 
   private async safeTtlUpdate(ttl: number): Promise<void> {
     // Wait a brief moment to allow in-flight operations to complete
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
     const oldCache = this.cache;
-    
+
     // Create new cache with updated TTL
     const newCache = new NodeCache({ stdTTL: ttl, checkperiod: ttl * 0.2 });
-    
+
     // Migrate existing data to new cache (if any)
     try {
       const keys = oldCache.keys();
@@ -171,20 +173,20 @@ export class CacheService {
         }
       }
     } catch (error) {
-      logger.warn('Error migrating cache data during TTL update', { error });
+      logger.warn("Error migrating cache data during TTL update", { error });
     }
-    
+
     // Replace the cache atomically
     this.cache = newCache;
-    
+
     // Clean up old cache
     try {
       oldCache.flushAll();
       oldCache.close();
     } catch (error) {
-      logger.warn('Error closing old cache instance', { error });
+      logger.warn("Error closing old cache instance", { error });
     }
-    
+
     logger.info(`Cache TTL updated to ${ttl} seconds`);
   }
 
@@ -195,9 +197,9 @@ export class CacheService {
     try {
       this.cache.flushAll();
       this.cache.close();
-      logger.debug('Cache instance cleaned up');
+      logger.debug("Cache instance cleaned up");
     } catch (error) {
-      logger.error('Error cleaning up cache', { error });
+      logger.error("Error cleaning up cache", { error });
     }
   }
 
@@ -206,18 +208,18 @@ export class CacheService {
    */
   private static installCleanupHandlers(): void {
     const cleanup = () => {
-      logger.info('Cleaning up all cache instances');
+      logger.info("Cleaning up all cache instances");
       for (const instance of CacheService.instances) {
         instance.cleanup();
       }
       CacheService.instances.clear();
     };
 
-    process.on('exit', cleanup);
-    process.on('SIGTERM', cleanup);
-    process.on('SIGINT', cleanup);
-    process.on('uncaughtException', cleanup);
-    process.on('unhandledRejection', cleanup);
+    process.on("exit", cleanup);
+    process.on("SIGTERM", cleanup);
+    process.on("SIGINT", cleanup);
+    process.on("uncaughtException", cleanup);
+    process.on("unhandledRejection", cleanup);
   }
 
   /**

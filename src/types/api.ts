@@ -10,12 +10,12 @@ export interface ApiResponse<T> {
    * Whether the request was successful
    */
   success: boolean;
-  
+
   /**
    * Response data (present if success is true)
    */
   data?: T;
-  
+
   /**
    * Error information (present if success is false)
    */
@@ -30,17 +30,17 @@ export interface ApiError {
    * Error message
    */
   message: string;
-  
+
   /**
    * Error code
    */
   code?: number;
-  
+
   /**
    * Error type
    */
   type?: string;
-  
+
   /**
    * Additional error details
    */
@@ -54,28 +54,28 @@ export interface RequestOptions {
   /**
    * HTTP method
    */
-  method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
-  
+  method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
+
   /**
    * Path to the API endpoint
    */
   path: string;
-  
+
   /**
    * Request body
    */
   body?: Record<string, unknown>;
-  
+
   /**
    * Query parameters
    */
   params?: Record<string, string>;
-  
+
   /**
    * Additional headers
    */
   headers?: Record<string, string>;
-  
+
   /**
    * Whether to skip caching
    */

@@ -1,8 +1,8 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import { createLogger } from './logger';
+import * as fs from "fs";
+import * as path from "path";
+import { createLogger } from "./logger";
 
-const logger = createLogger('FileUtil');
+const logger = createLogger("FileUtil");
 
 /**
  * Utility functions for file operations with security hardening
@@ -23,24 +23,24 @@ function sanitizePath(filePath: string): string | null {
   try {
     // Resolve to absolute path
     const absolutePath = path.resolve(WORKING_DIR, filePath);
-    
+
     // Ensure the path is within the working directory
     const relative = path.relative(WORKING_DIR, absolutePath);
-    
+
     // Check for directory traversal attempts
-    if (relative.startsWith('..') || path.isAbsolute(relative)) {
-      logger.error('Path traversal attempt detected', { 
-        filePath, 
-        absolutePath, 
+    if (relative.startsWith("..") || path.isAbsolute(relative)) {
+      logger.error("Path traversal attempt detected", {
+        filePath,
+        absolutePath,
         relative,
-        workingDir: WORKING_DIR 
+        workingDir: WORKING_DIR,
       });
       return null;
     }
-    
+
     return absolutePath;
   } catch (error) {
-    logger.error('Error sanitizing path', { filePath, error });
+    logger.error("Error sanitizing path", { filePath, error });
     return null;
   }
 }
@@ -56,10 +56,10 @@ export function fileExists(filePath: string): boolean {
     if (!safePath) {
       return false;
     }
-    
+
     return fs.existsSync(safePath) && fs.statSync(safePath).isFile();
   } catch (error) {
-    logger.error('Error checking if file exists', { filePath, error });
+    logger.error("Error checking if file exists", { filePath, error });
     return false;
   }
 }
@@ -75,16 +75,16 @@ export function ensureDirectoryExists(dirPath: string): boolean {
     if (!safePath) {
       return false;
     }
-    
+
     if (fs.existsSync(safePath)) {
       return fs.statSync(safePath).isDirectory();
     }
-    
+
     // Create the directory
     fs.mkdirSync(safePath, { recursive: true });
     return true;
   } catch (error) {
-    logger.error('Error ensuring directory exists', { dirPath, error });
+    logger.error("Error ensuring directory exists", { dirPath, error });
     return false;
   }
 }
@@ -94,54 +94,57 @@ export function ensureDirectoryExists(dirPath: string): boolean {
  * @param filePath File path
  * @returns File information or null if the file doesn't exist
  */
-export function getFileInfo(filePath: string): { 
-  name: string; 
-  size: number; 
-  extension: string; 
-  mimeType: string; 
-  lastModified: Date 
+export function getFileInfo(filePath: string): {
+  name: string;
+  size: number;
+  extension: string;
+  mimeType: string;
+  lastModified: Date;
 } | null {
   try {
     const safePath = sanitizePath(filePath);
     if (!safePath || !fileExists(filePath)) {
       return null;
     }
-    
+
     const stats = fs.statSync(safePath);
     const ext = path.extname(filePath).toLowerCase();
-    
+
     // Simple mime type mapping
     const mimeTypes: Record<string, string> = {
-      '.txt': 'text/plain',
-      '.html': 'text/html',
-      '.css': 'text/css',
-      '.js': 'application/javascript',
-      '.json': 'application/json',
-      '.xml': 'application/xml',
-      '.pdf': 'application/pdf',
-      '.zip': 'application/zip',
-      '.png': 'image/png',
-      '.jpg': 'image/jpeg',
-      '.jpeg': 'image/jpeg',
-      '.gif': 'image/gif',
-      '.svg': 'image/svg+xml',
-      '.doc': 'application/msword',
-      '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      '.xls': 'application/vnd.ms-excel',
-      '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      '.ppt': 'application/vnd.ms-powerpoint',
-      '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+      ".txt": "text/plain",
+      ".html": "text/html",
+      ".css": "text/css",
+      ".js": "application/javascript",
+      ".json": "application/json",
+      ".xml": "application/xml",
+      ".pdf": "application/pdf",
+      ".zip": "application/zip",
+      ".png": "image/png",
+      ".jpg": "image/jpeg",
+      ".jpeg": "image/jpeg",
+      ".gif": "image/gif",
+      ".svg": "image/svg+xml",
+      ".doc": "application/msword",
+      ".docx":
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      ".xls": "application/vnd.ms-excel",
+      ".xlsx":
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      ".ppt": "application/vnd.ms-powerpoint",
+      ".pptx":
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
     };
-    
+
     return {
       name: path.basename(filePath),
       size: stats.size,
       extension: ext,
-      mimeType: mimeTypes[ext] || 'application/octet-stream',
-      lastModified: stats.mtime
+      mimeType: mimeTypes[ext] || "application/octet-stream",
+      lastModified: stats.mtime,
     };
   } catch (error) {
-    logger.error('Error getting file info', { filePath, error });
+    logger.error("Error getting file info", { filePath, error });
     return null;
   }
 }
@@ -155,29 +158,29 @@ export function readFileAsBuffer(filePath: string): Buffer | null {
   try {
     const safePath = sanitizePath(filePath);
     if (!safePath) {
-      logger.error('Invalid file path', { filePath });
+      logger.error("Invalid file path", { filePath });
       return null;
     }
-    
+
     if (!fileExists(filePath)) {
-      logger.error('File does not exist', { filePath });
+      logger.error("File does not exist", { filePath });
       return null;
     }
-    
+
     // Check file size before reading
     const stats = fs.statSync(safePath);
     if (stats.size > MAX_FILE_SIZE) {
-      logger.error('File too large', { 
-        filePath, 
-        size: stats.size, 
-        maxSize: MAX_FILE_SIZE 
+      logger.error("File too large", {
+        filePath,
+        size: stats.size,
+        maxSize: MAX_FILE_SIZE,
       });
       return null;
     }
-    
+
     return fs.readFileSync(safePath);
   } catch (error) {
-    logger.error('Error reading file', { filePath, error });
+    logger.error("Error reading file", { filePath, error });
     return null;
   }
 }
@@ -192,32 +195,36 @@ export function writeFile(filePath: string, data: Buffer | string): boolean {
   try {
     const safePath = sanitizePath(filePath);
     if (!safePath) {
-      logger.error('Invalid file path', { filePath });
+      logger.error("Invalid file path", { filePath });
       return false;
     }
-    
+
     const dirPath = path.dirname(safePath);
     const safeDirPath = sanitizePath(dirPath);
     if (!safeDirPath || !ensureDirectoryExists(safeDirPath)) {
-      logger.error('Could not create directory for file', { dirPath: safeDirPath });
-      return false;
-    }
-    
-    // Check data size limit
-    const dataSize = Buffer.isBuffer(data) ? data.length : Buffer.byteLength(data);
-    if (dataSize > MAX_FILE_SIZE) {
-      logger.error('Data too large to write', { 
-        filePath, 
-        size: dataSize, 
-        maxSize: MAX_FILE_SIZE 
+      logger.error("Could not create directory for file", {
+        dirPath: safeDirPath,
       });
       return false;
     }
-    
+
+    // Check data size limit
+    const dataSize = Buffer.isBuffer(data)
+      ? data.length
+      : Buffer.byteLength(data);
+    if (dataSize > MAX_FILE_SIZE) {
+      logger.error("Data too large to write", {
+        filePath,
+        size: dataSize,
+        maxSize: MAX_FILE_SIZE,
+      });
+      return false;
+    }
+
     fs.writeFileSync(safePath, data);
     return true;
   } catch (error) {
-    logger.error('Error writing file', { filePath, error });
+    logger.error("Error writing file", { filePath, error });
     return false;
   }
 }

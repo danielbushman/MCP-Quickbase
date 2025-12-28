@@ -1,278 +1,278 @@
-import { 
-  validateParams, 
-  createMcpZodSchema, 
+import {
+  validateParams,
+  createMcpZodSchema,
   createValidationSchema,
-  ValidationError 
-} from '../utils/validation';
+  ValidationError,
+} from "../utils/validation";
 
-describe('Validation System', () => {
-  describe('createMcpZodSchema', () => {
-    it('should handle empty schema', () => {
+describe("Validation System", () => {
+  describe("createMcpZodSchema", () => {
+    it("should handle empty schema", () => {
       const schema = {};
       const result = createMcpZodSchema(schema);
       expect(result).toEqual({});
     });
 
-    it('should handle invalid schema', () => {
+    it("should handle invalid schema", () => {
       const schema = null as any;
       const result = createMcpZodSchema(schema);
       expect(result).toEqual({});
     });
 
-    it('should create schema for string properties', () => {
+    it("should create schema for string properties", () => {
       const schema = {
-        type: 'object',
+        type: "object",
         properties: {
-          name: { type: 'string' },
-          optional: { type: 'string' }
+          name: { type: "string" },
+          optional: { type: "string" },
         },
-        required: ['name']
+        required: ["name"],
       };
-      
+
       const result = createMcpZodSchema(schema);
-      expect(result).toHaveProperty('name');
-      expect(result).toHaveProperty('optional');
+      expect(result).toHaveProperty("name");
+      expect(result).toHaveProperty("optional");
     });
 
-    it('should handle enum constraints', () => {
+    it("should handle enum constraints", () => {
       const schema = {
-        type: 'object',
+        type: "object",
         properties: {
-          format: { 
-            type: 'string',
-            enum: ['JSON', 'CSV', 'XML']
-          }
-        }
+          format: {
+            type: "string",
+            enum: ["JSON", "CSV", "XML"],
+          },
+        },
       };
-      
+
       const result = createMcpZodSchema(schema);
-      expect(result).toHaveProperty('format');
+      expect(result).toHaveProperty("format");
     });
 
-    it('should handle array properties', () => {
+    it("should handle array properties", () => {
       const schema = {
-        type: 'object',
+        type: "object",
         properties: {
-          tags: { 
-            type: 'array',
-            items: { type: 'string' }
-          }
-        }
+          tags: {
+            type: "array",
+            items: { type: "string" },
+          },
+        },
       };
-      
+
       const result = createMcpZodSchema(schema);
-      expect(result).toHaveProperty('tags');
+      expect(result).toHaveProperty("tags");
     });
 
-    it('should handle number and integer types', () => {
+    it("should handle number and integer types", () => {
       const schema = {
-        type: 'object',
+        type: "object",
         properties: {
-          count: { type: 'number' },
-          id: { type: 'integer' },
-          active: { type: 'boolean' }
-        }
+          count: { type: "number" },
+          id: { type: "integer" },
+          active: { type: "boolean" },
+        },
       };
-      
+
       const result = createMcpZodSchema(schema);
-      expect(result).toHaveProperty('count');
-      expect(result).toHaveProperty('id');
-      expect(result).toHaveProperty('active');
+      expect(result).toHaveProperty("count");
+      expect(result).toHaveProperty("id");
+      expect(result).toHaveProperty("active");
     });
   });
 
-  describe('validateParams', () => {
-    it('should validate valid parameters', () => {
+  describe("validateParams", () => {
+    it("should validate valid parameters", () => {
       const schema = {
-        type: 'object',
+        type: "object",
         properties: {
-          name: { type: 'string' },
-          age: { type: 'number' }
+          name: { type: "string" },
+          age: { type: "number" },
         },
-        required: ['name']
+        required: ["name"],
       };
 
-      const params = { name: 'John', age: 30 };
-      const result = validateParams(params, schema, 'test_tool');
-      
+      const params = { name: "John", age: 30 };
+      const result = validateParams(params, schema, "test_tool");
+
       expect(result).toEqual(params);
     });
 
-    it('should reject missing required parameters', () => {
+    it("should reject missing required parameters", () => {
       const schema = {
-        type: 'object',
+        type: "object",
         properties: {
-          name: { type: 'string' }
+          name: { type: "string" },
         },
-        required: ['name']
+        required: ["name"],
       };
 
       const params = {};
-      
+
       expect(() => {
-        validateParams(params, schema, 'test_tool');
+        validateParams(params, schema, "test_tool");
       }).toThrow(ValidationError);
     });
 
-    it('should reject wrong parameter types', () => {
+    it("should reject wrong parameter types", () => {
       const schema = {
-        type: 'object',
+        type: "object",
         properties: {
-          age: { type: 'number' }
+          age: { type: "number" },
         },
-        required: ['age']
+        required: ["age"],
       };
 
-      const params = { age: 'not a number' };
-      
+      const params = { age: "not a number" };
+
       expect(() => {
-        validateParams(params, schema, 'test_tool');
+        validateParams(params, schema, "test_tool");
       }).toThrow(ValidationError);
     });
 
-    it('should validate enum constraints', () => {
+    it("should validate enum constraints", () => {
       const schema = {
-        type: 'object',
+        type: "object",
         properties: {
-          format: { 
-            type: 'string',
-            enum: ['JSON', 'CSV']
-          }
+          format: {
+            type: "string",
+            enum: ["JSON", "CSV"],
+          },
         },
-        required: ['format']
+        required: ["format"],
       };
 
       // Valid enum value should pass
-      const validParams = { format: 'JSON' };
-      const result = validateParams(validParams, schema, 'test_tool');
+      const validParams = { format: "JSON" };
+      const result = validateParams(validParams, schema, "test_tool");
       expect(result).toEqual(validParams);
 
       // Invalid enum value should fail
-      const invalidParams = { format: 'XML' };
+      const invalidParams = { format: "XML" };
       expect(() => {
-        validateParams(invalidParams, schema, 'test_tool');
+        validateParams(invalidParams, schema, "test_tool");
       }).toThrow(ValidationError);
     });
 
-    it('should provide detailed error context', () => {
+    it("should provide detailed error context", () => {
       const schema = {
-        type: 'object',
+        type: "object",
         properties: {
-          name: { type: 'string' }
+          name: { type: "string" },
         },
-        required: ['name']
+        required: ["name"],
       };
 
       const params = {};
-      
+
       try {
-        validateParams(params, schema, 'test_tool');
-        fail('Should have thrown ValidationError');
+        validateParams(params, schema, "test_tool");
+        fail("Should have thrown ValidationError");
       } catch (error) {
         expect(error).toBeInstanceOf(ValidationError);
         const validationError = error as ValidationError;
-        expect(validationError.context?.toolName).toBe('test_tool');
+        expect(validationError.context?.toolName).toBe("test_tool");
         expect(validationError.context?.issues).toBeDefined();
-        expect(validationError.message).toContain('test_tool');
+        expect(validationError.message).toContain("test_tool");
       }
     });
 
-    it('should handle array validation', () => {
+    it("should handle array validation", () => {
       const schema = {
-        type: 'object',
+        type: "object",
         properties: {
-          tags: { 
-            type: 'array',
-            items: { type: 'string' }
-          }
-        }
+          tags: {
+            type: "array",
+            items: { type: "string" },
+          },
+        },
       };
 
-      const validParams = { tags: ['tag1', 'tag2'] };
-      const result = validateParams(validParams, schema, 'test_tool');
+      const validParams = { tags: ["tag1", "tag2"] };
+      const result = validateParams(validParams, schema, "test_tool");
       expect(result).toEqual(validParams);
 
-      const invalidParams = { tags: [123, 'tag2'] };
+      const invalidParams = { tags: [123, "tag2"] };
       expect(() => {
-        validateParams(invalidParams, schema, 'test_tool');
+        validateParams(invalidParams, schema, "test_tool");
       }).toThrow(ValidationError);
     });
   });
 
-  describe('Schema Caching', () => {
-    it('should cache validation schemas', () => {
+  describe("Schema Caching", () => {
+    it("should cache validation schemas", () => {
       const schema = {
-        type: 'object',
+        type: "object",
         properties: {
-          name: { type: 'string' }
-        }
+          name: { type: "string" },
+        },
       };
 
       // First call creates the schema
       const schema1 = createValidationSchema(schema);
       // Second call should return cached schema
       const schema2 = createValidationSchema(schema);
-      
+
       expect(schema1).toBe(schema2);
     });
   });
 
-  describe('Edge Cases', () => {
-    it('should handle malformed schemas gracefully', () => {
+  describe("Edge Cases", () => {
+    it("should handle malformed schemas gracefully", () => {
       const malformedSchemas = [
         undefined,
         null,
-        { type: 'invalid' },
-        { properties: null }
+        { type: "invalid" },
+        { properties: null },
       ];
 
-      malformedSchemas.forEach(schema => {
+      malformedSchemas.forEach((schema) => {
         expect(() => {
           const result = createMcpZodSchema(schema as any);
-          expect(typeof result).toBe('object');
+          expect(typeof result).toBe("object");
         }).not.toThrow();
       });
     });
 
-    it('should handle null property schemas', () => {
+    it("should handle null property schemas", () => {
       const schema = {
-        type: 'object',
-        properties: { field: null }
+        type: "object",
+        properties: { field: null },
       };
-      
+
       expect(() => {
         const result = createMcpZodSchema(schema as any);
-        expect(result).toHaveProperty('field');
+        expect(result).toHaveProperty("field");
       }).not.toThrow();
     });
 
-    it('should handle empty enum arrays', () => {
+    it("should handle empty enum arrays", () => {
       const schema = {
-        type: 'object',
+        type: "object",
         properties: {
-          format: { 
-            type: 'string',
-            enum: []
-          }
-        }
+          format: {
+            type: "string",
+            enum: [],
+          },
+        },
       };
-      
+
       const result = createMcpZodSchema(schema);
-      expect(result).toHaveProperty('format');
+      expect(result).toHaveProperty("format");
     });
 
-    it('should handle mixed-type enum values', () => {
+    it("should handle mixed-type enum values", () => {
       const schema = {
-        type: 'object',
+        type: "object",
         properties: {
-          value: { 
-            enum: ['string', 123, true]
-          }
-        }
+          value: {
+            enum: ["string", 123, true],
+          },
+        },
       };
-      
+
       const result = createMcpZodSchema(schema);
-      expect(result).toHaveProperty('value');
+      expect(result).toHaveProperty("value");
     });
   });
 });
