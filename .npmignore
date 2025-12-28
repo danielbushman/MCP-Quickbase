@@ -39,7 +39,6 @@ Dockerfile.glama
 glama.yaml
 
 # Documentation files (already on GitHub)
-ai_workspace/
 CEO_*.md
 EXECUTIVE_SUMMARY.md
 MIGRATION.md
