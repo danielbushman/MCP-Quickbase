@@ -239,5 +239,77 @@ describe("Record Tools", () => {
         },
       });
     });
+
+    it("should truncate pagination correctly without duplicates when final page exceeds limit", async () => {
+      // Regression test: Previously, pageRecords were appended before checking
+      // if total exceeded limit, causing duplicates when truncation occurred.
+      //
+      // Scenario: limit=1500, first page=1000, second page request=500 but returns 750
+      // (edge case where API returns more records than requested `top`)
+      // - First page: returns 1000 records, hasMore=true
+      // - Second page: we request 500, but API returns 750 (more than top)
+      // - Bug: would append 750, then check triggers and appends 500 more (duplicates)
+      // - Fixed: check BEFORE appending, truncate to 500, no duplicates
+
+      const createRecords = (start: number, count: number) =>
+        Array.from({ length: count }, (_, i) => ({
+          "3": { value: start + i }, // Record ID field
+          "6": { value: `Record ${start + i}` },
+        }));
+
+      // First page: records 1-1000 (full page of 1000)
+      const firstPageResponse = {
+        success: true,
+        data: {
+          data: createRecords(1, 1000),
+          metadata: { totalRecords: 2000, numRecords: 1000 },
+        },
+      };
+
+      // Second page: we request 500 (top=500), but API returns 750 (edge case)
+      // This triggers the truncation logic
+      const secondPageResponse = {
+        success: true,
+        data: {
+          data: createRecords(1001, 750),
+          metadata: { totalRecords: 2000, numRecords: 750 },
+        },
+      };
+
+      mockClient.request = jest
+        .fn()
+        .mockResolvedValueOnce(firstPageResponse)
+        .mockResolvedValueOnce(secondPageResponse);
+
+      const params = {
+        table_id: "test-table",
+        max_records: 1500,
+        paginate: true,
+      };
+
+      const result = await tool.execute(params);
+
+      expect(result.success).toBe(true);
+
+      // Should have exactly 1500 records (not 1750 or 2250 from duplicates)
+      expect(result.data?.records).toHaveLength(1500);
+
+      // Verify no duplicate record IDs
+      const recordIds = result.data?.records.map(
+        (r: Record<string, { value: number }>) => r["3"].value,
+      );
+      const uniqueIds = new Set(recordIds);
+      expect(uniqueIds.size).toBe(1500);
+
+      // Verify records are 1-1500 (first 1000 + first 500 of second page, truncated)
+      expect(recordIds).toBeDefined();
+      expect(recordIds![0]).toBe(1);
+      expect(recordIds![999]).toBe(1000);
+      expect(recordIds![1000]).toBe(1001);
+      expect(recordIds![1499]).toBe(1500);
+
+      // hasMore should be true since API returned more records than we needed
+      expect(result.data?.hasMore).toBe(true);
+    });
   });
 });

@@ -363,6 +363,19 @@ export class QueryRecordsTool extends BaseTool<
           break;
         }
 
+        // Capture length before appending to check limit correctly
+        const prevAllLen = allRecords.length;
+
+        // Check if adding all pageRecords would exceed limit - truncate if needed
+        if (prevAllLen + pageRecords.length > limit) {
+          logger.debug("Truncating final page to respect limit");
+          const remainingSlots = limit - prevAllLen;
+          allRecords = [...allRecords, ...pageRecords.slice(0, remainingSlots)];
+          // If we had to truncate, there are definitely more records available
+          hasMore = true;
+          break;
+        }
+
         // Add the new records to our results
         allRecords = [...allRecords, ...pageRecords];
 
@@ -380,18 +393,6 @@ export class QueryRecordsTool extends BaseTool<
               recordsReceived: pageRecords.length,
             },
           );
-          break;
-        }
-
-        // Anti-bypass check: ensure we're not receiving the same data
-        if (
-          pageRecords.length === body.options.top &&
-          allRecords.length + pageRecords.length > limit
-        ) {
-          logger.debug("Truncating final page to respect limit");
-          const remainingSlots = limit - allRecords.length;
-          allRecords = [...allRecords, ...pageRecords.slice(0, remainingSlots)];
-          hasMore = false;
           break;
         }
 
