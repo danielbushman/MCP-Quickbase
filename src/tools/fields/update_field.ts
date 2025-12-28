@@ -30,11 +30,6 @@ export interface UpdateFieldParams {
   description?: string;
 
   /**
-   * New field type (only allowed for certain field type conversions)
-   */
-  field_type?: string;
-
-  /**
    * Additional options and properties to update
    */
   options?: FieldProperties;
@@ -86,7 +81,7 @@ export class UpdateFieldTool extends BaseTool<
   public description =
     "Updates an existing field in a Quickbase table. " +
     "Can modify the field label, help text, and properties. " +
-    "Field type changes are only allowed for certain compatible conversions.";
+    "Note: Field type cannot be changed - delete and recreate the field instead.";
 
   /**
    * Parameter schema for update_field
@@ -105,11 +100,6 @@ export class UpdateFieldTool extends BaseTool<
       name: {
         type: "string",
         description: "New display label for the field",
-      },
-      field_type: {
-        type: "string",
-        description:
-          "New field type (limited conversions allowed, e.g., text to text-multi-line)",
       },
       description: {
         type: "string",
@@ -140,8 +130,7 @@ export class UpdateFieldTool extends BaseTool<
    * @returns Updated field details
    */
   protected async run(params: UpdateFieldParams): Promise<UpdateFieldResult> {
-    const { table_id, field_id, name, field_type, description, options } =
-      params;
+    const { table_id, field_id, name, description, options } = params;
 
     logger.info("Updating field in Quickbase table", {
       tableId: table_id,
@@ -152,24 +141,20 @@ export class UpdateFieldTool extends BaseTool<
     if (
       !name &&
       !description &&
-      !field_type &&
       (!options || Object.keys(options).length === 0)
     ) {
       throw new Error(
-        "At least one update field (name, description, field_type, or options) is required",
+        "At least one update field (name, description, or options) is required",
       );
     }
 
     // Prepare request body with only the fields that are provided
     // Note: Quickbase API uses 'fieldHelp' at root level for help text (not 'description')
+    // Note: Field type cannot be changed via API - must delete and recreate
     const body: Record<string, any> = {};
 
     if (name !== undefined) {
       body.label = name;
-    }
-
-    if (field_type !== undefined) {
-      body.fieldType = field_type;
     }
 
     // Add fieldHelp if description provided (maps to root-level fieldHelp)

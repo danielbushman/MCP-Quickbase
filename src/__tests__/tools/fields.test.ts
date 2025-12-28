@@ -1012,8 +1012,9 @@ describe("Field Tools", () => {
         expect(tool.paramSchema.properties).toHaveProperty("field_id");
         expect(tool.paramSchema.properties).toHaveProperty("name");
         expect(tool.paramSchema.properties).toHaveProperty("description");
-        expect(tool.paramSchema.properties).toHaveProperty("field_type");
         expect(tool.paramSchema.properties).toHaveProperty("options");
+        // Note: field_type is not supported by Quickbase API for updates
+        expect(tool.paramSchema.properties).not.toHaveProperty("field_type");
         expect(tool.paramSchema.required).toContain("table_id");
         expect(tool.paramSchema.required).toContain("field_id");
       });
@@ -1085,28 +1086,8 @@ describe("Field Tools", () => {
           });
         });
 
-        it("should update field type successfully", async () => {
-          const updatedField = {
-            id: "6",
-            label: "Field",
-            fieldType: "text-multi-line",
-            description: "Description",
-          };
-
-          mockClient.request.mockResolvedValue({
-            success: true,
-            data: updatedField,
-          });
-
-          const result = await tool.execute({
-            table_id: "btable123",
-            field_id: "6",
-            field_type: "text-multi-line",
-          });
-
-          expect(result.success).toBe(true);
-          expect(result.data?.fieldType).toBe("text-multi-line");
-        });
+        // Note: field_type updates are not supported by Quickbase API
+        // To change field type, delete and recreate the field
 
         it("should update multiple fields at once", async () => {
           const updatedField = {
@@ -1338,24 +1319,7 @@ describe("Field Tools", () => {
           expect(result.error).toBeDefined();
         });
 
-        it("should handle invalid field type conversion", async () => {
-          mockClient.request.mockResolvedValue({
-            success: false,
-            error: {
-              message: "Cannot convert field type from numeric to date",
-              code: 400,
-            },
-          });
-
-          const result = await tool.execute({
-            table_id: "btable123",
-            field_id: "7",
-            field_type: "date",
-          });
-
-          expect(result.success).toBe(false);
-          expect(result.error?.message).toContain("Cannot convert field type");
-        });
+        // Note: field_type conversion test removed - Quickbase API doesn't support field type changes
       });
     });
   });
