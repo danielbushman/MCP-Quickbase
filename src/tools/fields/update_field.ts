@@ -20,12 +20,12 @@ export interface UpdateFieldParams {
   field_id: string;
 
   /**
-   * New name for the field
+   * New display label for the field
    */
   name?: string;
 
   /**
-   * New description for the field
+   * Help text shown to users when editing the field (stored as fieldHelp)
    */
   description?: string;
 
@@ -60,9 +60,9 @@ export interface UpdateFieldResult {
   fieldType?: string;
 
   /**
-   * The updated description of the field
+   * Help text for the field (shown to users when editing)
    */
-  description?: string;
+  fieldHelp?: string;
 
   /**
    * The ID of the table containing the field
@@ -83,7 +83,10 @@ export class UpdateFieldTool extends BaseTool<
   UpdateFieldResult
 > {
   public name = "update_field";
-  public description = "Updates an existing field in a Quickbase table";
+  public description =
+    "Updates an existing field in a Quickbase table. " +
+    "Can modify the field label, help text, and properties. " +
+    "Field type changes are only allowed for certain compatible conversions.";
 
   /**
    * Parameter schema for update_field
@@ -93,27 +96,31 @@ export class UpdateFieldTool extends BaseTool<
     properties: {
       table_id: {
         type: "string",
-        description: "The ID of the table",
+        description: "The ID of the table (e.g., 'bqx7xkw3r')",
       },
       field_id: {
         type: "string",
-        description: "The ID of the field",
+        description: "The ID of the field to update (e.g., '6')",
       },
       name: {
         type: "string",
-        description: "New name for the field",
+        description: "New display label for the field",
       },
       field_type: {
         type: "string",
-        description: "New type for the field",
+        description:
+          "New field type (limited conversions allowed, e.g., text to text-multi-line)",
       },
       description: {
         type: "string",
-        description: "New description for the field",
+        description:
+          "Help text shown to users when editing the field (stored as fieldHelp)",
       },
       options: {
         type: "object",
-        description: "Additional field options",
+        description:
+          "Field properties to update: required, unique, appearsByDefault, " +
+          "findEnabled, maxLength, numLines, defaultValue, etc.",
       },
     },
     required: ["table_id", "field_id"],
@@ -154,6 +161,7 @@ export class UpdateFieldTool extends BaseTool<
     }
 
     // Prepare request body with only the fields that are provided
+    // Note: Quickbase API uses 'fieldHelp' at root level for help text (not 'description')
     const body: Record<string, any> = {};
 
     if (name !== undefined) {
@@ -164,8 +172,9 @@ export class UpdateFieldTool extends BaseTool<
       body.fieldType = field_type;
     }
 
+    // Add fieldHelp if description provided (maps to root-level fieldHelp)
     if (description !== undefined) {
-      body.description = description;
+      body.fieldHelp = description;
     }
 
     // Add properties if provided
@@ -201,7 +210,7 @@ export class UpdateFieldTool extends BaseTool<
       fieldId: field.id,
       label: field.label,
       fieldType: field.fieldType,
-      description: field.description,
+      fieldHelp: field.fieldHelp,
       tableId: table_id,
       ...field,
     };

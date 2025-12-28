@@ -627,7 +627,7 @@ describe("Field Tools", () => {
             id: "10",
             label: "New Text Field",
             fieldType: "text",
-            description: "A new text field",
+            fieldHelp: "A new text field",
           };
 
           mockClient.request.mockResolvedValue({
@@ -649,13 +649,14 @@ describe("Field Tools", () => {
           expect(result.data?.fieldType).toBe("text");
           expect(result.data?.tableId).toBe("btable123");
 
+          // Description maps to fieldHelp at root level (Quickbase API requirement)
           expect(mockClient.request).toHaveBeenCalledWith({
             method: "POST",
             path: "/fields?tableId=btable123",
             body: {
               label: "New Text Field",
               fieldType: "text",
-              description: "A new text field",
+              fieldHelp: "A new text field",
             },
           });
         });
@@ -665,7 +666,7 @@ describe("Field Tools", () => {
             id: "11",
             label: "Price",
             fieldType: "numeric",
-            description: "Product price",
+            fieldHelp: "Product price",
             properties: { precision: 2 },
           };
 
@@ -685,13 +686,14 @@ describe("Field Tools", () => {
           expect(result.success).toBe(true);
           expect(result.data?.fieldType).toBe("numeric");
 
+          // Description maps to fieldHelp at root level, options go to properties
           expect(mockClient.request).toHaveBeenCalledWith({
             method: "POST",
             path: "/fields?tableId=btable123",
             body: {
               label: "Price",
               fieldType: "numeric",
-              description: "Product price",
+              fieldHelp: "Product price",
               properties: { precision: 2 },
             },
           });
@@ -752,7 +754,6 @@ describe("Field Tools", () => {
             id: "14",
             label: "Simple Field",
             fieldType: "text",
-            description: "",
           };
 
           mockClient.request.mockResolvedValue({
@@ -767,13 +768,13 @@ describe("Field Tools", () => {
           });
 
           expect(result.success).toBe(true);
+          // No properties object when no description or options provided
           expect(mockClient.request).toHaveBeenCalledWith({
             method: "POST",
             path: "/fields?tableId=btable123",
             body: {
               label: "Simple Field",
               fieldType: "text",
-              description: "",
             },
           });
         });
@@ -783,7 +784,6 @@ describe("Field Tools", () => {
             id: "15",
             label: "Formatted Text",
             fieldType: "text",
-            description: "",
             properties: {
               maxLength: 500,
               appearsByDefault: true,
@@ -806,13 +806,13 @@ describe("Field Tools", () => {
           });
 
           expect(result.success).toBe(true);
+          // Options are passed through as properties
           expect(mockClient.request).toHaveBeenCalledWith({
             method: "POST",
             path: "/fields?tableId=btable123",
             body: {
               label: "Formatted Text",
               fieldType: "text",
-              description: "",
               properties: {
                 maxLength: 500,
                 appearsByDefault: true,
@@ -1057,7 +1057,7 @@ describe("Field Tools", () => {
             id: "6",
             label: "Customer Name",
             fieldType: "text",
-            description: "Updated description",
+            fieldHelp: "Updated description",
           };
 
           mockClient.request.mockResolvedValue({
@@ -1072,13 +1072,14 @@ describe("Field Tools", () => {
           });
 
           expect(result.success).toBe(true);
-          expect(result.data?.description).toBe("Updated description");
+          expect(result.data?.fieldHelp).toBe("Updated description");
 
+          // Description maps to fieldHelp at root level (Quickbase API requirement)
           expect(mockClient.request).toHaveBeenCalledWith({
             method: "POST",
             path: "/fields/6?tableId=btable123",
             body: {
-              description: "Updated description",
+              fieldHelp: "Updated description",
             },
           });
         });
@@ -1111,7 +1112,7 @@ describe("Field Tools", () => {
             id: "6",
             label: "New Name",
             fieldType: "text",
-            description: "New description",
+            fieldHelp: "New description",
           };
 
           mockClient.request.mockResolvedValue({
@@ -1127,12 +1128,13 @@ describe("Field Tools", () => {
           });
 
           expect(result.success).toBe(true);
+          // Label and fieldHelp both at root level
           expect(mockClient.request).toHaveBeenCalledWith({
             method: "POST",
             path: "/fields/6?tableId=btable123",
             body: {
               label: "New Name",
-              description: "New description",
+              fieldHelp: "New description",
             },
           });
         });
