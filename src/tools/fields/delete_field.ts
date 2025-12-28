@@ -125,11 +125,12 @@ export class DeleteFieldTool extends BaseTool<
     }
 
     // Delete the field
+    // Quickbase API uses DELETE /fields?tableId=... with fieldIds array in body
     const response = await this.client.request({
       method: "DELETE",
-      path: `/fields/${field_id}`,
-      params: {
-        tableId: table_id,
+      path: `/fields?tableId=${table_id}`,
+      body: {
+        fieldIds: [parseInt(field_id, 10)],
       },
     });
 

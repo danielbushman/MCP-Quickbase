@@ -342,11 +342,12 @@ describe("Field Tools", () => {
           expect(result.data?.tableId).toBe("btable123");
           expect(result.data?.message).toContain("successfully deleted");
 
+          // Quickbase API uses DELETE /fields?tableId=... with fieldIds array in body
           expect(mockClient.request).toHaveBeenCalledWith({
             method: "DELETE",
-            path: "/fields/6",
-            params: {
-              tableId: "btable123",
+            path: "/fields?tableId=btable123",
+            body: {
+              fieldIds: [6],
             },
           });
         });
