@@ -40,7 +40,9 @@ describe("Tool Registry", () => {
       expect(toolNames).toContain("update_table");
       expect(toolNames).toContain("get_table_fields");
       expect(toolNames).toContain("create_field");
+      expect(toolNames).toContain("get_field");
       expect(toolNames).toContain("update_field");
+      expect(toolNames).toContain("delete_field");
       expect(toolNames).toContain("query_records");
       expect(toolNames).toContain("create_record");
       expect(toolNames).toContain("update_record");
