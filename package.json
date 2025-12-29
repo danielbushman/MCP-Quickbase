@@ -1,6 +1,6 @@
 {
   "name": "mcp-quickbase",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "Work with Quickbase via Model Context Protocol",
   "main": "dist/mcp-stdio-server.js",
   "types": "dist/mcp-stdio-server.d.ts",
