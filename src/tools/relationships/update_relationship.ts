@@ -226,7 +226,7 @@ export class UpdateRelationshipTool extends BaseTool<
     // Update the relationship
     const response = await this.client.request<Record<string, unknown>>({
       method: "POST",
-      path: `/tables/${table_id}/relationships/${relationship_id}`,
+      path: `/tables/${table_id}/relationship/${relationship_id}`,
       body,
     });
 

@@ -250,7 +250,7 @@ export class CreateRelationshipTool extends BaseTool<
     // Create the relationship
     const response = await this.client.request<Record<string, unknown>>({
       method: "POST",
-      path: `/tables/${table_id}/relationships`,
+      path: `/tables/${table_id}/relationship`,
       body,
     });
 

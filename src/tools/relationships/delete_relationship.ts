@@ -103,7 +103,7 @@ export class DeleteRelationshipTool extends BaseTool<
     // Delete the relationship
     const response = await this.client.request<Record<string, unknown>>({
       method: "DELETE",
-      path: `/tables/${table_id}/relationships/${relationship_id}`,
+      path: `/tables/${table_id}/relationship/${relationship_id}`,
     });
 
     if (!response.success) {

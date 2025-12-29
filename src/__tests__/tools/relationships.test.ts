@@ -522,7 +522,7 @@ describe("Relationship Tools", () => {
         expect(result.data?.summaryFields).toHaveLength(0);
         expect(mockClient.request).toHaveBeenCalledWith({
           method: "POST",
-          path: "/tables/bqrchild456/relationships",
+          path: "/tables/bqrchild456/relationship",
           body: {
             parentTableId: "bqrparent123",
           },
@@ -560,7 +560,7 @@ describe("Relationship Tools", () => {
         expect(result.data?.foreignKeyField.label).toBe("Customer Link");
         expect(mockClient.request).toHaveBeenCalledWith({
           method: "POST",
-          path: "/tables/bqrchild456/relationships",
+          path: "/tables/bqrchild456/relationship",
           body: {
             parentTableId: "bqrparent123",
             foreignKeyField: {
@@ -606,7 +606,7 @@ describe("Relationship Tools", () => {
         expect(result.data?.lookupFields[1].label).toBe("Parent Email");
         expect(mockClient.request).toHaveBeenCalledWith({
           method: "POST",
-          path: "/tables/bqrchild456/relationships",
+          path: "/tables/bqrchild456/relationship",
           body: {
             parentTableId: "bqrparent123",
             lookupFieldIds: [6, 7],
@@ -648,7 +648,7 @@ describe("Relationship Tools", () => {
         expect(result.data?.summaryFields[0].label).toBe("Total Amount");
         expect(mockClient.request).toHaveBeenCalledWith({
           method: "POST",
-          path: "/tables/bqrchild456/relationships",
+          path: "/tables/bqrchild456/relationship",
           body: {
             parentTableId: "bqrparent123",
             summaryFields: [
@@ -694,7 +694,7 @@ describe("Relationship Tools", () => {
         expect(result.data?.summaryFields).toHaveLength(1);
         expect(mockClient.request).toHaveBeenCalledWith({
           method: "POST",
-          path: "/tables/bqrchild456/relationships",
+          path: "/tables/bqrchild456/relationship",
           body: {
             parentTableId: "bqrparent123",
             summaryFields: [
@@ -740,7 +740,7 @@ describe("Relationship Tools", () => {
         expect(result.success).toBe(true);
         expect(mockClient.request).toHaveBeenCalledWith({
           method: "POST",
-          path: "/tables/bqrchild456/relationships",
+          path: "/tables/bqrchild456/relationship",
           body: {
             parentTableId: "bqrparent123",
             summaryFields: [
@@ -784,7 +784,7 @@ describe("Relationship Tools", () => {
         expect(result.success).toBe(true);
         expect(mockClient.request).toHaveBeenCalledWith({
           method: "POST",
-          path: "/tables/bqrchild456/relationships",
+          path: "/tables/bqrchild456/relationship",
           body: {
             parentTableId: "bqrparent123",
             summaryFields: [
@@ -828,7 +828,7 @@ describe("Relationship Tools", () => {
         expect(result.success).toBe(true);
         expect(mockClient.request).toHaveBeenCalledWith({
           method: "POST",
-          path: "/tables/bqrchild456/relationships",
+          path: "/tables/bqrchild456/relationship",
           body: {
             parentTableId: "bqrparent123",
             summaryFields: [
@@ -881,7 +881,7 @@ describe("Relationship Tools", () => {
         expect(result.data?.summaryFields).toHaveLength(1);
         expect(mockClient.request).toHaveBeenCalledWith({
           method: "POST",
-          path: "/tables/bqrchild456/relationships",
+          path: "/tables/bqrchild456/relationship",
           body: {
             parentTableId: "bqrparent123",
             foreignKeyField: {
@@ -1112,7 +1112,7 @@ describe("Relationship Tools", () => {
         expect(result.data?.summaryFields).toHaveLength(1);
         expect(mockClient.request).toHaveBeenCalledWith({
           method: "POST",
-          path: "/tables/bqrchild456/relationships",
+          path: "/tables/bqrchild456/relationship",
           body: {
             parentTableId: "bqrparent123",
             summaryFields: [
@@ -1188,7 +1188,7 @@ describe("Relationship Tools", () => {
         // Empty array should not be included in the request body
         expect(mockClient.request).toHaveBeenCalledWith({
           method: "POST",
-          path: "/tables/bqrchild456/relationships",
+          path: "/tables/bqrchild456/relationship",
           body: {
             parentTableId: "bqrparent123",
           },
@@ -1293,7 +1293,7 @@ describe("Relationship Tools", () => {
         expect(result.data?.lookupFields[1].label).toBe("Parent Email");
         expect(mockClient.request).toHaveBeenCalledWith({
           method: "POST",
-          path: "/tables/bqrchild456/relationships/10",
+          path: "/tables/bqrchild456/relationship/10",
           body: {
             lookupFieldIds: [6, 7],
           },
@@ -1334,7 +1334,7 @@ describe("Relationship Tools", () => {
         expect(result.data?.summaryFields[0].label).toBe("Total Amount");
         expect(mockClient.request).toHaveBeenCalledWith({
           method: "POST",
-          path: "/tables/bqrchild456/relationships/10",
+          path: "/tables/bqrchild456/relationship/10",
           body: {
             summaryFields: [
               {
@@ -1382,7 +1382,7 @@ describe("Relationship Tools", () => {
         expect(result.data?.summaryFields).toHaveLength(1);
         expect(mockClient.request).toHaveBeenCalledWith({
           method: "POST",
-          path: "/tables/bqrchild456/relationships/10",
+          path: "/tables/bqrchild456/relationship/10",
           body: {
             lookupFieldIds: [6],
             summaryFields: [
@@ -1432,7 +1432,7 @@ describe("Relationship Tools", () => {
         expect(result.data?.summaryFields).toHaveLength(1);
         expect(mockClient.request).toHaveBeenCalledWith({
           method: "POST",
-          path: "/tables/bqrchild456/relationships/10",
+          path: "/tables/bqrchild456/relationship/10",
           body: {
             summaryFields: [
               {
@@ -1479,7 +1479,7 @@ describe("Relationship Tools", () => {
         expect(result.success).toBe(true);
         expect(mockClient.request).toHaveBeenCalledWith({
           method: "POST",
-          path: "/tables/bqrchild456/relationships/10",
+          path: "/tables/bqrchild456/relationship/10",
           body: {
             summaryFields: [
               {
@@ -1522,7 +1522,7 @@ describe("Relationship Tools", () => {
         expect(result.success).toBe(true);
         expect(mockClient.request).toHaveBeenCalledWith({
           method: "POST",
-          path: "/tables/bqrchild456/relationships/10",
+          path: "/tables/bqrchild456/relationship/10",
           body: {
             summaryFields: [
               {
@@ -1565,7 +1565,7 @@ describe("Relationship Tools", () => {
         expect(result.success).toBe(true);
         expect(mockClient.request).toHaveBeenCalledWith({
           method: "POST",
-          path: "/tables/bqrchild456/relationships/10",
+          path: "/tables/bqrchild456/relationship/10",
           body: {
             summaryFields: [
               {
@@ -1785,7 +1785,7 @@ describe("Relationship Tools", () => {
         expect(result.data?.id).toBe(10);
         expect(mockClient.request).toHaveBeenCalledWith({
           method: "POST",
-          path: "/tables/bqrchild456/relationships/10",
+          path: "/tables/bqrchild456/relationship/10",
           body: {},
         });
       });
@@ -1855,7 +1855,7 @@ describe("Relationship Tools", () => {
         // Empty array should not be included in the request body
         expect(mockClient.request).toHaveBeenCalledWith({
           method: "POST",
-          path: "/tables/bqrchild456/relationships/10",
+          path: "/tables/bqrchild456/relationship/10",
           body: {},
         });
       });
@@ -1961,7 +1961,7 @@ describe("Relationship Tools", () => {
         expect(result.data?.deleted).toBe(true);
         expect(mockClient.request).toHaveBeenCalledWith({
           method: "DELETE",
-          path: "/tables/bqrchild456/relationships/10",
+          path: "/tables/bqrchild456/relationship/10",
         });
       });
 
