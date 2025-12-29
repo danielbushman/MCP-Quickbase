@@ -7,6 +7,18 @@ import {
 import { QuickbaseClient } from "../../client/quickbase";
 import { QuickbaseConfig } from "../../types/config";
 
+/**
+ * IMPORTANT: Quickbase API Endpoint Path Difference
+ *
+ * The Quickbase Relationships API uses DIFFERENT pluralization for read vs write:
+ *   - GET:    /tables/{id}/relationships  (PLURAL)
+ *   - POST:   /tables/{id}/relationship   (SINGULAR)
+ *   - DELETE: /tables/{id}/relationship/{relId}  (SINGULAR)
+ *
+ * Using the wrong form results in HTTP 404 errors. These tests verify the correct
+ * paths are used. See src/tools/relationships/CLAUDE.md for details.
+ */
+
 // Mock the QuickbaseClient
 jest.mock("../../client/quickbase");
 
@@ -459,6 +471,8 @@ describe("Relationship Tools", () => {
     });
   });
 
+  // NOTE: Create/Update/Delete use SINGULAR path: /tables/{id}/relationship
+  // This is different from GET which uses PLURAL: /tables/{id}/relationships
   describe("CreateRelationshipTool", () => {
     let tool: CreateRelationshipTool;
 
