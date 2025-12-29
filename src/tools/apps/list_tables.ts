@@ -54,17 +54,17 @@ export interface TableInfo {
  */
 export interface ListTablesParams {
   /**
-   * The ID of the application (optional, uses the configured one if not provided)
+   * The application ID to list tables for
    */
   app_id?: string;
 
   /**
-   * Whether to include hidden tables in the results
+   * Whether to include hidden tables
    */
   include_hidden?: boolean;
 
   /**
-   * Filter tables by pattern (case-insensitive substring match)
+   * Filter tables by name (case-insensitive substring match)
    */
   filter?: string;
 }
@@ -74,7 +74,7 @@ export interface ListTablesParams {
  */
 export interface ListTablesResult {
   /**
-   * Array of table information
+   * Array of tables in the application
    */
   tables: TableInfo[];
 
@@ -85,7 +85,7 @@ export interface ListTablesResult {
 }
 
 /**
- * Tool for listing tables in a Quickbase application
+ * Tool for listing all tables in a Quickbase application
  */
 export class ListTablesTool extends BaseTool<
   ListTablesParams,

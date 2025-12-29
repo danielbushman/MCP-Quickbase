@@ -51,9 +51,13 @@ describe("Tool Registry", () => {
       expect(toolNames).toContain("upload_file");
       expect(toolNames).toContain("download_file");
       expect(toolNames).toContain("run_report");
+      expect(toolNames).toContain("get_relationships");
+      expect(toolNames).toContain("create_relationship");
+      expect(toolNames).toContain("update_relationship");
+      expect(toolNames).toContain("delete_relationship");
 
       // Verify total count
-      expect(toolNames.length).toBe(20);
+      expect(toolNames.length).toBe(24);
     });
 
     it("should register tools in correct categories", () => {
@@ -82,6 +86,9 @@ describe("Tool Registry", () => {
       const reportTools = allTools.filter((tool) =>
         tool.name.includes("report"),
       );
+      const relationshipTools = allTools.filter((tool) =>
+        tool.name.includes("relationship"),
+      );
 
       expect(appTools.length).toBe(3);
       expect(tableTools.length).toBe(3);
@@ -89,6 +96,7 @@ describe("Tool Registry", () => {
       expect(recordTools.length).toBe(5);
       expect(fileTools.length).toBe(2);
       expect(reportTools.length).toBe(1);
+      expect(relationshipTools.length).toBe(4);
     });
   });
 
@@ -111,7 +119,7 @@ describe("Tool Registry", () => {
 
       initializeTools(mockClient, mockCache);
 
-      expect(toolRegistry.getToolCount()).toBe(20);
+      expect(toolRegistry.getToolCount()).toBe(24);
     });
   });
 });

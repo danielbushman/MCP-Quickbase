@@ -9,6 +9,7 @@ import { registerFieldTools } from "./fields";
 import { registerRecordTools } from "./records";
 import { registerFileTools } from "./files";
 import { registerReportTools } from "./reports";
+import { registerRelationshipTools } from "./relationships";
 import { createLogger } from "../utils/logger";
 
 const logger = createLogger("ToolsInit");
@@ -46,7 +47,8 @@ export function initializeTools(
   // Register report operation tools
   registerReportTools(client);
 
-  // Additional tools will be registered here
+  // Register relationship management tools
+  registerRelationshipTools(client);
 
   logger.info(`Registered ${toolRegistry.getToolCount()} tools`);
 }
@@ -62,3 +64,4 @@ export * from "./fields";
 export * from "./records";
 export * from "./files";
 export * from "./reports";
+export * from "./relationships";
