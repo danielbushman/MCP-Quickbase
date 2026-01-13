@@ -1,0 +1,60 @@
+# Smithery configuration file: https://smithery.ai/docs/build/project-config
+
+startCommand:
+  type: stdio
+  commandFunction:
+    # A JS function that produces the CLI command based on the given config to start the MCP on stdio.
+    |-
+    (config) => ({
+      command: 'node',
+      args: ['dist/mcp-stdio-server.js'],
+      env: {
+        QUICKBASE_REALM_HOST: config.quickbaseRealmHost,
+        QUICKBASE_USER_TOKEN: config.quickbaseUserToken,
+        ...(config.quickbaseAppId ? { QUICKBASE_APP_ID: config.quickbaseAppId } : {}),
+        QUICKBASE_CACHE_ENABLED: String(config.quickbaseCacheEnabled),
+        QUICKBASE_CACHE_TTL: String(config.quickbaseCacheTtl),
+        DEBUG: String(config.debug),
+        LOG_LEVEL: config.logLevel
+      }
+    })
+  configSchema:
+    # JSON Schema defining the configuration options for the MCP.
+    type: object
+    required:
+      - quickbaseRealmHost
+      - quickbaseUserToken
+    properties:
+      quickbaseRealmHost:
+        type: string
+        description: Your Quickbase realm host, e.g. 'company.quickbase.com'
+      quickbaseUserToken:
+        type: string
+        description: Your Quickbase user API token
+      quickbaseAppId:
+        type: string
+        description: Default Quickbase application ID
+      quickbaseCacheEnabled:
+        type: boolean
+        default: true
+        description: Enable or disable caching
+      quickbaseCacheTtl:
+        type: number
+        default: 3600
+        description: Cache time-to-live in seconds
+      debug:
+        type: boolean
+        default: false
+        description: Enable debug logging
+      logLevel:
+        type: string
+        default: INFO
+        description: Logging level (DEBUG, INFO, WARN, ERROR)
+  exampleConfig:
+    quickbaseRealmHost: example.quickbase.com
+    quickbaseUserToken: abcd1234
+    quickbaseAppId: xyz789
+    quickbaseCacheEnabled: true
+    quickbaseCacheTtl: 3600
+    debug: false
+    logLevel: INFO
