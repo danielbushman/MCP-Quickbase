@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/workspace/_SPECS/scripts/specs-autocommit start 2>/dev/null || true"
+          }
+        ]
+      }
+    ]
+  }
+}
