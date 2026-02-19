@@ -277,6 +277,7 @@ export class QueryRecordsTool extends BaseTool<
       tableId: table_id,
       maxRecords: max_records,
       pagination: paginate ? "enabled" : "disabled",
+      hasGroupBy: groupBy && groupBy.length > 0 ? true : undefined,
     });
 
     // Prepare the query body
