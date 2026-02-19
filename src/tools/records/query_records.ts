@@ -7,6 +7,7 @@ const logger = createLogger("QueryRecordsTool");
 /**
  * Order by configuration for query
  */
+// Note: fieldId is string here for historical reasons; GroupBy.fieldId below uses number to match the Quickbase API spec.
 export interface OrderBy {
   /**
    * Field ID to order by
@@ -151,7 +152,7 @@ export class QueryRecordsTool extends BaseTool<
 > {
   public name = "query_records";
   public description =
-    "Executes a query against a Quickbase table with optional pagination and groupBy aggregation";
+    "Executes a query against a Quickbase table with optional pagination and server-side field grouping";
 
   /**
    * Parameter schema for query_records
@@ -193,7 +194,7 @@ export class QueryRecordsTool extends BaseTool<
       groupBy: {
         type: "array",
         description:
-          "Fields to group results by for server-side aggregation. Returns grouped/summarized data instead of individual records.",
+          "Fields to group results by for server-side aggregation. Use this instead of paginating large tables for counts or summaries - returns only the grouped results (e.g., 5-10 rows for a status count on a 1M+ record table) instead of individual records.",
         items: {
           type: "object",
           properties: {
