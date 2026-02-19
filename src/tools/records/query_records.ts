@@ -19,6 +19,34 @@ export interface OrderBy {
   order: "ASC" | "DESC";
 }
 
+// Note: GroupBy item validation is shallow at the MCP layer. convertPropertyToZod treats
+// items.type: "object" as z.record(z.unknown()), so fieldId and grouping are not strictly
+// validated here. Invalid values pass MCP validation and are rejected by the Quickbase API.
+export interface GroupBy {
+  /**
+   * Field ID to group by
+   */
+  fieldId: number;
+
+  /**
+   * Grouping strategy
+   */
+  grouping:
+    | "equal-values"
+    | "first-word"
+    | "first-letter"
+    | "1000000"
+    | "100000"
+    | "10000"
+    | "1000"
+    | "100"
+    | "10"
+    | "1"
+    | ".1"
+    | ".01"
+    | ".001";
+}
+
 /**
  * Parameters for query_records tool
  */
@@ -42,6 +70,11 @@ export interface QueryRecordsParams {
    * Fields to order by
    */
   orderBy?: OrderBy[];
+
+  /**
+   * Fields to group results by for server-side aggregation
+   */
+  groupBy?: GroupBy[];
 
   /**
    * Maximum number of records to return
@@ -118,7 +151,7 @@ export class QueryRecordsTool extends BaseTool<
 > {
   public name = "query_records";
   public description =
-    "Executes a query against a Quickbase table with optional pagination";
+    "Executes a query against a Quickbase table with optional pagination and groupBy aggregation";
 
   /**
    * Parameter schema for query_records
@@ -155,6 +188,40 @@ export class QueryRecordsTool extends BaseTool<
               enum: ["ASC", "DESC"],
             },
           },
+        },
+      },
+      groupBy: {
+        type: "array",
+        description:
+          "Fields to group results by for server-side aggregation. Returns grouped/summarized data instead of individual records.",
+        items: {
+          type: "object",
+          properties: {
+            fieldId: {
+              type: "number",
+              description: "The field ID to group by",
+            },
+            grouping: {
+              type: "string",
+              description: "The grouping strategy to apply",
+              enum: [
+                "equal-values",
+                "first-word",
+                "first-letter",
+                "1000000",
+                "100000",
+                "10000",
+                "1000",
+                "100",
+                "10",
+                "1",
+                ".1",
+                ".01",
+                ".001",
+              ],
+            },
+          },
+          required: ["fieldId", "grouping"],
         },
       },
       max_records: {
@@ -198,6 +265,7 @@ export class QueryRecordsTool extends BaseTool<
       where,
       select,
       orderBy,
+      groupBy,
       max_records = 1000,
       skip = 0,
       paginate = false,
@@ -228,6 +296,11 @@ export class QueryRecordsTool extends BaseTool<
     // Add sorting if provided
     if (orderBy && orderBy.length > 0) {
       body.sortBy = orderBy;
+    }
+
+    // Add grouping if provided
+    if (groupBy && groupBy.length > 0) {
+      body.groupBy = groupBy;
     }
 
     // Add pagination
