@@ -2,6 +2,7 @@ import {
   CreateRecordTool,
   UpdateRecordTool,
   QueryRecordsTool,
+  GroupBy,
 } from "../../tools/records";
 import { QuickbaseClient } from "../../client/quickbase";
 import { QuickbaseConfig } from "../../types/config";
@@ -347,7 +348,7 @@ describe("Record Tools", () => {
 
       const params = {
         table_id: "test-table",
-        groupBy: [] as any[],
+        groupBy: [] as GroupBy[],
       };
 
       await tool.execute(params);
@@ -435,6 +436,61 @@ describe("Record Tools", () => {
       ]);
     });
 
+    it("should preserve groupBy in all pagination requests when paginating across multiple pages", async () => {
+      const PAGE_SIZE = 1000;
+
+      // First response: exactly 1000 records returned (triggers pagination)
+      const pageOneRecords = Array.from({ length: PAGE_SIZE }, (_, i) => ({
+        "6": { value: `Group${i}` },
+      }));
+      const mockResponsePage1 = {
+        success: true,
+        data: {
+          data: pageOneRecords,
+          metadata: { totalRecords: PAGE_SIZE + 1, numRecords: PAGE_SIZE },
+        },
+      };
+
+      // Second response: 0 records returned (stops pagination)
+      const mockResponsePage2 = {
+        success: true,
+        data: {
+          data: [],
+          metadata: { totalRecords: PAGE_SIZE + 1, numRecords: 0 },
+        },
+      };
+
+      mockClient.request = jest
+        .fn()
+        .mockResolvedValueOnce(mockResponsePage1)
+        .mockResolvedValueOnce(mockResponsePage2);
+
+      const params = {
+        table_id: "test-table",
+        groupBy: [{ fieldId: 6, grouping: "equal-values" }] as GroupBy[],
+        max_records: 2000,
+        paginate: true,
+      };
+
+      await tool.execute(params);
+
+      // Pagination should have activated (first response hit the page limit)
+      expect(mockClient.request).toHaveBeenCalledTimes(2);
+
+      // Both calls must include groupBy at the top level of body
+      const firstCallArgs = mockClient.request.mock.calls[0][0];
+      expect(firstCallArgs.body).toHaveProperty("groupBy");
+      expect(firstCallArgs.body!.groupBy).toEqual([
+        { fieldId: 6, grouping: "equal-values" },
+      ]);
+
+      const secondCallArgs = mockClient.request.mock.calls[1][0];
+      expect(secondCallArgs.body).toHaveProperty("groupBy");
+      expect(secondCallArgs.body!.groupBy).toEqual([
+        { fieldId: 6, grouping: "equal-values" },
+      ]);
+    });
+
     it("should truncate pagination correctly without duplicates when final page exceeds limit", async () => {
       // Regression test: Previously, pageRecords were appended before checking
       // if total exceeded limit, causing duplicates when truncation occurred.
@@ -446,7 +502,10 @@ describe("Record Tools", () => {
       // - Bug: would append 750, then check triggers and appends 500 more (duplicates)
       // - Fixed: check BEFORE appending, truncate to 500, no duplicates
 
-      const createRecords = (start: number, count: number) =>
+      const createRecords = (
+        start: number,
+        count: number,
+      ): Record<string, { value: number | string }>[] =>
         Array.from({ length: count }, (_, i) => ({
           "3": { value: start + i }, // Record ID field
           "6": { value: `Record ${start + i}` },
