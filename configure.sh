@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 echo "========================================="
 echo "    Quickbase MCP Server Configurator"
@@ -27,19 +27,24 @@ echo
 echo "Setting up Claude Desktop configuration..."
 
 # Determine the platform and Claude Desktop config path
-if [[ "${OSTYPE}" == "darwin"* ]]; then
+case "${OSTYPE}" in
+  darwin*)
     config_dir="${HOME}/Library/Application Support/Claude"
     config_file="${config_dir}/claude_desktop_config.json"
-elif [[ "${OSTYPE}" == "linux-gnu"* ]]; then
+    ;;
+  linux-gnu*)
     config_dir="${HOME}/.config/Claude"
     config_file="${config_dir}/claude_desktop_config.json"
-elif [[ "${OSTYPE}" == "msys"* || "${OSTYPE}" == "cygwin"* || "${OSTYPE}" == "win32"* ]]; then
+    ;;
+  msys*|cygwin*|win32*)
     config_dir="${APPDATA}/Claude"
     config_file="${config_dir}/claude_desktop_config.json"
-else
+    ;;
+  *)
     echo "Unsupported operating system. Please configure Claude Desktop manually."
     config_file=""
-fi
+    ;;
+esac
 
 # Check if config file already exists
 config_backup=""
@@ -50,14 +55,16 @@ if [ -f "${config_file}" ]; then
     
     # Read existing config
     existing_config=$(cat "${config_file}")
-    if [[ "${existing_config}" == *"\"mcpServers\""* ]]; then
+    case "${existing_config}" in
+      *'"mcpServers"'*)
         echo "Warning: Existing MCP servers configuration found."
         read -p "Would you like to overwrite it? (y/n): " overwrite
-        if [[ "${overwrite}" != "y" && "${overwrite}" != "Y" ]]; then
+        if [ "${overwrite}" != "y" ] && [ "${overwrite}" != "Y" ]; then
             echo "Please manually update your Claude Desktop configuration. See the README.md for instructions."
             exit 0
         fi
-    fi
+        ;;
+    esac
 fi
 
 if [ ! -z "${config_file}" ]; then
@@ -66,7 +73,7 @@ if [ ! -z "${config_file}" ]; then
     
     # Get absolute paths
     current_dir=$(pwd)
-    node_path=$(which node)
+    node_path=$(command -v node)
     server_path="${current_dir}/dist/mcp-stdio-server.js"
     
     # Create or update Claude Desktop config

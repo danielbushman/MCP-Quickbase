@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # This script will install and configure Quickbase MCP Server
 # It's designed to work when run both locally and via curl | bash
 
@@ -64,9 +64,10 @@ else
 fi
 
 # Make sure it's an absolute path
-if [[ "$INSTALL_DIR" != /* ]]; then
-    INSTALL_DIR="$PWD/$INSTALL_DIR"
-fi
+case "$INSTALL_DIR" in
+  /*) ;; # already absolute
+  *)  INSTALL_DIR="$PWD/$INSTALL_DIR" ;;
+esac
 
 echo "Installing to: $INSTALL_DIR"
 
@@ -74,7 +75,7 @@ echo "Installing to: $INSTALL_DIR"
 if [ -d "${INSTALL_DIR}" ]; then
     echo "Warning: Directory ${INSTALL_DIR} already exists."
     read -p "Do you want to continue and possibly overwrite existing files? (y/n): " overwrite
-    if [[ "$overwrite" != "y" && "$overwrite" != "Y" ]]; then
+    if [ "$overwrite" != "y" ] && [ "$overwrite" != "Y" ]; then
         echo "Installation cancelled."
         exit 1
     fi

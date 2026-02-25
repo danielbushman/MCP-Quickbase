@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Find and kill any process running on port 3536
 PID=$(lsof -ti:3536)
