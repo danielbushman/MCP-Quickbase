@@ -8,108 +8,97 @@ metadata:
   tags:
     - quickbase
     - database
-    - construction
     - project-management
-    - mcp-connector
+    - workflow
+    - automation
 
 spec:
-  # Docker configuration
   docker:
     dockerfile: Dockerfile
     context: .
-    
-  # Runtime configuration
+
   runtime:
     command: ["node", "dist/mcp-stdio-server.js"]
     workingDir: /app
-    user: mcp
-    
-  # Environment variables (users will need to set these)
+    user: service-user
+
   environment:
     - name: QUICKBASE_REALM_HOST
       description: "Your Quickbase realm hostname (e.g., mycompany.quickbase.com)"
       required: true
       type: string
-      
+
     - name: QUICKBASE_USER_TOKEN
       description: "Your Quickbase user token for API access"
       required: true
       type: secret
-      
+
     - name: QUICKBASE_APP_ID
-      description: "The Quickbase application ID to connect to"
-      required: true
+      description: "Default Quickbase application ID (can be overridden per request)"
+      required: false
       type: string
-      
+
     - name: QUICKBASE_CACHE_ENABLED
       description: "Enable caching for better performance"
       required: false
       type: boolean
       default: true
-      
+
     - name: QUICKBASE_CACHE_TTL
       description: "Cache time-to-live in seconds"
       required: false
       type: number
       default: 3600
-      
+
     - name: DEBUG
       description: "Enable debug logging"
       required: false
       type: boolean
       default: "false"
-      
+
     - name: LOG_LEVEL
       description: "Logging level (ERROR, WARN, INFO, DEBUG)"
       required: false
       type: string
       default: "INFO"
 
-  # Resource requirements
   resources:
-    memory: "512Mi"
-    cpu: "0.5"
-    
-  # Health check
-  healthCheck:
-    enabled: true
-    path: /health
-    intervalSeconds: 30
-    timeoutSeconds: 10
-    
-  # MCP protocol configuration
+    memory: "256Mi"
+    cpu: "0.25"
+
   mcp:
     protocol: stdio
     capabilities:
       - tools
-      - resources
-    
-  # Available tools
+
   tools:
+    - name: check_configuration
+      description: "Check if Quickbase configuration is properly set up"
+
     - name: test_connection
       description: "Test connection to Quickbase"
-      
+
     - name: configure_cache
       description: "Configure caching behavior"
-      
+
     - name: create_app
       description: "Create a new Quickbase application"
-      
+
     - name: update_app
       description: "Update an existing Quickbase application"
-      
+
     - name: list_tables
       description: "List all tables in the application"
-      
+
     - name: create_table
       description: "Create a new table"
-      
+
     - name: update_table
       description: "Update an existing table"
-      
+
     - name: get_table_fields
       description: "Get field information for a table"
-      
+
     - name: create_field
       description: "Create a new field in a table"
 
@@ -121,28 +110,28 @@ spec:
 
     - name: delete_field
       description: "Delete a field from a table"
-      
+
     - name: query_records
-      description: "Query records from a table with filtering and pagination"
-      
+      description: "Query records with filtering, sorting, grouping, and pagination"
+
     - name: create_record
       description: "Create a new record in a table"
-      
+
     - name: update_record
       description: "Update an existing record"
-      
+
     - name: bulk_create_records
       description: "Create multiple records at once"
-      
+
     - name: bulk_update_records
       description: "Update multiple records at once"
-      
+
     - name: upload_file
       description: "Upload a file to a record field"
-      
+
     - name: download_file
       description: "Download a file from a record field"
-      
+
     - name: run_report
       description: "Execute a Quickbase report"
 
@@ -158,48 +147,34 @@ spec:
     - name: delete_relationship
       description: "Delete a table relationship"
 
-# Usage examples and documentation
 documentation:
   quickStart: |
-    To use this MCP connector:
-    
-    1. Set up your Quickbase credentials:
-       - QUICKBASE_REALM_HOST: Your Quickbase realm (e.g., mycompany.quickbase.com)
-       - QUICKBASE_USER_TOKEN: Your user token from Quickbase
-       - QUICKBASE_APP_ID: The ID of your Quickbase application
-    
-    2. Start interacting with natural language prompts like:
-       - "Show me all projects in our Quickbase system"
-       - "Add a new employee to the database"
-       - "Generate a safety report for this week"
-    
-  examples:
-    - title: "Daily Operations Check"
-      prompt: "Check our Quickbase system and show me which crews are working today, what projects they're assigned to, and who's leading each crew."
-      
-    - title: "Project Status Update"
-      prompt: "Give me a status update on all active projects in Quickbase with budget, timeline, and recent progress."
-      
-    - title: "Safety Incident Report"
-      prompt: "Create a safety dashboard from Quickbase showing incident counts by type and location for the last 30 days."
-      
-    - title: "Inventory Management"
-      prompt: "Show me all materials in Quickbase that are below reorder threshold and generate purchase orders grouped by supplier."
+    1. Set your Quickbase credentials (QUICKBASE_REALM_HOST, QUICKBASE_USER_TOKEN)
+    2. Optionally set QUICKBASE_APP_ID as a default
+    3. Ask Claude to interact with your Quickbase data
 
-# Deployment metadata
+  examples:
+    - title: "Query Records"
+      prompt: "Show me all active projects in Quickbase"
+
+    - title: "Create Record"
+      prompt: "Add a new customer record with name 'Acme Corp' and status 'Active'"
+
+    - title: "Run Report"
+      prompt: "Run my monthly summary report and summarize the results"
+
+    - title: "Manage Relationships"
+      prompt: "Show me all relationships for the Projects table"
+
 deployment:
   category: "Database & Business Operations"
   useCases:
-    - "Construction project management"
-    - "Workforce tracking and scheduling"
-    - "Materials and inventory management"
-    - "Safety incident reporting"
-    - "Business operations automation"
-    - "Real-time project analytics"
-    
+    - "Quickbase application management"
+    - "Record querying and manipulation"
+    - "Table and field management"
+    - "Report execution"
+    - "File attachments"
+    - "Relationship management"
+
   integrations:
     - "Quickbase applications"
-    - "Construction management systems"
-    - "HR and payroll systems"
-    - "Inventory management"
-    - "Safety compliance tracking"

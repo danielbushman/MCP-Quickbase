@@ -1,17 +1,26 @@
+# Glama.ai deployment image for Quickbase MCP Server
 FROM debian:bullseye-slim
 
 ENV DEBIAN_FRONTEND=noninteractive \
-    GLAMA_VERSION="0.2.0" \
     PATH="/home/service-user/.local/bin:${PATH}"
 
-RUN (groupadd -r service-user) && (useradd -u 1987 -r -m -g service-user service-user) && (mkdir -p /home/service-user/.local/bin /app) && (chown -R service-user:service-user /home/service-user /app) && (apt-get update) && (apt-get install -y --no-install-recommends build-essential curl wget software-properties-common libssl-dev zlib1g-dev git) && (rm -rf /var/lib/apt/lists/*) && (curl -fsSL https://deb.nodesource.com/setup_22.x | bash -) && (apt-get install -y nodejs) && (apt-get clean) && (npm install -g mcp-proxy@3.0.3) && (npm install -g pnpm@9.15.5) && (npm install -g bun@1.1.42) && (node --version) && (curl -LsSf https://astral.sh/uv/install.sh | UV_INSTALL_DIR="/usr/local/bin" sh) && (uv python install 3.13 --default --preview) && (ln -s $(uv python find) /usr/local/bin/python) && (python --version) && (apt-get clean) && (rm -rf /var/lib/apt/lists/*) && (rm -rf /tmp/*) && (rm -rf /var/tmp/*) && (su - service-user -c "uv python install 3.13 --default --preview && python --version")
+# Create non-root user and install Node.js + mcp-proxy
+RUN groupadd -r service-user \
+    && useradd -u 1987 -r -m -g service-user service-user \
+    && mkdir -p /app \
+    && chown -R service-user:service-user /app \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends curl git ca-certificates \
+    && curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+    && apt-get install -y nodejs \
+    && npm install -g mcp-proxy@3.0.3 \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 USER service-user
-
 WORKDIR /app
 
 RUN git clone https://github.com/danielbushman/MCP-Quickbase . && git checkout main
+RUN npm install && npm run build
 
-RUN (npm install) && (npm run build) && (chmod +x dist/mcp-stdio-server.js)
-
-CMD ["mcp-proxy","node","dist/mcp-stdio-server.js"]
+CMD ["mcp-proxy", "node", "dist/mcp-stdio-server.js"]
