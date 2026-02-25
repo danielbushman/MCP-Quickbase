@@ -18,7 +18,7 @@ read -p "Quickbase App ID: " app_id
 echo "QUICKBASE_REALM_HOST=${realm_host}
 QUICKBASE_USER_TOKEN=${user_token}
 QUICKBASE_APP_ID=${app_id}
-MCP_SERVER_PORT=3535" > .env
+PORT=3536" > .env
 
 echo "Credentials saved to .env file in $(pwd)"
 
@@ -81,7 +81,7 @@ if [ ! -z "${config_file}" ]; then
         \"QUICKBASE_REALM_HOST\": \"${realm_host}\",
         \"QUICKBASE_USER_TOKEN\": \"${user_token}\",
         \"QUICKBASE_APP_ID\": \"${app_id}\",
-        \"MCP_SERVER_PORT\": \"3535\"
+        \"PORT\": \"3536\"
       }
     }
   }
