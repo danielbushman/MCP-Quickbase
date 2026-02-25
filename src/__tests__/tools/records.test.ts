@@ -2,6 +2,7 @@ import {
   CreateRecordTool,
   UpdateRecordTool,
   QueryRecordsTool,
+  GroupBy,
 } from "../../tools/records";
 import { QuickbaseClient } from "../../client/quickbase";
 import { QuickbaseConfig } from "../../types/config";
@@ -240,6 +241,256 @@ describe("Record Tools", () => {
       });
     });
 
+    it("should pass groupBy with a single field to the API body", async () => {
+      const mockResponse = {
+        success: true,
+        data: {
+          data: [{ "1": { value: 1 }, "6": { value: "Grouped" } }],
+          metadata: { totalRecords: 1, numRecords: 1 },
+        },
+      };
+
+      mockClient.request = jest.fn().mockResolvedValue(mockResponse);
+
+      const params = {
+        table_id: "test-table",
+        groupBy: [{ fieldId: 6, grouping: "equal-values" as const }],
+      };
+
+      const result = await tool.execute(params);
+
+      expect(result.success).toBe(true);
+      expect(mockClient.request).toHaveBeenCalledWith({
+        method: "POST",
+        path: "/records/query",
+        body: {
+          from: "test-table",
+          groupBy: [{ fieldId: 6, grouping: "equal-values" }],
+          options: {
+            skip: 0,
+            top: 1000,
+          },
+        },
+      });
+    });
+
+    it("should pass groupBy with multiple fields to the API body", async () => {
+      const mockResponse = {
+        success: true,
+        data: {
+          data: [{ "1": { value: 1 }, "6": { value: "Grouped" } }],
+          metadata: { totalRecords: 1, numRecords: 1 },
+        },
+      };
+
+      mockClient.request = jest.fn().mockResolvedValue(mockResponse);
+
+      const params = {
+        table_id: "test-table",
+        groupBy: [
+          { fieldId: 6, grouping: "equal-values" as const },
+          { fieldId: 9, grouping: "first-word" as const },
+        ],
+      };
+
+      const result = await tool.execute(params);
+
+      expect(result.success).toBe(true);
+      expect(mockClient.request).toHaveBeenCalledWith({
+        method: "POST",
+        path: "/records/query",
+        body: {
+          from: "test-table",
+          groupBy: [
+            { fieldId: 6, grouping: "equal-values" },
+            { fieldId: 9, grouping: "first-word" },
+          ],
+          options: {
+            skip: 0,
+            top: 1000,
+          },
+        },
+      });
+    });
+
+    it("should not include groupBy in body when groupBy is omitted", async () => {
+      const mockResponse = {
+        success: true,
+        data: {
+          data: [{ "1": { value: 1 }, "6": { value: "Active" } }],
+          metadata: { totalRecords: 1, numRecords: 1 },
+        },
+      };
+
+      mockClient.request = jest.fn().mockResolvedValue(mockResponse);
+
+      const params = {
+        table_id: "test-table",
+        where: "{6.EX.'Active'}",
+      };
+
+      await tool.execute(params);
+
+      const callArgs = mockClient.request.mock.calls[0][0];
+      expect(callArgs.body).not.toHaveProperty("groupBy");
+    });
+
+    it("should not include groupBy in body when groupBy is an empty array", async () => {
+      const mockResponse = {
+        success: true,
+        data: {
+          data: [{ "1": { value: 1 }, "6": { value: "Grouped" } }],
+          metadata: { totalRecords: 1, numRecords: 1 },
+        },
+      };
+
+      mockClient.request = jest.fn().mockResolvedValue(mockResponse);
+
+      const params = {
+        table_id: "test-table",
+        groupBy: [] as GroupBy[],
+      };
+
+      await tool.execute(params);
+
+      const callArgs = mockClient.request.mock.calls[0][0];
+      expect(callArgs.body).not.toHaveProperty("groupBy");
+    });
+
+    it("should place groupBy at top level of body, not inside options, when combined with other params", async () => {
+      const mockResponse = {
+        success: true,
+        data: {
+          data: [{ "1": { value: 1 }, "6": { value: "Grouped" } }],
+          metadata: { totalRecords: 1, numRecords: 1 },
+        },
+      };
+
+      mockClient.request = jest.fn().mockResolvedValue(mockResponse);
+
+      const params = {
+        table_id: "test-table",
+        where: "{6.EX.'Active'}",
+        select: ["1", "6"],
+        orderBy: [{ fieldId: "6", order: "ASC" as const }],
+        groupBy: [{ fieldId: 6, grouping: "equal-values" as const }],
+      };
+
+      const result = await tool.execute(params);
+
+      expect(result.success).toBe(true);
+      expect(mockClient.request).toHaveBeenCalledWith({
+        method: "POST",
+        path: "/records/query",
+        body: {
+          from: "test-table",
+          where: "{6.EX.'Active'}",
+          select: ["1", "6"],
+          sortBy: [{ fieldId: "6", order: "ASC" }],
+          groupBy: [{ fieldId: 6, grouping: "equal-values" }],
+          options: {
+            skip: 0,
+            top: 1000,
+          },
+        },
+      });
+
+      // Critical negative assertion: groupBy must NOT be inside options
+      const callArgs = mockClient.request.mock.calls[0][0];
+      expect(callArgs.body).toHaveProperty("groupBy");
+      expect(callArgs.body!.options).not.toHaveProperty("groupBy");
+    });
+
+    it("should include groupBy in body and not trigger pagination when results fit in one page", async () => {
+      const mockResponse = {
+        success: true,
+        data: {
+          data: [
+            { "6": { value: "Active" } },
+            { "6": { value: "Closed" } },
+            { "6": { value: "Pending" } },
+          ],
+          metadata: { totalRecords: 3, numRecords: 3 },
+        },
+      };
+
+      mockClient.request = jest.fn().mockResolvedValue(mockResponse);
+
+      const params = {
+        table_id: "test-table",
+        groupBy: [{ fieldId: 6, grouping: "equal-values" as const }],
+        paginate: true,
+      };
+
+      const result = await tool.execute(params);
+
+      expect(result.success).toBe(true);
+      // Pagination should NOT have activated (only 3 records, well under the 1000 top)
+      expect(mockClient.request).toHaveBeenCalledTimes(1);
+
+      // The single call should include groupBy at the top level of body
+      const callArgs = mockClient.request.mock.calls[0][0];
+      expect(callArgs.body).toHaveProperty("groupBy");
+      expect(callArgs.body!.groupBy).toEqual([
+        { fieldId: 6, grouping: "equal-values" },
+      ]);
+    });
+
+    it("should preserve groupBy in all pagination requests when paginating across multiple pages", async () => {
+      const PAGE_SIZE = 1000;
+
+      // First response: exactly 1000 records returned (triggers pagination)
+      const pageOneRecords = Array.from({ length: PAGE_SIZE }, (_, i) => ({
+        "6": { value: `Group${i}` },
+      }));
+      const mockResponsePage1 = {
+        success: true,
+        data: {
+          data: pageOneRecords,
+          metadata: { totalRecords: PAGE_SIZE + 1, numRecords: PAGE_SIZE },
+        },
+      };
+
+      // Second response: 0 records returned (stops pagination)
+      const mockResponsePage2 = {
+        success: true,
+        data: {
+          data: [],
+          metadata: { totalRecords: PAGE_SIZE + 1, numRecords: 0 },
+        },
+      };
+
+      mockClient.request = jest
+        .fn()
+        .mockResolvedValueOnce(mockResponsePage1)
+        .mockResolvedValueOnce(mockResponsePage2);
+
+      const params = {
+        table_id: "test-table",
+        groupBy: [{ fieldId: 6, grouping: "equal-values" }] as GroupBy[],
+        max_records: 2000,
+        paginate: true,
+      };
+
+      await tool.execute(params);
+
+      // Pagination should have activated (first response hit the page limit)
+      expect(mockClient.request).toHaveBeenCalledTimes(2);
+
+      // Both calls must include groupBy at the top level of body
+      const firstCallArgs = mockClient.request.mock.calls[0][0];
+      expect(firstCallArgs.body).toHaveProperty("groupBy");
+      expect(firstCallArgs.body!.groupBy).toEqual([
+        { fieldId: 6, grouping: "equal-values" },
+      ]);
+
+      const secondCallArgs = mockClient.request.mock.calls[1][0];
+      expect(secondCallArgs.body).toHaveProperty("groupBy");
+      expect(secondCallArgs.body!.groupBy).toEqual([
+        { fieldId: 6, grouping: "equal-values" },
+      ]);
+    });
+
     it("should truncate pagination correctly without duplicates when final page exceeds limit", async () => {
       // Regression test: Previously, pageRecords were appended before checking
       // if total exceeded limit, causing duplicates when truncation occurred.
@@ -251,7 +502,10 @@ describe("Record Tools", () => {
       // - Bug: would append 750, then check triggers and appends 500 more (duplicates)
       // - Fixed: check BEFORE appending, truncate to 500, no duplicates
 
-      const createRecords = (start: number, count: number) =>
+      const createRecords = (
+        start: number,
+        count: number,
+      ): Record<string, { value: number | string }>[] =>
         Array.from({ length: count }, (_, i) => ({
           "3": { value: start + i }, // Record ID field
           "6": { value: `Record ${start + i}` },

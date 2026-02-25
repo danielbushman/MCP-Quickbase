@@ -7,6 +7,7 @@ const logger = createLogger("QueryRecordsTool");
 /**
  * Order by configuration for query
  */
+// Note: fieldId is string here for historical reasons; GroupBy.fieldId below uses number to match the Quickbase API spec.
 export interface OrderBy {
   /**
    * Field ID to order by
@@ -17,6 +18,34 @@ export interface OrderBy {
    * Ordering direction: ASC or DESC
    */
   order: "ASC" | "DESC";
+}
+
+// Note: GroupBy item validation is shallow at the MCP layer. convertPropertyToZod treats
+// items.type: "object" as z.record(z.unknown()), so fieldId and grouping are not strictly
+// validated here. Invalid values pass MCP validation and are rejected by the Quickbase API.
+export interface GroupBy {
+  /**
+   * Field ID to group by
+   */
+  fieldId: number;
+
+  /**
+   * Grouping strategy
+   */
+  grouping:
+    | "equal-values"
+    | "first-word"
+    | "first-letter"
+    | "1000000"
+    | "100000"
+    | "10000"
+    | "1000"
+    | "100"
+    | "10"
+    | "1"
+    | ".1"
+    | ".01"
+    | ".001";
 }
 
 /**
@@ -42,6 +71,11 @@ export interface QueryRecordsParams {
    * Fields to order by
    */
   orderBy?: OrderBy[];
+
+  /**
+   * Fields to group results by for server-side aggregation
+   */
+  groupBy?: GroupBy[];
 
   /**
    * Maximum number of records to return
@@ -118,7 +152,7 @@ export class QueryRecordsTool extends BaseTool<
 > {
   public name = "query_records";
   public description =
-    "Executes a query against a Quickbase table with optional pagination";
+    "Executes a query against a Quickbase table with optional pagination and server-side field grouping";
 
   /**
    * Parameter schema for query_records
@@ -155,6 +189,40 @@ export class QueryRecordsTool extends BaseTool<
               enum: ["ASC", "DESC"],
             },
           },
+        },
+      },
+      groupBy: {
+        type: "array",
+        description:
+          "Fields to group results by for server-side aggregation. Use this instead of paginating large tables for counts or summaries - returns only the grouped results (e.g., 5-10 rows for a status count on a 1M+ record table) instead of individual records.",
+        items: {
+          type: "object",
+          properties: {
+            fieldId: {
+              type: "number",
+              description: "The field ID to group by",
+            },
+            grouping: {
+              type: "string",
+              description: "The grouping strategy to apply",
+              enum: [
+                "equal-values",
+                "first-word",
+                "first-letter",
+                "1000000",
+                "100000",
+                "10000",
+                "1000",
+                "100",
+                "10",
+                "1",
+                ".1",
+                ".01",
+                ".001",
+              ],
+            },
+          },
+          required: ["fieldId", "grouping"],
         },
       },
       max_records: {
@@ -198,6 +266,7 @@ export class QueryRecordsTool extends BaseTool<
       where,
       select,
       orderBy,
+      groupBy,
       max_records = 1000,
       skip = 0,
       paginate = false,
@@ -208,6 +277,7 @@ export class QueryRecordsTool extends BaseTool<
       tableId: table_id,
       maxRecords: max_records,
       pagination: paginate ? "enabled" : "disabled",
+      hasGroupBy: groupBy && groupBy.length > 0 ? true : undefined,
     });
 
     // Prepare the query body
@@ -228,6 +298,11 @@ export class QueryRecordsTool extends BaseTool<
     // Add sorting if provided
     if (orderBy && orderBy.length > 0) {
       body.sortBy = orderBy;
+    }
+
+    // Add grouping if provided
+    if (groupBy && groupBy.length > 0) {
+      body.groupBy = groupBy;
     }
 
     // Add pagination
