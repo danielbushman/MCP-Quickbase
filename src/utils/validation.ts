@@ -275,4 +275,3 @@ export function validateParams<T>(
     throw error;
   }
 }
-

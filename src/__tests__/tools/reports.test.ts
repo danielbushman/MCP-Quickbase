@@ -285,6 +285,24 @@ describe("Report Tools", () => {
       expect(result.error?.message).toContain("does not have permission");
     });
 
+    it("should use fallback error message when error has no message field", async () => {
+      const mockError = {
+        success: false,
+        error: {
+          code: 500,
+        },
+      } as ApiResponse<any>;
+
+      mockClient.request.mockResolvedValue(mockError);
+
+      const result = await tool.execute({
+        report_id: "server-error-report",
+      });
+
+      expect(result.success).toBe(false);
+      expect(result.error?.message).toContain("Failed to run report");
+    });
+
     it("should handle empty report results", async () => {
       const mockResponse: ApiResponse<any> = {
         success: true,
