@@ -276,6 +276,3 @@ export function validateParams<T>(
   }
 }
 
-// Legacy exports for backward compatibility
-export const createZodSchema = createMcpZodSchema;
-export const createZodObjectSchema = createValidationSchema;
