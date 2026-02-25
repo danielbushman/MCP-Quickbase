@@ -10,7 +10,7 @@ USER service-user
 
 WORKDIR /app
 
-RUN git clone https://github.com/danielbushman/MCP-Quickbase . && git checkout 74595fe271dd4a7816e7594d672debf02088dca8
+RUN git clone https://github.com/danielbushman/MCP-Quickbase . && git checkout main
 
 RUN (npm install) && (npm run build) && (chmod +x dist/mcp-stdio-server.js)
 

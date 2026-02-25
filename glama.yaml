@@ -4,7 +4,7 @@ kind: MCPServer
 metadata:
   name: mcp-quickbase
   description: "Quickbase MCP Server"
-  version: "2.0.0"
+  version: "2.3.0"
   tags:
     - quickbase
     - database
@@ -112,9 +112,15 @@ spec:
       
     - name: create_field
       description: "Create a new field in a table"
-      
+
+    - name: get_field
+      description: "Get properties of a specific field"
+
     - name: update_field
       description: "Update an existing field"
+
+    - name: delete_field
+      description: "Delete a field from a table"
       
     - name: query_records
       description: "Query records from a table with filtering and pagination"
@@ -139,6 +145,18 @@ spec:
       
     - name: run_report
       description: "Execute a Quickbase report"
+
+    - name: get_relationships
+      description: "Get table relationships"
+
+    - name: create_relationship
+      description: "Create a new table relationship"
+
+    - name: update_relationship
+      description: "Update an existing relationship"
+
+    - name: delete_relationship
+      description: "Delete a table relationship"
 
 # Usage examples and documentation
 documentation:

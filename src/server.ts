@@ -249,7 +249,7 @@ app.get("/api/schema", (_req, res) => {
 app.get("/status", (_req, res) => {
   res.json({
     name: "Quickbase MCP Server",
-    version: "2.0.0",
+    version: "2.3.0",
     status: connectorStatus.status,
     error: connectorStatus.error,
     tools: quickbaseClient ? toolRegistry.getToolNames() : [],

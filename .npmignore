@@ -20,41 +20,24 @@ tsconfig.json
 *.test.ts
 *.test.js
 
-# Scripts and configs
+# Scripts
 *.sh
-configure.sh
-auto_setup.sh
-check_dependencies.sh
-deploy.sh
-run_tests.sh
-test_all_tools.sh
-quick_setup.sh
-minimal_setup.sh
-killProcess.sh
 
 # Docker files (not needed for npm)
 Dockerfile
-Dockerfile.glama
 .dockerignore
 glama.yaml
 
 # Documentation files (already on GitHub)
-CEO_*.md
-EXECUTIVE_SUMMARY.md
-MIGRATION.md
-RELEASE_NOTES.md
 CLAUDE.md
 
 # Version control
 .git/
 .gitignore
 .claude/
+.crewchief/
+.sdd/
 .nvmrc
-
-# Legacy files
-v1-legacy/
-venv/
-requirements.txt
 
 # IDE files
 .vscode/
