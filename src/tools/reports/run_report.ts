@@ -4,7 +4,7 @@ import { createLogger } from "../../utils/logger";
 
 const logger = createLogger("RunReportTool");
 
-interface RunReportParams {
+export interface RunReportParams {
   report_id: string;
   options?: {
     filters?: Record<string, any>;
@@ -16,14 +16,20 @@ interface RunReportParams {
   };
 }
 
+export interface RunReportResult {
+  fields?: Record<string, unknown>[];
+  data: Record<string, unknown>[];
+  metadata?: Record<string, unknown>;
+}
+
 /**
  * Tool for executing Quickbase reports
  */
-export class RunReportTool extends BaseTool<RunReportParams, any> {
-  public readonly name = "run_report";
-  public readonly description =
+export class RunReportTool extends BaseTool<RunReportParams, RunReportResult> {
+  public name = "run_report";
+  public description =
     "Execute a Quickbase report with optional filters and parameters";
-  public readonly paramSchema = {
+  public paramSchema = {
     type: "object",
     properties: {
       report_id: {
@@ -71,7 +77,7 @@ export class RunReportTool extends BaseTool<RunReportParams, any> {
     super(client);
   }
 
-  protected async run(params: RunReportParams): Promise<any> {
+  protected async run(params: RunReportParams): Promise<RunReportResult> {
     const { report_id, options = {} } = params;
 
     logger.info(`Running report: ${report_id}`);
@@ -82,8 +88,15 @@ export class RunReportTool extends BaseTool<RunReportParams, any> {
       body: options,
     });
 
+    if (!response.success) {
+      logger.error(`Failed to run report: ${report_id}`, {
+        error: response.error,
+      });
+      throw new Error(response.error?.message || "Failed to run report");
+    }
+
     logger.info(`Report executed successfully: ${report_id}`);
 
-    return response;
+    return response.data as RunReportResult;
   }
 }

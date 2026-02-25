@@ -76,7 +76,7 @@ describe("Report Tools", () => {
       });
 
       expect(result.success).toBe(true);
-      expect(result.data).toEqual(mockResponse);
+      expect(result.data).toEqual(mockResponse.data);
     });
 
     it("should run a report with skip and top options", async () => {
@@ -117,7 +117,7 @@ describe("Report Tools", () => {
       });
 
       expect(result.success).toBe(true);
-      expect(result.data).toEqual(mockResponse);
+      expect(result.data).toEqual(mockResponse.data);
     });
 
     it("should run a report with where clause", async () => {
@@ -159,7 +159,7 @@ describe("Report Tools", () => {
       });
 
       expect(result.success).toBe(true);
-      expect(result.data).toEqual(mockResponse);
+      expect(result.data).toEqual(mockResponse.data);
     });
 
     it("should run a report with sort options", async () => {
@@ -202,7 +202,7 @@ describe("Report Tools", () => {
       });
 
       expect(result.success).toBe(true);
-      expect(result.data).toEqual(mockResponse);
+      expect(result.data).toEqual(mockResponse.data);
     });
 
     it("should run a report with groupBy options", async () => {
@@ -244,7 +244,7 @@ describe("Report Tools", () => {
       });
 
       expect(result.success).toBe(true);
-      expect(result.data).toEqual(mockResponse);
+      expect(result.data).toEqual(mockResponse.data);
     });
 
     it("should handle report not found error", async () => {
@@ -262,8 +262,8 @@ describe("Report Tools", () => {
         report_id: "nonexistent",
       });
 
-      expect(result.success).toBe(true);
-      expect(result.data).toEqual(mockError);
+      expect(result.success).toBe(false);
+      expect(result.error?.message).toContain("Report not found");
     });
 
     it("should handle permission error", async () => {
@@ -281,8 +281,8 @@ describe("Report Tools", () => {
         report_id: "restricted-report",
       });
 
-      expect(result.success).toBe(true);
-      expect(result.data).toEqual(mockError);
+      expect(result.success).toBe(false);
+      expect(result.error?.message).toContain("does not have permission");
     });
 
     it("should handle empty report results", async () => {
@@ -307,7 +307,7 @@ describe("Report Tools", () => {
       });
 
       expect(result.success).toBe(true);
-      expect(result.data).toEqual(mockResponse);
+      expect(result.data).toEqual(mockResponse.data);
     });
   });
 });
