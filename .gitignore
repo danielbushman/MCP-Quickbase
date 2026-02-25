@@ -71,3 +71,5 @@ crewchief.config.local.js
 crewchief.config.js
 
 **/*.local.*
+
+.sdd/
