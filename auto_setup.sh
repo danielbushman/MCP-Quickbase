@@ -119,9 +119,7 @@ npm run build
 
 # Make scripts executable
 echo "Setting up executables..."
-chmod +x run_tests.sh
 chmod +x configure.sh
-chmod +x check_dependencies.sh
 
 # Full and complete path now stored in INSTALL_DIR
 # Use current directory for certainty
