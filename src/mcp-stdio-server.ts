@@ -26,7 +26,7 @@ async function main(): Promise<void> {
     // Initialize the MCP server
     const server = new McpServer({
       name: "Quickbase MCP Server",
-      version: "2.0.0",
+      version: "2.3.0",
     });
 
     logger.info("MCP Server created");

@@ -1,5 +1,44 @@
 # v2 Release Notes
 
+## v2.3.0 - 2026-02-25
+
+### Added
+- `groupBy` parameter for `query_records` tool, enabling server-side record grouping
+- Observability logging for groupBy parameter usage
+- Multi-page pagination test for groupBy preservation
+- Enhanced groupBy schema description with performance context
+
+## v2.2.0 - 2025-12-29
+
+### Added
+- Relationship management tools: `get_relationships`, `create_relationship`, `update_relationship`, `delete_relationship`
+- Full CRUD support for Quickbase table relationships
+- Integration tests for all relationship tools
+
+### Fixed
+- API endpoint paths for relationship write operations (singular vs plural)
+
+## v2.1.0 - 2025-12-28
+
+### Added
+- `get_field` tool for retrieving individual field details
+- `delete_field` tool with system field protection and cache invalidation
+- Comprehensive field tools test suite
+- Future improvements documentation
+
+### Fixed
+- Pagination truncation logic preventing duplicate records
+- `create_table` field mapping (use fieldHelp instead of description)
+- Removed non-functional fields parameter from `create_table`
+- Correct Quickbase API format for `delete_field`
+- Removed unsupported `field_type` from `update_field`
+- Critical security hardening for file operations
+- Configuration validation and realm hostname redaction
+
+### Changed
+- Moved release notes, migration guide, and hardening summary to docs folder
+- Cleaned up obsolete ai_workspace and ai_specs folders
+
 ## 🎉 Major Release: v2.0.0
 
 This release represents a complete rewrite of Quickbase MCP Server with significant improvements in performance, reliability, and developer experience.
@@ -32,7 +71,7 @@ This release represents a complete rewrite of Quickbase MCP Server with signific
 
 ### 📦 What's Included
 
-#### Tools (18 total)
+#### Tools (18 at initial release, now 25 as of v2.3.0)
 - **Connection**: test_connection, configure_cache
 - **Apps**: create_app, update_app, list_tables
 - **Tables**: create_table, update_table, get_table_fields
@@ -70,17 +109,16 @@ See [Migration Guide](migration-guide.md) for detailed migration instructions.
 - Corrected pagination bugs in query_records
 - Fixed cache invalidation timing issues
 
-### 🔮 Future Plans
+### 🔮 Future Plans (as of v2.0.0)
 
 - Increase test coverage to 80%+
 - Add webhook support
 - Implement streaming for large datasets
 - Add more comprehensive logging options
-- Support for Quickbase formulas and relationships
+- ~~Support for Quickbase formulas and relationships~~ (relationships added in v2.2.0)
 
 ### 📝 Notes
 
-- v1 code is preserved in `v1-legacy/` for reference only
 - All new development should use v2
 - Please report any issues on GitHub
 

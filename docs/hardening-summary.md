@@ -32,7 +32,7 @@ This document summarizes the security hardening and consistency improvements mad
 - **TypeScript strict mode** is properly enabled
 - **Consistent error handling** across all tools
 - **Proper logging** with sensitive data redaction
-- **Consistent file naming** (kebab-case) across the project
+- **Consistent file naming** (snake_case) across the project
 
 ## Areas of Excellence
 

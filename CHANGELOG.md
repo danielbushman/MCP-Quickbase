@@ -2,6 +2,44 @@
 
 All notable changes to Quickbase MCP Server will be documented in this file.
 
+## [2.3.0] - 2026-02-25
+
+### Added
+- `groupBy` parameter for `query_records` tool, enabling server-side record grouping
+- Observability logging for groupBy parameter usage
+- Multi-page pagination test for groupBy preservation
+
+## [2.2.0] - 2025-12-29
+
+### Added
+- Relationship management tools: `get_relationships`, `create_relationship`, `update_relationship`, `delete_relationship`
+- Full CRUD support for Quickbase table relationships
+- Integration tests for relationship tools
+
+### Fixed
+- API endpoint paths for relationship write operations (singular vs plural)
+
+## [2.1.0] - 2025-12-28
+
+### Added
+- `get_field` tool for retrieving individual field details
+- `delete_field` tool with system field protection and cache invalidation
+- Comprehensive field tools test suite
+- Future improvements documentation
+
+### Fixed
+- Pagination truncation logic to prevent duplicate records
+- `create_table` field mapping (use fieldHelp instead of description)
+- Removed non-functional fields parameter from `create_table`
+- Correct Quickbase API format for `delete_field`
+- Removed unsupported `field_type` from `update_field`
+- Critical security hardening for file operations
+- Configuration validation and realm hostname redaction
+
+### Changed
+- Moved release notes, migration guide, and hardening summary to docs folder
+- Cleaned up obsolete ai_workspace and ai_specs folders
+
 ## [2.0.0] - 2025-05-24
 
 ### Added

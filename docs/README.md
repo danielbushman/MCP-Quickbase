@@ -11,7 +11,7 @@ This directory contains comprehensive documentation for Quickbase MCP Server v2.
 ### Development
 - **[Developer Guide](developer-guide.md)** - Comprehensive guide for developers
 - **[Architecture Overview](architecture.md)** - System design and components
-- **[Tools Reference](tools.md)** - Complete list of all 18 MCP tools
+- **[Tools Reference](tools.md)** - Complete list of all 25 MCP tools
 
 ### Operations
 - **[Deployment Guide](deployment.md)** - Production deployment instructions
@@ -40,8 +40,8 @@ This directory contains comprehensive documentation for Quickbase MCP Server v2.
 All documentation follows these principles:
 - Clear, concise language
 - Practical examples
-- Up-to-date with v2.0.0
+- Up-to-date with v2.3.0
 - No redundancy between files
 - Consistent formatting
 
-Last updated: January 2025
+Last updated: February 2026

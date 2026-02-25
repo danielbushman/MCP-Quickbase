@@ -104,7 +104,7 @@ The server can start without environment variables configured, but tools will no
 - **`DEBUG`** - Enable debug logging (`true`/`false`, default: `false`)
 - **`LOG_LEVEL`** - Logging level (`DEBUG`/`INFO`/`WARN`/`ERROR`, default: `INFO`)
 
-## 🛠️ Available Tools
+## 🛠️ Available Tools (25)
 
 ### Connection & Configuration
 - **`check_configuration`** - Check if Quickbase configuration is properly set up
@@ -123,10 +123,12 @@ The server can start without environment variables configured, but tools will no
 
 ### Field Management
 - **`create_field`** - Create new fields in tables
+- **`get_field`** - Get properties of a specific field
 - **`update_field`** - Update field properties
+- **`delete_field`** - Delete a field from a table
 
 ### Record Operations
-- **`query_records`** - Query records with filtering and sorting
+- **`query_records`** - Query records with filtering, sorting, and groupBy
 - **`create_record`** - Create single records
 - **`update_record`** - Update existing records
 - **`bulk_create_records`** - Create multiple records
@@ -135,6 +137,12 @@ The server can start without environment variables configured, but tools will no
 ### File Operations
 - **`upload_file`** - Upload files to file attachment fields
 - **`download_file`** - Download files from records
+
+### Relationship Management
+- **`get_relationships`** - Get table relationships
+- **`create_relationship`** - Create a new table relationship
+- **`update_relationship`** - Update an existing relationship
+- **`delete_relationship`** - Delete a table relationship
 
 ### Reporting
 - **`run_report`** - Execute Quickbase reports
@@ -164,7 +172,7 @@ Upload invoice.pdf to the Documents field in record 123
 
 ## 📋 Requirements
 
-- Node.js 18 or higher
+- Node.js 18+
 - Valid Quickbase account with API access
 - Claude Desktop (for MCP integration)
 

@@ -20,7 +20,7 @@ This document captures improvement items for future consideration. These items w
 
 - **Add webhook support**: Enable real-time notifications from Quickbase events to external systems.
 - **Implement streaming for large datasets**: Handle large query results more efficiently without loading everything into memory at once.
-- **Support for Quickbase formulas and relationships**: Add tools or capabilities to work with Quickbase formula fields and table relationships.
+- ~~**Support for Quickbase formulas and relationships**~~: Relationship tools added in v2.2.0. Quickbase formula field support remains a future item.
 
 ## Enhancement
 

@@ -18,7 +18,7 @@ export function createMcpServer(): McpServer {
   // Initialize the MCP server with our app info
   const server = new McpServer({
     name: "Quickbase MCP Server",
-    version: "2.0.0",
+    version: "2.3.0",
   });
 
   logger.info("MCP Server created");

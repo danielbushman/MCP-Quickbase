@@ -39,8 +39,9 @@ The connector is built using a modular architecture with the following key compo
 │ - Table Tools   │    │ - Retry Logic   │    │ - Config Types  │
 │ - Record Tools  │    │ - File Utils    │    │ - MCP Types     │
 │ - Field Tools   │    │ - Logger        │    │ - Tool Types    │
-│ - File Tools    │    │                 │    │                 │
+│ - File Tools    │    │ - Validation    │    │                 │
 │ - Report Tools  │    │                 │    │                 │
+│ - Relation Tools│    │                 │    │                 │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
 
@@ -113,9 +114,10 @@ src/
 │   ├── base.ts           # Base tool class
 │   ├── registry.ts       # Tool registry and management
 │   ├── apps/             # Application management tools
-│   ├── fields/           # Field management tools
+│   ├── fields/           # Field CRUD tools
 │   ├── files/            # File operation tools
 │   ├── records/          # Record operation tools
+│   ├── relationships/    # Relationship management tools
 │   ├── reports/          # Report execution tools
 │   └── tables/           # Table operation tools
 ├── types/                 # TypeScript type definitions
@@ -126,14 +128,15 @@ src/
 │   ├── cache.ts          # Caching service
 │   ├── file.ts           # File handling utilities
 │   ├── logger.ts         # Logging service
-│   └── retry.ts          # Retry logic implementation
+│   ├── retry.ts          # Retry logic implementation
+│   └── validation.ts     # Zod schema validation
 ├── mcp-stdio-server.ts    # Stdio MCP server entry point
 └── server.ts             # HTTP server entry point
 ```
 
 ### Naming Conventions
 
-- **Files**: kebab-case (`create-record.ts`)
+- **Files**: snake_case (`create_record.ts`)
 - **Classes**: PascalCase (`CreateRecordTool`)
 - **Variables/Functions**: camelCase (`executeQuery`)
 - **Constants**: UPPER_SNAKE_CASE (`MAX_RETRY_ATTEMPTS`)
@@ -289,11 +292,16 @@ describe('MyNewTool', () => {
 ```
 src/__tests__/
 ├── client.test.ts           # API client tests
-├── cache.test.ts           # Cache service tests
+├── cache.test.ts            # Cache service tests
 ├── integration.test.ts      # Full system integration tests
-├── tools.test.ts           # Tool registry tests
-└── tools/                  # Individual tool tests
-    ├── records.test.ts     # Record operation tools
+├── performance.test.ts      # Performance benchmarks
+├── tools.test.ts            # Tool registry tests
+├── validation.test.ts       # Validation utility tests
+└── tools/                   # Individual tool tests
+    ├── records.test.ts      # Record operation tools
+    ├── fields.test.ts       # Field management tools
+    ├── relationships.test.ts # Relationship management tools
+    ├── reports.test.ts      # Report tools
     └── test_connection.test.ts
 ```
 

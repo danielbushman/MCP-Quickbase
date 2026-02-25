@@ -24,7 +24,7 @@ The Quickbase MCP Server v2 delivers excellent performance across all key metric
 ```
 Average Tool Registration Time: 25ms
 Peak Tool Registration Time: 45ms
-Tools Registered: 18 tools
+Tools Registered: 25 tools
 Memory Allocation: 2.1MB
 ```
 

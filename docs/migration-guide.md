@@ -143,11 +143,7 @@ QUICKBASE_CACHE_TTL=3600  # seconds
 
 ## 🔙 Rolling Back (Not Recommended)
 
-If you must roll back to v1:
-
-1. The v1 code is preserved in `v1-legacy/` for reference
-2. However, v1 is no longer maintained or supported
-3. We strongly recommend working through any v2 migration issues instead
+Rolling back to v1 is no longer possible. The v1-legacy code was removed in v2.1.0. If you encounter issues, please open an issue on GitHub.
 
 ## ✅ Post-Migration Checklist
 

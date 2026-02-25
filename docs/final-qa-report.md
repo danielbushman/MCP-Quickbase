@@ -14,7 +14,7 @@ The Quickbase MCP Server v2 has successfully completed comprehensive QA validati
 ### 1. Functional Testing - **PASSED** ✅
 
 #### Core Functionality
-- ✅ **Tool Registration**: All 18 tools register successfully
+- ✅ **Tool Registration**: All 25 tools register successfully
 - ✅ **Client Initialization**: Quickbase client creates without errors
 - ✅ **Cache Operations**: All cache operations function correctly
 - ✅ **Error Handling**: Proper error responses and logging

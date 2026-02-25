@@ -1,6 +1,6 @@
 # 🛠️ Available Tools
 
-The Quickbase MCP Server provides 18 comprehensive tools for Claude to interact with your Quickbase data:
+The Quickbase MCP Server provides 25 tools for Claude to interact with your Quickbase data:
 
 ## 🔗 Connection & Configuration
 
@@ -115,6 +115,17 @@ Create a new field in a table.
 - "Add a 'Rating' field to the Customers table as a number field"
 - "Create a date field called 'Due Date' in the Tasks table"
 
+### `get_field`
+Get properties of a specific field.
+
+**Parameters**:
+- `table_id` (string, required): Table ID
+- `field_id` (number, required): Field ID to retrieve
+
+**Example usage**:
+- "Get the details of field 6 in the Customers table"
+- "What type is field 10 in table bqrxzt5wq?"
+
 ### `update_field`
 Update properties of an existing field.
 
@@ -124,9 +135,20 @@ Update properties of an existing field.
 - `name` (string, optional): New field name
 - `description` (string, optional): New field description
 
-**Example usage**: 
+**Example usage**:
 - "Change the label of field 6 to 'Current Status'"
 - "Update the description of the Priority field"
+
+### `delete_field`
+Delete a field from a table. System fields cannot be deleted.
+
+**Parameters**:
+- `table_id` (string, required): Table ID
+- `field_id` (number, required): Field ID to delete
+
+**Example usage**:
+- "Delete field 15 from the Projects table"
+- "Remove the unused Notes field from table bqrxzt5wq"
 
 ## 📝 Record Operations
 
@@ -141,6 +163,7 @@ Retrieve records from a table with advanced filtering and pagination.
 - `max_records` (number, optional): Maximum records to return
 - `skip` (number, optional): Records to skip (pagination)
 - `paginate` (boolean, optional): Enable automatic pagination
+- `groupBy` (array, optional): Group results by field(s) with sort order
 
 **Example usage**: 
 - "Show me all customer records where Status is Active"
@@ -220,6 +243,56 @@ Download a file attachment from a record field.
 **Example usage**: 
 - "Download the contract from customer record 5678"
 - "Save the project document to my Downloads folder"
+
+## 🔗 Relationship Management
+
+### `get_relationships`
+Get all relationships for a table.
+
+**Parameters**:
+- `table_id` (string, required): Table ID to get relationships for
+
+**Example usage**:
+- "Show me the relationships for the Projects table"
+- "What tables are linked to the Customers table?"
+
+### `create_relationship`
+Create a new relationship between tables.
+
+**Parameters**:
+- `parent_table_id` (string, required): Parent table ID
+- `child_table_id` (string, required): Child table ID
+- `foreign_key_field` (object, optional): Foreign key field configuration
+- `lookup_field_ids` (array, optional): Field IDs to create as lookup fields
+- `summary_fields` (array, optional): Summary field configurations
+
+**Example usage**:
+- "Create a relationship from Customers to Orders"
+- "Link the Projects table to the Tasks table with a lookup field"
+
+### `update_relationship`
+Update an existing relationship.
+
+**Parameters**:
+- `table_id` (string, required): Child table ID
+- `relationship_id` (number, required): Relationship ID to update
+- `lookup_field_ids` (array, optional): Updated lookup field IDs
+- `summary_fields` (array, optional): Updated summary field configurations
+
+**Example usage**:
+- "Add a lookup field to the Projects-Tasks relationship"
+- "Update the summary fields on relationship 5"
+
+### `delete_relationship`
+Delete a table relationship.
+
+**Parameters**:
+- `table_id` (string, required): Child table ID
+- `relationship_id` (number, required): Relationship ID to delete
+
+**Example usage**:
+- "Delete the relationship between Projects and Tasks"
+- "Remove relationship 5 from table bqrxzt5wq"
 
 ## 📊 Report Management
 
