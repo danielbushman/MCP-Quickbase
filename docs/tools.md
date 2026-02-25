@@ -4,6 +4,16 @@ The Quickbase MCP Server provides 25 tools for Claude to interact with your Quic
 
 ## 🔗 Connection & Configuration
 
+### `check_configuration`
+Check if Quickbase configuration is properly set up. Reports whether the server has a configured client, lists the required environment variables (`QUICKBASE_REALM_HOST`, `QUICKBASE_USER_TOKEN`) and optional variables (`QUICKBASE_APP_ID`, `QUICKBASE_CACHE_ENABLED`, `QUICKBASE_CACHE_TTL`, `DEBUG`). Useful for debugging connectivity before making API calls. This tool is available even when credentials are missing or invalid.
+
+**No parameters required**
+
+**Example usage**:
+- "Check my Quickbase configuration"
+- "Show the current server settings"
+- "Are my Quickbase credentials configured?"
+
 ### `test_connection`
 Verify your connection to Quickbase and check authentication.
 
